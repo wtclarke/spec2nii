@@ -1,4 +1,4 @@
-import GSL.gslfunctions as GSL
+import spec2nii.GSL.gslfunctions as GSL
 import numpy as np
 
 def twix2DCMOrientation(mapVBVDHdr):

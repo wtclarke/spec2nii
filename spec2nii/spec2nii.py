@@ -1,9 +1,9 @@
 import argparse
 import numpy as np
 from dataclasses import dataclass
-from writeNii import writeNii
+from spec2nii.writeNii import writeNii
 import os.path as op
-from dcm2niiOrientation.orientationFuncs import nifti_dicom2mat,nifti_mat44_to_quatern
+from spec2nii.dcm2niiOrientation.orientationFuncs import nifti_dicom2mat,nifti_mat44_to_quatern
 
 # There are case specific imports below
 @dataclass
@@ -72,7 +72,7 @@ class spec2nii:
     def twix(self,args):     
         # Call mapVBVD to load the twix file.
         from mapVBVD import mapVBVD
-        from twixfunctions import twix2DCMOrientation,examineTwix
+        from spec2nii.twixfunctions import twix2DCMOrientation,examineTwix
         twixObj = mapVBVD.mapVBVD(self.fileIn)
 
         if  args.view:
