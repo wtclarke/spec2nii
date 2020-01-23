@@ -3,6 +3,7 @@ import numpy as np
 from dataclasses import dataclass
 from spec2nii.writeNii import writeNii
 import os.path as op
+from os import walk
 from spec2nii.dcm2niiOrientation.orientationFuncs import nifti_dicom2mat,nifti_mat44_to_quatern
 
 # There are case specific imports below
@@ -40,8 +41,9 @@ class spec2nii:
 
         # Handle dicom subcommand
         parser_dicom = subparsers.add_parser('dicom', help='Convert from DICOM format.')
-        parser_dicom.add_argument('file',help='file to convert',type=str)
-        parser_dicom.add_argument('a', type=str, help='placeholder')
+        parser_dicom.add_argument('file',help='file or directory to convert',type=str)
+        parser_dicom.add_argument("-f", "--fileout", type=str,help="Output file base name (default = DCM SeriesDescription tag)")
+        parser_dicom.add_argument("-o", "--outdir", type=str,help="Output location (default = .)",default='.')
         parser_dicom.set_defaults(func=self.dicom)
 
         # Handle ismrmrd subcommand
@@ -164,7 +166,50 @@ class spec2nii:
                         self.fileoutNames[len(self.fileoutNames)-1] += f'_{indexStr}{ii :03d}'
 
     def dicom(self,args):
-        print(f'Converting dicom file {self.fileIn}')
+        if op.isdir(self.fileIn):
+            basePath = self.fileIn
+            (_, _, filenames) = next(walk(basePath))
+            print(f'Found {len(filenames)} files.')
+        else:
+            print('Single file conversion.')
+            basePath = op.dirname(self.fileIn)
+            filenames = [op.basename(self.fileIn),]
+        
+        # DICOM specific imports
+        import nibabel.nicom.dicomwrappers
+        for idx,fn in enumerate(filenames):
+            print(f'Converting dicom file {self.fileIn}')
+            
+            img = nibabel.nicom.dicomwrappers.wrapper_from_file(op.join(basePath,fn))
+
+            specData = np.frombuffer(img.dcm_data[('7fe1', '1010')].value, dtype=np.single)
+            specDataCmplx = specData[0::2]+1j*specData[1::2]
+            self.imageOut.append(specDataCmplx)
+
+            if args.fileout:
+                mainStr = args.fileout
+            else: 
+                mainStr = img.dcm_data.SeriesDescription
+
+            self.fileoutNames.append(f'{mainStr}_{idx :03d}')
+
+            #1) Extract dicom parameters
+            imageOrientationPatient = np.array(img.csa_header['tags']['ImageOrientationPatient']['items']).reshape(2,3).transpose()
+            imagePositionPatient = img.csa_header['tags']['VoiPosition']['items']
+            xyzMM = np.array([img.csa_header['tags']['VoiPhaseFoV']['items'][0],
+                         img.csa_header['tags']['VoiReadoutFoV']['items'][0],
+                        img.csa_header['tags']['VoiThickness']['items'][0]])
+            # 2) in style of dcm2niix
+            # a) calculate Q44
+            Q44 = nifti_dicom2mat(imageOrientationPatient,imagePositionPatient,xyzMM)
+            # b) calculate nifti quaternion parameters
+            Q44[:2,:] *= -1
+            qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(Q44)
+            # 3) place in data class for nifti orientation parameters 
+            currNiftiOrientation = NIFTIOrient(qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac,Q44)
+            self.orientationInfoOut.append(currNiftiOrientation)
+            self.dwellTimes.append(img.csa_header['tags']['RealDwellTime']['items'][0]*1E-9)
+
 
     def ismrmrd(self,args):
         print(f'Converting ismrmrd file {self.fileIn}')
