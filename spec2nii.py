@@ -1,8 +1,10 @@
 import argparse
 import numpy as np
-import dataclasses
-import writeNii
-import os
+from dataclasses import dataclass
+from writeNii import writeNii
+import os.path as op
+from dcm2niiOrientation.orientationFuncs import nifti_dicom2mat,nifti_mat44_to_quatern
+
 # There are case specific imports below
 @dataclass
 class NIFTIOrient:
@@ -15,7 +17,8 @@ class NIFTIOrient:
     dx: float
     dy: float
     dz: float
-    qfac: float    
+    qfac: float
+    Q44: np.array    
 
 class spec2nii:
     def __init__(self):
@@ -27,9 +30,12 @@ class spec2nii:
         # Handle twix subcommand
         parser_twix = subparsers.add_parser('twix', help='Convert from Siemens .dat twix format.')
         parser_twix.add_argument('file',help='file to convert',type=str)
-        parser_twix.add_argument('evalinfo', type=str, help='evalInfo flag to convert')
+        group = parser_twix.add_mutually_exclusive_group(required=True)
+        group.add_argument("-v", "--view", help="View contents of twix file, no files converted",action='store_true')
+        group.add_argument('-e','--evalinfo', type=str, help='evalInfo flag to convert')
         parser_twix.add_argument("-f", "--fileout", type=str,help="Output file base name (default = input file name)")
         parser_twix.add_argument("-o", "--outdir", type=str,help="Output location (default = .)",default='.')
+        parser_twix.add_argument("-m", "--multiraid", type=int,help="Select multiraid file to load (default = 2 i.e. 2nd file)",default=2)         
         parser_twix.set_defaults(func=self.twix)
 
         # Handle dicom subcommand
@@ -50,38 +56,48 @@ class spec2nii:
         self.fileoutNames = []
         self.imageOut = []
         self.orientationInfoOut = []
+        self.dwellTimes = []
 
         self.outputDir = args.outdir
 
         args.func(args)
 
-        # Write nifit files
-        for n,i,o in zip(self.fileoutNames,self.imageOut,self.orientationInfoOut):
-            writeNii(n,i,o)
+        if self.imageOut:
+            # Write nifti files
+            for n,i,o,d in zip(self.fileoutNames,self.imageOut,self.orientationInfoOut,self.dwellTimes):
+                writeNii(n,self.outputDir,i,o,d)
+        elif not args.view:
+            print('No files to write.')
 
-    def twix(self,args):
-        print(f"Converting twix file {self.fileIn}.")
-
+    def twix(self,args):     
         # Call mapVBVD to load the twix file.
         from mapVBVD import mapVBVD
-        from twixfunctions import twix2DCMOrientation
+        from twixfunctions import twix2DCMOrientation,examineTwix
         twixObj = mapVBVD.mapVBVD(self.fileIn)
 
-        print(f'Looking for eval info flag {args.evalinfo}.')
+        if  args.view:
+            examineTwix(twixObj,op.basename(self.fileIn),args.multiraid)
+            return
+        
+        if isinstance(twixObj,list):                       
+            twixObj = twixObj[args.multiraid-1]
+            
+        print(f"Converting twix file {self.fileIn}.")
+        print(f'Looking for evalinfo flag {args.evalinfo}.')
         dataKey = args.evalinfo
 
         # Set squeeze data
         twixObj[dataKey].squeeze = True
         squeezedData = twixObj[dataKey]['']
-        print(squeezedData.shape)
+        print(f'Found data of size {squeezedData.shape}.')
 
         # Orientation calculations
         #1) Calculate dicom like imageOrientationPatient,imagePositionPatient,pixelSpacing and slicethickness
         imageOrientationPatient,imagePositionPatient,pixelSpacing,slicethickness = twix2DCMOrientation(twixObj['hdr'])
-        print(imageOrientationPatient)
-        print(imagePositionPatient)
-        print(pixelSpacing)
-        print(slicethickness)
+        # print(imageOrientationPatient)
+        # print(imagePositionPatient)
+        # print(pixelSpacing)
+        # print(slicethickness)
         # 2) in style of dcm2niix
         # a) calculate Q44
         xyzMM = np.append(pixelSpacing,slicethickness)
@@ -90,7 +106,10 @@ class spec2nii:
         Q44[:2,:] *= -1
         qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(Q44)
         # 3) place in data class for nifti orientation parameters  
-        currNiftiOrientation = NIFTIOrient(qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac)
+        currNiftiOrientation = NIFTIOrient(qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac,Q44)
+
+        # Extract dwellTime
+        dwellTime = twixObj['hdr']['MeasYaps'][('sRXSPEC','alDwellTime','0')]/1E9
 
         # Identify what those indicies are
         # If cha is one: loop over 3rd and higher dims and make 2D images
@@ -99,33 +118,43 @@ class spec2nii:
         if args.fileout:
             mainStr = args.fileout
         else:
-            mainStr = os.path.basename(self.fileIn)
-        print(mainStr)
+            mainStr = op.basename(self.fileIn)
 
-        dims = twixObj['image'].sqzDims()
+        dims = twixObj[dataKey].sqzDims()
         if dims[0] != 'Col':
             raise ValueError('Col is expected to be the first dimension in the Twix file, it is not.')# This is very unlikely to occur
         if 'Cha' in dims:
             if dims[1] != 'Cha':
-                raise ValueError('If present Cha is expected to be the first dimension in the Twix file, it is not.') # This is very unlikely to occur
+                raise ValueError('If present Cha is expected to be the first dimension in the Twix file, it is not.') # This is very unlikely to occur            
+            if len(dims) ==2: # Only single file output, force singleton third dimensions
+                squeezedData = squeezedData.reshape((squeezedData.shape+(1,)))
             # Loop over all the other dims from the third up
             for index in np.ndindex(squeezedData.shape[2:]):
                 modIndex = (slice(None),slice(None),)+ index
                 self.imageOut.append(squeezedData[modIndex])
                 self.orientationInfoOut.append(currNiftiOrientation)
+                self.dwellTimes.append(dwellTime)
                 # Create strings
                 for idx,ii in enumerate(index):
-                    indexStr = dims[2+idx]
+                    if len(dims) > 2:
+                        indexStr = dims[2+idx]
+                    else:
+                        self.fileoutNames.append(f'{mainStr}')
+                        continue
+
                     if idx==0:
                         self.fileoutNames.append(f'{mainStr}_{indexStr}{ii :03d}')
                     else:
                         self.fileoutNames[len(self.fileoutNames)-1] += f'_{indexStr}{ii :03d}'
 
         else: # Loop over all the other dims from the second up
+            if len(dims) ==1: # Only single file output, force singleton second dimensions
+                squeezedData = squeezedData.reshape((squeezedData.shape+(1,)))
             for index in np.ndindex(squeezedData.shape[1:]):
                 modIndex = (slice(None),)+ index
                 self.imageOut.append(squeezedData[modIndex])
                 self.orientationInfoOut.append(currNiftiOrientation)
+                self.dwellTimes.append(dwellTime)
                 # Create strings
                 for idx,ii in enumerate(index):
                     indexStr = dims[1+idx]

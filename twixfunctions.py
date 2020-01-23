@@ -61,3 +61,24 @@ def twix2DCMOrientation(mapVBVDHdr):
     imagePositionPatient = basePosition
 
     return imageOrientationPatient,imagePositionPatient,pixelSpacing,sliceThickness
+
+def examineTwix(twixObj,fileName,mraid):
+    print(f'Contents of file: {fileName}')
+
+    if isinstance(twixObj,list):
+        print(f'Multiraid file, {len(twixObj)} files found.')
+        print(f'Selecting file {mraid}. Use -m option to change.')                       
+        twixObj = twixObj[mraid-1]
+
+    evalInfoFlags = twixObj.keys()
+    evalInfoFlags = [i for i in evalInfoFlags if i != 'hdr']
+
+    print(f'The file contains these evalinfo flags with dimensions and sizes as follows:')
+    for ev in evalInfoFlags:
+        twixObj[ev].squeeze = True
+        tmpSqzSize = twixObj[ev].sqzSize()
+        tmpSqzDims = ', '.join(twixObj[ev].sqzDims())
+        print(f'{ev: <15}:\t{tmpSqzDims: <20}\t{tmpSqzSize}')
+
+    #import pdb; pdb.set_trace()
+
