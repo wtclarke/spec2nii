@@ -121,8 +121,9 @@ class spec2nii:
         # Extract dwellTime
         dwellTime = twixObj['hdr']['MeasYaps'][('sRXSPEC','alDwellTime','0')]/1E9
 
-        # Extract metadata
-        meta = extractTwixMetadata(twixObj['hdr'])
+        if args.json:
+            # Extract metadata
+            meta = extractTwixMetadata(twixObj['hdr'])
 
         # Identify what those indicies are
         # If cha is one: loop over 3rd and higher dims and make 2D images
@@ -147,7 +148,8 @@ class spec2nii:
                 self.imageOut.append(squeezedData[modIndex])
                 self.orientationInfoOut.append(currNiftiOrientation)
                 self.dwellTimes.append(dwellTime)
-                self.metaData.append(meta)
+                if args.json:
+                    self.metaData.append(meta)
                 # Create strings
                 for idx,ii in enumerate(index):
                     if len(dims) > 2:
@@ -169,7 +171,8 @@ class spec2nii:
                 self.imageOut.append(squeezedData[modIndex])
                 self.orientationInfoOut.append(currNiftiOrientation)
                 self.dwellTimes.append(dwellTime)
-                self.metaData.append(meta)
+                if args.json:
+                    self.metaData.append(meta)
                 # Create strings
                 for idx,ii in enumerate(index):
                     indexStr = dims[1+idx]
@@ -222,7 +225,8 @@ class spec2nii:
             currNiftiOrientation = NIFTIOrient(qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac,Q44)
             self.orientationInfoOut.append(currNiftiOrientation)
             self.dwellTimes.append(img.csa_header['tags']['RealDwellTime']['items'][0]*1E-9)
-            self.metaData.append(extractDicomMetadata(img))
+            if args.json:
+                self.metaData.append(extractDicomMetadata(img))
 
 
     def ismrmrd(self,args):
