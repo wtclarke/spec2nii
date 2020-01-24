@@ -82,3 +82,38 @@ def examineTwix(twixObj,fileName,mraid):
 
     #import pdb; pdb.set_trace()
 
+def extractTwixMetadata(mapVBVDHdr):
+    metaDict = {}
+    metaDict.update({'Modality':'MR'})
+    metaDict.update({'Manufacturer':mapVBVDHdr['Dicom'][('Manufacturer')]})
+    metaDict.update({'ManufacturersModelName':mapVBVDHdr['Dicom'][('ManufacturersModelName')]})
+    metaDict.update({'DeviceSerialNumber':int(mapVBVDHdr['Dicom'][('DeviceSerialNumber')])})
+    metaDict.update({'StationName':int(mapVBVDHdr['Dicom'][('DeviceSerialNumber')])}) # Not an exact match but close
+    metaDict.update({'SoftwareVersions':mapVBVDHdr['Dicom'][('SoftwareVersions')]})
+    metaDict.update({'MagneticFieldStrength':mapVBVDHdr['Dicom']['flMagneticFieldStrength']})
+    if ('sCoilSelectMeas', 'aRxCoilSelectData', '0', 'asList', '0', 'sCoilElementID', 'tCoilID') in mapVBVDHdr['MeasYaps']:
+        metaDict.update({'ReceiveCoilName':mapVBVDHdr['MeasYaps'][('sCoilSelectMeas', 'aRxCoilSelectData', '0', 'asList', '0', 'sCoilElementID', 'tCoilID')]})
+    elif ('asCoilSelectMeas', '0', 'asList', '0', 'sCoilElementID', 'tCoilID') in  mapVBVDHdr['MeasYaps']:
+         metaDict.update({'ReceiveCoilName':mapVBVDHdr['MeasYaps'][('asCoilSelectMeas', '0', 'asList', '0', 'sCoilElementID', 'tCoilID')]})
+    else:
+        metaDict.update({'ReceiveCoilName':''})
+    metaDict.update({'ScanningSequence':mapVBVDHdr['Dicom'][('tScanningSequence')]})
+    metaDict.update({'SequenceVariant':mapVBVDHdr['Dicom'][('tSequenceVariant')]})
+    metaDict.update({'ScanOptions':mapVBVDHdr['Dicom'][('tScanOptions')]})
+    metaDict.update({'SequenceName':''}) # Can't find in twix headers
+    metaDict.update({'PulseSequenceDetails':mapVBVDHdr['Config'][('SequenceFileName')]})
+    metaDict.update({'EchoTime':mapVBVDHdr['Phoenix'][('alTE','0')]*1E-6})
+    metaDict.update({'InversionTime':mapVBVDHdr['Meas'][('TI_Time')]})
+    metaDict.update({'DwellTime':mapVBVDHdr['Meas'][('DwellTimeSig')]*1e-9})
+    metaDict.update({'FlipAngle':mapVBVDHdr['Meas'][('FlipAngle')]})
+    metaDict.update({'InstitutionName':mapVBVDHdr['Dicom'][('InstitutionName')]})
+    metaDict.update({'InstitutionAddress':mapVBVDHdr['Dicom'][('InstitutionAddress')]})
+    metaDict.update({'InstitutionalDepartmentName':''})#Not in twix headers
+    metaDict.update({'TimeStamp':''})#Not in twix headers
+    metaDict.update({'Nucleus':mapVBVDHdr['Meas'][('ResonantNucleus')]})
+    metaDict.update({'ImagingFrequency':mapVBVDHdr['Meas'][('Frequency')]/1E6})
+    metaDict.update({'RepetitionTime':mapVBVDHdr['Meas'][('TR_Time')]/1E6})    
+    metaDict.update({'PatientPosition':mapVBVDHdr['Meas'][('PatientPosition')]})
+    metaDict.update({'ProtocolName':mapVBVDHdr['Dicom'][('tProtocolName')]})
+    metaDict.update({'ConversionSoftware':'spec2nii'})
+    return metaDict

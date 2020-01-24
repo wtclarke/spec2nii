@@ -2,6 +2,7 @@ import argparse
 import numpy as np
 from dataclasses import dataclass
 from spec2nii.writeNii import writeNii
+from spec2nii.writeJSON import writeJSON
 import os.path as op
 from os import walk
 from spec2nii.dcm2niiOrientation.orientationFuncs import nifti_dicom2mat,nifti_mat44_to_quatern
@@ -31,6 +32,7 @@ class spec2nii:
         # Handle twix subcommand
         parser_twix = subparsers.add_parser('twix', help='Convert from Siemens .dat twix format.')
         parser_twix.add_argument('file',help='file to convert',type=str)
+        parser_twix.add_argument('-j','--json',help='file to convert',action='store_true')
         group = parser_twix.add_mutually_exclusive_group(required=True)
         group.add_argument("-v", "--view", help="View contents of twix file, no files converted",action='store_true')
         group.add_argument('-e','--evalinfo', type=str, help='evalInfo flag to convert')
@@ -59,6 +61,7 @@ class spec2nii:
         self.imageOut = []
         self.orientationInfoOut = []
         self.dwellTimes = []
+        self.metaData = []
 
         self.outputDir = args.outdir
 
@@ -68,13 +71,18 @@ class spec2nii:
             # Write nifti files
             for n,i,o,d in zip(self.fileoutNames,self.imageOut,self.orientationInfoOut,self.dwellTimes):
                 writeNii(n,self.outputDir,i,o,d)
+            
+            if self.metaData and args.json:
+                for n,m in zip(self.fileoutNames,self.metaData):
+                    writeJSON(n,self.outputDir,m)
+
         elif not args.view:
             print('No files to write.')
 
     def twix(self,args):     
         # Call mapVBVD to load the twix file.
         from mapVBVD import mapVBVD
-        from spec2nii.twixfunctions import twix2DCMOrientation,examineTwix
+        from spec2nii.twixfunctions import twix2DCMOrientation,examineTwix,extractTwixMetadata
         twixObj = mapVBVD.mapVBVD(self.fileIn)
 
         if  args.view:
@@ -113,6 +121,9 @@ class spec2nii:
         # Extract dwellTime
         dwellTime = twixObj['hdr']['MeasYaps'][('sRXSPEC','alDwellTime','0')]/1E9
 
+        # Extract metadata
+        meta = extractTwixMetadata(twixObj['hdr'])
+
         # Identify what those indicies are
         # If cha is one: loop over 3rd and higher dims and make 2D images
         # If cha isn't present one: loop over 2nd and higher dims and make 1D images
@@ -124,10 +135,10 @@ class spec2nii:
 
         dims = twixObj[dataKey].sqzDims()
         if dims[0] != 'Col':
-            raise ValueError('Col is expected to be the first dimension in the Twix file, it is not.')# This is very unlikely to occur
+            raise ValueError('Col is expected to be the first dimension in the Twix file, it is not.')# This is very unlikely to occur  but would cause complete failure.
         if 'Cha' in dims:
             if dims[1] != 'Cha':
-                raise ValueError('If present Cha is expected to be the first dimension in the Twix file, it is not.') # This is very unlikely to occur            
+                raise ValueError('If present Cha is expected to be the first dimension in the Twix file, it is not.') # This is very unlikely to occur but would cause complete failure.           
             if len(dims) ==2: # Only single file output, force singleton third dimensions
                 squeezedData = squeezedData.reshape((squeezedData.shape+(1,)))
             # Loop over all the other dims from the third up
@@ -136,6 +147,7 @@ class spec2nii:
                 self.imageOut.append(squeezedData[modIndex])
                 self.orientationInfoOut.append(currNiftiOrientation)
                 self.dwellTimes.append(dwellTime)
+                self.metaData.append(meta)
                 # Create strings
                 for idx,ii in enumerate(index):
                     if len(dims) > 2:
@@ -157,6 +169,7 @@ class spec2nii:
                 self.imageOut.append(squeezedData[modIndex])
                 self.orientationInfoOut.append(currNiftiOrientation)
                 self.dwellTimes.append(dwellTime)
+                self.metaData.append(meta)
                 # Create strings
                 for idx,ii in enumerate(index):
                     indexStr = dims[1+idx]
@@ -209,10 +222,13 @@ class spec2nii:
             currNiftiOrientation = NIFTIOrient(qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac,Q44)
             self.orientationInfoOut.append(currNiftiOrientation)
             self.dwellTimes.append(img.csa_header['tags']['RealDwellTime']['items'][0]*1E-9)
+            self.metaData.append(extractDicomMetadata(img))
 
 
     def ismrmrd(self,args):
-        print(f'Converting ismrmrd file {self.fileIn}')
+        print(f'Ismrmrd not yet handled!')
+        print('exiting')
+        return None
 
 if __name__== "__main__":
     spec2nii()
