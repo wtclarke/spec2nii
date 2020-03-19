@@ -32,7 +32,7 @@ class spec2nii:
         # Handle twix subcommand
         parser_twix = subparsers.add_parser('twix', help='Convert from Siemens .dat twix format.')
         parser_twix.add_argument('file',help='file to convert',type=str)
-        parser_twix.add_argument('-j','--json',help='file to convert',action='store_true')
+        parser_twix.add_argument('-j','--json',help='Create json sidecar.',action='store_true')
         group = parser_twix.add_mutually_exclusive_group(required=True)
         group.add_argument("-v", "--view", help="View contents of twix file, no files converted",action='store_true')
         group.add_argument('-e','--evalinfo', type=str, help='evalInfo flag to convert')
@@ -193,6 +193,8 @@ class spec2nii:
         
         # DICOM specific imports
         import nibabel.nicom.dicomwrappers
+        from spec2nii.dicomfunctions import extractDicomMetadata
+
         for idx,fn in enumerate(filenames):
             print(f'Converting dicom file {self.fileIn}')
             
@@ -233,6 +235,10 @@ class spec2nii:
         print(f'Ismrmrd not yet handled!')
         print('exiting')
         return None
+
+def main(*args):
+    spec2nii(*args)
+    return 0
 
 if __name__== "__main__":
     spec2nii()

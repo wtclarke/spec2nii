@@ -15,7 +15,7 @@ def extractDicomMetadata(dcmdata):
     metaDict.update({'ScanningSequence':dcmdata.csa_header['tags']['ScanningSequence']['items'][0]})
     metaDict.update({'SequenceVariant':''})
     metaDict.update({'ScanOptions':''})
-    metaDict.update({'SequenceName':dcmdata.csa_header['tags']['SequenceName']['items'][0]}})
+    metaDict.update({'SequenceName':dcmdata.csa_header['tags']['SequenceName']['items'][0]})
     metaDict.update({'PulseSequenceDetails':''})
     metaDict.update({'EchoTime':dcmdata.csa_header['tags']['EchoTime']['items'][0]*1E-3})
     metaDict.update({'InversionTime':dcmdata.csa_header['tags']['InversionTime']['items'][0]})
@@ -26,7 +26,7 @@ def extractDicomMetadata(dcmdata):
     metaDict.update({'InstitutionalDepartmentName':''})
     metaDict.update({'TimeStamp':dcmdata.dcm_data.AcquisitionTime})
     metaDict.update({'Nucleus':dcmdata.csa_header['tags']['ImagedNucleus']['items'][0]})
-    metaDict.update({'ImagingFrequency':dcmdata.csa_header['tags']['ImagingFrequency']['items'][0]}})
+    metaDict.update({'ImagingFrequency':dcmdata.csa_header['tags']['ImagingFrequency']['items'][0]})
     metaDict.update({'RepetitionTime':dcmdata.csa_header['tags']['RepetitionTime']['items'][0]/1E3})
     if dcmdata.csa_header['tags']['PatientOrientation']['items']:
         metaDict.update({'PatientPosition':dcmdata.csa_header['tags']['PatientOrientation']['items'][0]})

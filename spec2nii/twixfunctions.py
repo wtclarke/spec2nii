@@ -104,7 +104,7 @@ def extractTwixMetadata(mapVBVDHdr):
     metaDict.update({'PulseSequenceDetails':mapVBVDHdr['Config'][('SequenceFileName')]})
     metaDict.update({'EchoTime':mapVBVDHdr['Phoenix'][('alTE','0')]*1E-6})
     metaDict.update({'InversionTime':mapVBVDHdr['Meas'][('TI_Time')]})
-    metaDict.update({'DwellTime':mapVBVDHdr['Meas'][('DwellTimeSig')]*1e-9})
+    metaDict.update({'Dwelltime':mapVBVDHdr['Meas'][('DwellTimeSig')]*1e-9})
     metaDict.update({'FlipAngle':mapVBVDHdr['Meas'][('FlipAngle')]})
     metaDict.update({'InstitutionName':mapVBVDHdr['Dicom'][('InstitutionName')]})
     metaDict.update({'InstitutionAddress':mapVBVDHdr['Dicom'][('InstitutionAddress')]})

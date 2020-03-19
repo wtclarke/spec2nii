@@ -15,6 +15,6 @@ setup(name='spec2nii',
       packages=['spec2nii','spec2nii.GSL','spec2nii.dcm2niiOrientation'],
       install_requires=install_requires,
       entry_points={"console_scripts": [
-            "spec2nii = spec2nii.spec2nii:spec2nii"]
+            "spec2nii = spec2nii.spec2nii:main"]
             }         
      )
