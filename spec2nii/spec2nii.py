@@ -54,6 +54,33 @@ class spec2nii:
         parser_ismrmrd.add_argument('a', type=str, help='placeholder')
         parser_ismrmrd.set_defaults(func=self.ismrmrd)
 
+        # Handle text subcommand
+        parser_txt = subparsers.add_parser('text', help='Convert from plain text format.')
+        parser_txt.add_argument('file',help='file to convert',type=str)
+        parser_txt.add_argument('-j','--json',help='Create json sidecar.',action='store_true')
+        parser_txt.add_argument("-i", "--imagingfreq", type=float,help="Imaging (central) frequency in MHz",required=True)
+        parser_txt.add_argument("-b", "--bandwidth", type=float,help="Reciever bandwidth (sweepwidth) in Hz.",required=True)
+        parser_txt.add_argument("-a", "--affine", type=str,help="NIfTI affine file",required=False,metavar='<file>')
+        parser_txt.add_argument("-f", "--fileout", type=str,help="Output file base name (default = input file name)")
+        parser_txt.add_argument("-o", "--outdir", type=str,help="Output location (default = .)",default='.')        
+        parser_txt.set_defaults(func=self.text)
+
+        parser_jmrui = subparsers.add_parser('jmrui', help='Convert from jMRUI text format.')
+        parser_jmrui.add_argument('file',help='file to convert',type=str)
+        parser_jmrui.add_argument('-j','--json',help='Create json sidecar.',action='store_true')
+        parser_jmrui.add_argument("-a", "--affine", type=str,help="NIfTI affine file",required=False,metavar='<file>')
+        parser_jmrui.add_argument("-f", "--fileout", type=str,help="Output file base name (default = input file name)")
+        parser_jmrui.add_argument("-o", "--outdir", type=str,help="Output location (default = .)",default='.')        
+        parser_jmrui.set_defaults(func=self.jmrui)
+
+        parser_raw = subparsers.add_parser('raw', help='Convert from LCModel RAW text format.')
+        parser_raw.add_argument('file',help='file to convert',type=str)
+        parser_raw.add_argument('-j','--json',help='Create json sidecar.',action='store_true')
+        parser_raw.add_argument("-a", "--affine", type=str,help="NIfTI affine file",required=False,metavar='<file>')
+        parser_raw.add_argument("-f", "--fileout", type=str,help="Output file base name (default = input file name)")
+        parser_raw.add_argument("-o", "--outdir", type=str,help="Output location (default = .)",default='.')        
+        parser_raw.set_defaults(func=self.raw)
+
         args = parser.parse_args()
         
         self.fileIn = args.file
@@ -236,9 +263,104 @@ class spec2nii:
         print('exiting')
         return None
 
+    def text(self,args):
+        # Read text from file
+        data = np.loadtxt(args.file)
+        data = data[:,0] + 1j*data[:,1] 
+
+        # Interpret required arguments (frequency and bandwidth)
+        imagingfreq = args.imagingfreq
+        dwelltime = 1.0/args.bandwidth
+        metadict = {'ImagingFrequency':imagingfreq,'Dwelltime':dwelltime}
+        
+        # Read optional affine file
+        if args.affine:
+            affine = np.loadtxt(args.affine)
+        else:
+            affine = np.eye(4)
+        qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(affine)        
+        currNiftiOrientation = NIFTIOrient(qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac,affine)
+
+        # File names
+        if args.fileout:
+            mainStr = args.fileout
+        else:
+            base=op.basename(args.file)
+            mainStr = op.splitext(base)[0]
+
+        # Place in data output format
+        self.imageOut.append(data)
+        self.orientationInfoOut.append(currNiftiOrientation)
+        self.dwellTimes.append(dwelltime)
+        self.metaData.append(metadict)
+        self.fileoutNames.append(mainStr)
+
+    def jmrui(self,args):
+        from fsl_mrs.utils.mrs_io import jmrui_io
+        # Read data from file
+        data,header = jmrui_io.readjMRUItxt(args.file)
+
+        # meta
+        dwelltime = header['dwelltime']
+        metadict = {'ImagingFrequency':header['centralFrequency'],'Dwelltime':header['dwelltime']}
+        
+        # Read optional affine file
+        if args.affine:
+            affine = np.loadtxt(args.affine)
+        else:
+            affine = np.eye(4)
+        qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(affine)        
+        currNiftiOrientation = NIFTIOrient(qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac,affine)
+
+        # File names
+        if args.fileout:
+            mainStr = args.fileout
+        else:
+            base=op.basename(args.file)
+            mainStr = op.splitext(base)[0]
+
+        # Place in data output format
+        self.imageOut.append(data)
+        self.orientationInfoOut.append(currNiftiOrientation)
+        self.dwellTimes.append(dwelltime)
+        self.metaData.append(metadict)
+        self.fileoutNames.append(mainStr)
+
+    def raw(self,args):
+        from fsl_mrs.utils.mrs_io import lcm_io
+        # Read data from file
+        data,header = lcm_io.readLCModelRaw(args.file)
+        data = data.conj()
+        
+        # meta
+        dwelltime = header['dwelltime']
+        metadict = {'ImagingFrequency':header['centralFrequency'],'Dwelltime':header['dwelltime']}
+        
+        # Read optional affine file
+        if args.affine:
+            affine = np.loadtxt(args.affine)
+        else:
+            affine = np.eye(4)
+        qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(affine)        
+        currNiftiOrientation = NIFTIOrient(qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac,affine)
+
+        # File names
+        if args.fileout:
+            mainStr = args.fileout
+        else:
+            base=op.basename(args.file)
+            mainStr = op.splitext(base)[0]
+
+        # Place in data output format
+        self.imageOut.append(data)
+        self.orientationInfoOut.append(currNiftiOrientation)
+        self.dwellTimes.append(dwelltime)
+        self.metaData.append(metadict)
+        self.fileoutNames.append(mainStr)
+
 def main(*args):
     spec2nii(*args)
     return 0
 
-if __name__== "__main__":
-    spec2nii()
+# if __name__== "__main__":
+#     spec2nii()

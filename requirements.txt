@@ -2,3 +2,4 @@ numpy
 nibabel
 argparse
 pyMapVBVD
+fsl_mrs
