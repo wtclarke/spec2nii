@@ -1,26 +1,13 @@
 import argparse
 import numpy as np
-from dataclasses import dataclass
 from spec2nii.writeNii import writeNii
 from spec2nii.writeJSON import writeJSON
 import os.path as op
 from os import walk
-from spec2nii.dcm2niiOrientation.orientationFuncs import nifti_dicom2mat,nifti_mat44_to_quatern
-
+from spec2nii.dcm2niiOrientation.orientationFuncs import nifti_dicom2mat
+from spec2nii.nifti_orientation import NIFTIOrient
 # There are case specific imports below
-@dataclass
-class NIFTIOrient:
-    qb: float
-    qc: float
-    qd: float
-    qx: float
-    qy: float
-    qz: float
-    dx: float
-    dy: float
-    dz: float
-    qfac: float
-    Q44: np.array    
+
 
 class spec2nii:
     def __init__(self):
@@ -46,7 +33,25 @@ class spec2nii:
         parser_dicom.add_argument('file',help='file or directory to convert',type=str)
         parser_dicom.add_argument("-f", "--fileout", type=str,help="Output file base name (default = DCM SeriesDescription tag)")
         parser_dicom.add_argument("-o", "--outdir", type=str,help="Output location (default = .)",default='.')
+        parser_dicom.add_argument('-j','--json',help='Create json sidecar.',action='store_true')
         parser_dicom.set_defaults(func=self.dicom)
+
+        # Handle philips subcommand
+        parser_philips = subparsers.add_parser('philips', help='Convert from Philips spar/sdat format.')
+        parser_philips.add_argument('sdat',help='SDAT file',type=str)
+        parser_philips.add_argument('spar',help='SPAR file',type=str)
+        parser_philips.add_argument("-f", "--fileout", type=str,help="Output file base name (default = SDAT/SPAR name)")
+        parser_philips.add_argument("-o", "--outdir", type=str,help="Output location (default = .)",default='.')
+        parser_philips.add_argument('-j','--json',help='Create json sidecar.',action='store_true')
+        parser_philips.set_defaults(func=self.philips)
+
+        # Handle GE subcommand
+        parser_ge = subparsers.add_parser('ge', help='Convert from GE p-file format.')
+        parser_ge.add_argument('file',help='file to convert',type=str)
+        parser_ge.add_argument("-f", "--fileout", type=str,help="Output file name (default = input name)")
+        parser_ge.add_argument("-o", "--outdir", type=str,help="Output location (default = .)",default='.')
+        parser_ge.add_argument('-j','--json',help='Create json sidecar.',action='store_true')
+        parser_ge.set_defaults(func=self.ge)
 
         # Handle ismrmrd subcommand
         parser_ismrmrd = subparsers.add_parser('ismrmrd', help='Convert from ismrmrd format.')
@@ -81,9 +86,8 @@ class spec2nii:
         parser_raw.add_argument("-o", "--outdir", type=str,help="Output location (default = .)",default='.')        
         parser_raw.set_defaults(func=self.raw)
 
-        args = parser.parse_args()
-        
-        self.fileIn = args.file
+        args = parser.parse_args()        
+ 
         self.fileoutNames = []
         self.imageOut = []
         self.orientationInfoOut = []
@@ -110,16 +114,16 @@ class spec2nii:
         # Call mapVBVD to load the twix file.
         from mapVBVD import mapVBVD
         from spec2nii.twixfunctions import twix2DCMOrientation,examineTwix,extractTwixMetadata
-        twixObj = mapVBVD.mapVBVD(self.fileIn)
+        twixObj = mapVBVD.mapVBVD(args.file)
 
         if  args.view:
-            examineTwix(twixObj,op.basename(self.fileIn),args.multiraid)
+            examineTwix(twixObj,op.basename(args.file),args.multiraid)
             return
         
         if isinstance(twixObj,list):                       
             twixObj = twixObj[args.multiraid-1]
             
-        print(f"Converting twix file {self.fileIn}.")
+        print(f"Converting twix file {args.file}.")
         print(f'Looking for evalinfo flag {args.evalinfo}.')
         dataKey = args.evalinfo
 
@@ -141,9 +145,9 @@ class spec2nii:
         Q44 = nifti_dicom2mat(imageOrientationPatient,imagePositionPatient,xyzMM)
         # b) calculate nifti quaternion parameters
         Q44[:2,:] *= -1
-        qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(Q44)
+        # qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(Q44)
         # 3) place in data class for nifti orientation parameters  
-        currNiftiOrientation = NIFTIOrient(qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac,Q44)
+        currNiftiOrientation = NIFTIOrient(Q44)
 
         # Extract dwellTime
         dwellTime = twixObj['hdr']['MeasYaps'][('sRXSPEC','alDwellTime','0')]/1E9
@@ -159,7 +163,7 @@ class spec2nii:
         if args.fileout:
             mainStr = args.fileout
         else:
-            mainStr = op.basename(self.fileIn)
+            mainStr = op.basename(args.file)
 
         dims = twixObj[dataKey].sqzDims()
         if dims[0] != 'Col':
@@ -209,21 +213,21 @@ class spec2nii:
                         self.fileoutNames[len(self.fileoutNames)-1] += f'_{indexStr}{ii :03d}'
 
     def dicom(self,args):
-        if op.isdir(self.fileIn):
-            basePath = self.fileIn
+        if op.isdir(args.file):
+            basePath = args.file
             (_, _, filenames) = next(walk(basePath))
             print(f'Found {len(filenames)} files.')
         else:
             print('Single file conversion.')
-            basePath = op.dirname(self.fileIn)
-            filenames = [op.basename(self.fileIn),]
+            basePath = op.dirname(args.file)
+            filenames = [op.basename(args.file),]
         
         # DICOM specific imports
         import nibabel.nicom.dicomwrappers
         from spec2nii.dicomfunctions import extractDicomMetadata
 
         for idx,fn in enumerate(filenames):
-            print(f'Converting dicom file {self.fileIn}')
+            print(f'Converting dicom file {args.file}')
             
             img = nibabel.nicom.dicomwrappers.wrapper_from_file(op.join(basePath,fn))
 
@@ -249,9 +253,9 @@ class spec2nii:
             Q44 = nifti_dicom2mat(imageOrientationPatient,imagePositionPatient,xyzMM)
             # b) calculate nifti quaternion parameters
             Q44[:2,:] *= -1
-            qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(Q44)
+            # qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(Q44)
             # 3) place in data class for nifti orientation parameters 
-            currNiftiOrientation = NIFTIOrient(qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac,Q44)
+            currNiftiOrientation = NIFTIOrient(Q44)
             self.orientationInfoOut.append(currNiftiOrientation)
             self.dwellTimes.append(img.csa_header['tags']['RealDwellTime']['items'][0]*1E-9)
             if args.json:
@@ -262,6 +266,54 @@ class spec2nii:
         print(f'Ismrmrd not yet handled!')
         print('exiting')
         return None
+
+    def philips(self,args):
+        # philips specific imports
+        from spec2nii.philips import read_sdat_spar_pair
+
+        data, orientation, dwelltime, meta = read_sdat_spar_pair(args.sdat,args.spar)
+
+        # name of output
+        if args.fileout:
+            mainStr = args.fileout
+        elif op.splitext(op.basename(args.sdat))[0]==op.splitext(op.basename(args.spar))[0]:
+            mainStr = op.splitext(op.basename(args.sdat))[0]
+        else:
+            mainStr = op.splitext(op.basename(args.sdat))[0]
+
+        # Place in data output format
+        self.imageOut.append(data)
+        self.orientationInfoOut.append(orientation)
+        self.dwellTimes.append(dwelltime)
+        self.metaData.append(meta)
+        self.fileoutNames.append(mainStr)
+
+    def ge(self,args):
+        # philips specific imports
+        from spec2nii.GE import read_p_file
+
+        data,ref_data, orientation, dwelltime, meta = read_p_file(args.file)
+
+        # name of output
+        if args.fileout:
+            baseStr = args.fileout
+        else:
+            baseStr = op.splitext(op.basename(args.file))[0]
+
+        # Place in data output format
+        for idx,d in enumerate(data):
+            self.imageOut.append(d.T)
+            self.orientationInfoOut.append(orientation)
+            self.dwellTimes.append(dwelltime)
+            self.metaData.append(meta)
+            self.fileoutNames.append(baseStr+f'_frame{idx:03.0f}')
+        if ref_data is not None:
+            for idx,d in enumerate(ref_data):
+                self.imageOut.append(d.T)
+                self.orientationInfoOut.append(orientation)
+                self.dwellTimes.append(dwelltime)
+                self.metaData.append(meta)
+                self.fileoutNames.append(baseStr+f'_ref_frame{idx:03.0f}')
 
     def text(self,args):
         # Read text from file
@@ -278,8 +330,8 @@ class spec2nii:
             affine = np.loadtxt(args.affine)
         else:
             affine = np.eye(4)
-        qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(affine)        
-        currNiftiOrientation = NIFTIOrient(qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac,affine)
+        # qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(affine)        
+        currNiftiOrientation = NIFTIOrient(affine)
 
         # File names
         if args.fileout:
@@ -309,8 +361,8 @@ class spec2nii:
             affine = np.loadtxt(args.affine)
         else:
             affine = np.eye(4)
-        qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(affine)        
-        currNiftiOrientation = NIFTIOrient(qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac,affine)
+        # qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(affine)        
+        currNiftiOrientation = NIFTIOrient(affine)
 
         # File names
         if args.fileout:
@@ -341,8 +393,8 @@ class spec2nii:
             affine = np.loadtxt(args.affine)
         else:
             affine = np.eye(4)
-        qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(affine)        
-        currNiftiOrientation = NIFTIOrient(qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac,affine)
+        # qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(affine)        
+        currNiftiOrientation = NIFTIOrient(affine)
 
         # File names
         if args.fileout:
