@@ -86,6 +86,8 @@ def _read_data(filename,hdrs):
     dynamics = frames * echoes + echoes
     data = data.reshape((coils,dynamics,fid_pnts))
 
+    data = np.conj(data)
+
     # Remove empty frame
     data = data[:,1:,]
 

@@ -54,7 +54,7 @@ def read_sdat(filename,samples,rows):
     
     floats = _vax_to_ieee_single_float(raw)
     data_iter = iter(floats)
-    complex_iter = (complex(r, -i) for r, i in zip(data_iter, data_iter))
+    complex_iter = (complex(r, i) for r, i in zip(data_iter, data_iter))
     raw_data = np.fromiter(complex_iter, "complex64")
     raw_data = np.reshape(raw_data, (rows, samples)).squeeze()
     

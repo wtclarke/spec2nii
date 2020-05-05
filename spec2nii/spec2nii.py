@@ -163,7 +163,7 @@ class spec2nii:
         if args.fileout:
             mainStr = args.fileout
         else:
-            mainStr = op.basename(args.file)
+            mainStr = op.splitext(op.basename(args.file))[0]
 
         dims = twixObj[dataKey].sqzDims()
         if dims[0] != 'Col':

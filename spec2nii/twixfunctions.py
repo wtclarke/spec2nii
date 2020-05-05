@@ -87,8 +87,8 @@ def extractTwixMetadata(mapVBVDHdr):
     metaDict.update({'Modality':'MR'})
     metaDict.update({'Manufacturer':mapVBVDHdr['Dicom'][('Manufacturer')]})
     metaDict.update({'ManufacturersModelName':mapVBVDHdr['Dicom'][('ManufacturersModelName')]})
-    metaDict.update({'DeviceSerialNumber':int(mapVBVDHdr['Dicom'][('DeviceSerialNumber')])})
-    metaDict.update({'StationName':int(mapVBVDHdr['Dicom'][('DeviceSerialNumber')])}) # Not an exact match but close
+    metaDict.update({'DeviceSerialNumber':_try_int(mapVBVDHdr['Dicom'][('DeviceSerialNumber')])})
+    metaDict.update({'StationName':_try_int(mapVBVDHdr['Dicom'][('DeviceSerialNumber')])}) # Not an exact match but close
     metaDict.update({'SoftwareVersions':mapVBVDHdr['Dicom'][('SoftwareVersions')]})
     metaDict.update({'MagneticFieldStrength':mapVBVDHdr['Dicom']['flMagneticFieldStrength']})
     if ('sCoilSelectMeas', 'aRxCoilSelectData', '0', 'asList', '0', 'sCoilElementID', 'tCoilID') in mapVBVDHdr['MeasYaps']:
@@ -117,3 +117,10 @@ def extractTwixMetadata(mapVBVDHdr):
     metaDict.update({'ProtocolName':mapVBVDHdr['Dicom'][('tProtocolName')]})
     metaDict.update({'ConversionSoftware':'spec2nii'})
     return metaDict
+
+def _try_int(value):
+
+    try:
+        return int(value)
+    except:
+        return value
