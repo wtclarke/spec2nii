@@ -86,6 +86,8 @@ class spec2nii:
         parser_raw.add_argument("-o", "--outdir", type=str,help="Output location (default = .)",default='.')        
         parser_raw.set_defaults(func=self.raw)
 
+        parser.add_argument('--verbose',action='store_true')        
+
         args = parser.parse_args()        
  
         self.fileoutNames = []
@@ -134,7 +136,7 @@ class spec2nii:
 
         # Orientation calculations
         #1) Calculate dicom like imageOrientationPatient,imagePositionPatient,pixelSpacing and slicethickness
-        imageOrientationPatient,imagePositionPatient,pixelSpacing,slicethickness = twix2DCMOrientation(twixObj['hdr'])
+        imageOrientationPatient,imagePositionPatient,pixelSpacing,slicethickness = twix2DCMOrientation(twixObj['hdr'],verbose=args.verbose)
         # print(imageOrientationPatient)
         # print(imagePositionPatient)
         # print(pixelSpacing)
@@ -142,7 +144,7 @@ class spec2nii:
         # 2) in style of dcm2niix
         # a) calculate Q44
         xyzMM = np.append(pixelSpacing,slicethickness)
-        Q44 = nifti_dicom2mat(imageOrientationPatient,imagePositionPatient,xyzMM)
+        Q44 = nifti_dicom2mat(imageOrientationPatient,imagePositionPatient,xyzMM,verbose=args.verbose)
         # b) calculate nifti quaternion parameters
         Q44[:2,:] *= -1
         # qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(Q44)

@@ -1,7 +1,7 @@
 import spec2nii.GSL.gslfunctions as GSL
 import numpy as np
 
-def twix2DCMOrientation(mapVBVDHdr):
+def twix2DCMOrientation(mapVBVDHdr,verbose=False):
     #Orientation information
     if ('sSpecPara','sVoI','sNormal','dSag') in mapVBVDHdr['MeasYaps']:
         NormaldSag = mapVBVDHdr['MeasYaps'][('sSpecPara','sVoI','sNormal','dSag')]
@@ -26,12 +26,11 @@ def twix2DCMOrientation(mapVBVDHdr):
     TwixSliceNormal =np.array([NormaldSag,NormaldCor,NormaldTra],dtype = float)
 
     RoFoV = mapVBVDHdr['MeasYaps'][('sSpecPara','sVoI','dReadoutFOV')]
-    PeFoV = mapVBVDHdr['MeasYaps'][('sSpecPara','sVoI','dPhaseFOV')]
-    DEBUG = False;              
+    PeFoV = mapVBVDHdr['MeasYaps'][('sSpecPara','sVoI','dPhaseFOV')]              
 
-    dColVec_vector, dRowVec_vector = GSL.fGSLCalcPRS(TwixSliceNormal,inplaneRotation,DEBUG)
+    dColVec_vector, dRowVec_vector = GSL.fGSLCalcPRS(TwixSliceNormal,inplaneRotation,verbose)
 
-    imageOrientationPatient = np.stack((dRowVec_vector,dColVec_vector),axis = 1)
+    imageOrientationPatient = np.stack((dRowVec_vector,dColVec_vector),axis = 0)
     sliceNormal = TwixSliceNormal
 
     columns = 1
@@ -59,7 +58,12 @@ def twix2DCMOrientation(mapVBVDHdr):
 
     basePosition =np.array([PosdSag, PosdCor, PosdTra],dtype = float)
     imagePositionPatient = basePosition
-
+    if verbose:
+        print(f'imagePositionPatient is {imagePositionPatient.ravel()}')
+        print(f'imageOrientationPatient is \n{imageOrientationPatient}')
+        print(f'{imageOrientationPatient.ravel()}')
+        print(f'pixelSpacing is {pixelSpacing}')
+        
     return imageOrientationPatient,imagePositionPatient,pixelSpacing,sliceThickness
 
 def examineTwix(twixObj,fileName,mraid):

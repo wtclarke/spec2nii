@@ -1,33 +1,47 @@
 import numpy as np
 
-def nifti_dicom2mat(orient,patientPosition,xyzMM):
+def nifti_dicom2mat(orient,patientPosition,xyzMM,verbose = False):
     # DICOM values to 4x4 nifti transformation matrix. As per https://github.com/rordenlab/dcm2niix/blob/7ce33ca5fa3bb2dd4e5410bd97bcf515c9e462d9/console/nifti1_io_core.cpp
 
     Q = np.zeros((3,3))
 
     # Q.m[0][0] = orient[1]; Q.m[0][1] = orient[2] ; Q.m[0][2] = orient[3] ; // load Q
     # Q.m[1][0] = orient[4]; Q.m[1][1] = orient[5] ; Q.m[1][2] = orient[6];
-    Q[:2,:] = np.transpose(orient) # Fill first two rows
+    Q[:2,:] = orient # Fill first two rows
     
     # normalize rows
     #import pdb; pdb.set_trace()
     normQ = np.linalg.norm(Q, ord=2, axis=1, keepdims=True)
     normQ[normQ==0.0] = 1.0
     Q /= normQ
+    if verbose:
+        np.set_printoptions(precision=2)
+        print(f'Normalised ImageOrientationPatient in Q:\n {Q}')
 
     # row 3 is the cross product of rows 1 and 2
-    Q[:,2] = np.cross(Q[:,0],Q[:,1])
+    Q[2,:] = np.cross(Q[0,:],Q[1,:])
+    if verbose:
+        print(f'After slice normal calculation. Q:\n {Q}')
+
+    Q = Q.T
+    if np.linalg.det(Q)<0.0:
+        Q[:,2] = Q[:,2] *-1
 
     # next scale matrix
+    # I think dcm2niix reversees the pixel spacing: https://github.com/rordenlab/dcm2niix/blob/485c387c93bbca3b29b93403dfde211c4bc39af6/console/nii_dicom.cpp#L5403
+    xyzMM[1], xyzMM[0] = xyzMM[0], xyzMM[1]
     diagVox = np.diag(xyzMM)
-    Q *= diagVox
-
+    Q = Q@diagVox
+    if verbose:
+        print(f'After scaling. Q:\n {Q}')
+        
     # Include translations
     Q44 = np.zeros((4,4))
     Q44[:3,:3] = Q
     Q44[:3,3] = patientPosition
     Q44[3,3] = 1.0
-
+    if verbose:
+        print(f'Final Q:\n {Q44}')
     return Q44
 
 def nifti_mat44_to_quatern(R):
