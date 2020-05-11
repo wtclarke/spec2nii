@@ -1,3 +1,18 @@
+""" Tests for conversion routines.
+Currently included:
+jMRUI
+txt
+LCModel Raw
+
+TODO:
+twix
+GE p-files
+philips spar/sdat files
+DICOM
+ISMRMRD
+"""
+
+
 import pytest
 import numpy as np
 import os.path as op

@@ -1,3 +1,24 @@
+""" spec2nii - tool for conversion of various MRS data formats to NIFTI format.
+
+spec2nii converts the following formats to NIFTI files.
+Supporting SVS:
+    Siemens "Twix" .dat format
+    Siemens DICOM
+    Philips SPAR/SDAT files
+    GE p-files
+    LCModel RAW
+    jMRUI text
+    Plain text
+
+Supporting CSI/MRSI:
+    
+
+This module contains the main class to be called as a script (through the main function).
+
+Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
+Copyright (C) 2020 University of Oxford 
+"""
+
 import argparse
 import numpy as np
 from spec2nii.writeNii import writeNii

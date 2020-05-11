@@ -1,7 +1,27 @@
+""" spec2nii module containing functions specific to Siemens TWIX format
+Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
+Copyright (C) 2020 University of Oxford 
+"""
+
 import spec2nii.GSL.gslfunctions as GSL
 import numpy as np
 
 def twix2DCMOrientation(mapVBVDHdr,verbose=False):
+    """ Convert twix orientation information to DICOM equivalent.
+    
+    Convert orientation to DICOM imageOrientationPatient, imagePositionPatient, 
+    pixelSpacing and sliceThickness field values.
+
+    Args:
+        mapVBVDHdr (dict): Header info interpreted by pymapVBVD
+        verbose (bool,optionl)
+    Returns:
+        imageOrientationPatient
+        imagePositionPatient
+        pixelSpacing
+        sliceThickness
+
+    """
     #Orientation information
     if ('sSpecPara','sVoI','sNormal','dSag') in mapVBVDHdr['MeasYaps']:
         NormaldSag = mapVBVDHdr['MeasYaps'][('sSpecPara','sVoI','sNormal','dSag')]
@@ -67,6 +87,8 @@ def twix2DCMOrientation(mapVBVDHdr,verbose=False):
     return imageOrientationPatient,imagePositionPatient,pixelSpacing,sliceThickness
 
 def examineTwix(twixObj,fileName,mraid):
+    """ Print formated twix contents"""
+
     print(f'Contents of file: {fileName}')
 
     if isinstance(twixObj,list):
@@ -87,6 +109,14 @@ def examineTwix(twixObj,fileName,mraid):
     #import pdb; pdb.set_trace()
 
 def extractTwixMetadata(mapVBVDHdr):
+    """ Extract information from the pymapVBVD header to insert into the json sidecar.
+    
+    Args:
+        dcmdata (dict): Twix headers
+    Returns:
+        metaDict (dict): Json sidecard output
+    """
+
     metaDict = {}
     metaDict.update({'Modality':'MR'})
     metaDict.update({'Manufacturer':mapVBVDHdr['Dicom'][('Manufacturer')]})

@@ -1,9 +1,23 @@
+""" spec2nii module for writing output NIFTI images
+Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
+Copyright (C) 2020 University of Oxford 
+"""
+
 import nibabel as nib
 import os.path as op
 import numpy as np
 
-def writeNii(filename,outdir,data,positionInfo,dwellTime):
+def writeNii(filename,outdir,data,positionInfo,dwelltime):
+    """ Write spectroscopy data as NIFTI
+    
+    Args:
+        filename (str): Output file name less extension
+        outdir (str): Output directory
+        data (np.ndarray): Time domain data (excluding spatial dimensions)
+        positionInfo (NIFTIOrient obj): Orientation information.
+        dwelltime (float): Dwelltime in seconds
 
+    """
     # Form full path
     fullfilepath = op.join(outdir,filename+'.nii.gz')
 
@@ -15,11 +29,10 @@ def writeNii(filename,outdir,data,positionInfo,dwellTime):
     newobj = nib.nifti2.Nifti2Image(data,positionInfo.Q44)
 
     # Write new header
-    #newobj = updateHeader(newobj,positionInfo,dwellTime)
     pixDim = newobj.header['pixdim']
-    pixDim[4] = dwellTime
+    pixDim[4] = dwelltime
     newobj.header['pixdim'] = pixDim
-    #import pdb; pdb.set_trace()
+    
     # From nii obj and write    
     nib.save(newobj,fullfilepath)
 

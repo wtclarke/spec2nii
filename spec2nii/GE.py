@@ -6,7 +6,6 @@
 # Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
 #
 # Copyright (C) 2020 University of Oxford 
-# SHBASECOPYRIGHT
 
 import numpy as np
 import warnings

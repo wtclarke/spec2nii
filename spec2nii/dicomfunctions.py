@@ -1,4 +1,17 @@
+""" spec2nii module containing functions specific to interpreting Siemens DICOM
+Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
+Copyright (C) 2020 University of Oxford 
+"""
+
 def extractDicomMetadata(dcmdata):
+    """ Extract information from the nibabel DICOM objhect to insert into the json sidecar.
+    
+    Args:
+        dcmdata: nibabel.nicom image object
+    Returns:
+        metaDict (dict): Json sidecard output
+    """
+
     metaDict = {}
     metaDict.update({'Modality':'MR'})
     metaDict.update({'Manufacturer':dcmdata.dcm_data.Manufacturer})
