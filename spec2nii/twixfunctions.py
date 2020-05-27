@@ -137,7 +137,10 @@ def extractTwixMetadata(mapVBVDHdr):
     metaDict.update({'SequenceName':''}) # Can't find in twix headers
     metaDict.update({'PulseSequenceDetails':mapVBVDHdr['Config'][('SequenceFileName')]})
     metaDict.update({'EchoTime':mapVBVDHdr['Phoenix'][('alTE','0')]*1E-6})
-    metaDict.update({'InversionTime':mapVBVDHdr['Meas'][('TI_Time')]})
+    if ('InversionTime') in mapVBVDHdr['Meas']:
+        metaDict.update({'InversionTime':mapVBVDHdr['Meas'][('TI_Time')]})
+    else:
+        metaDict.update({'InversionTime':''})    
     metaDict.update({'Dwelltime':mapVBVDHdr['Meas'][('DwellTimeSig')]*1e-9})
     metaDict.update({'FlipAngle':mapVBVDHdr['Meas'][('FlipAngle')]})
     metaDict.update({'InstitutionName':mapVBVDHdr['Dicom'][('InstitutionName')]})
@@ -146,7 +149,10 @@ def extractTwixMetadata(mapVBVDHdr):
     metaDict.update({'TimeStamp':''})#Not in twix headers
     metaDict.update({'Nucleus':mapVBVDHdr['Meas'][('ResonantNucleus')]})
     metaDict.update({'ImagingFrequency':mapVBVDHdr['Meas'][('Frequency')]/1E6})
-    metaDict.update({'RepetitionTime':mapVBVDHdr['Meas'][('TR_Time')]/1E6})    
+    if ('TR_Time') in mapVBVDHdr['Meas']:
+        metaDict.update({'RepetitionTime':mapVBVDHdr['Meas'][('TR_Time')]/1E6}) 
+    else:
+        metaDict.update({'RepetitionTime':mapVBVDHdr['Meas'][('TR')]/1E6})     
     metaDict.update({'PatientPosition':mapVBVDHdr['Meas'][('PatientPosition')]})
     metaDict.update({'ProtocolName':mapVBVDHdr['Dicom'][('tProtocolName')]})
     metaDict.update({'ConversionSoftware':'spec2nii'})

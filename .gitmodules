@@ -1,0 +1,3 @@
+[submodule "tests/spec2nii_test_data"]
+	path = tests/spec2nii_test_data
+	url = https://git.fmrib.ox.ac.uk/wclarke/spec2nii_test_data.git

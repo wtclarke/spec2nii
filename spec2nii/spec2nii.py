@@ -199,7 +199,11 @@ class spec2nii:
             # Loop over all the other dims from the third up
             for index in np.ndindex(squeezedData.shape[2:]):
                 modIndex = (slice(None),slice(None),)+ index
-                self.imageOut.append(squeezedData[modIndex])
+
+                newshape = (1,1,1)+squeezedData[modIndex].shape
+                data_out = squeezedData[modIndex].reshape(newshape)
+
+                self.imageOut.append(data_out)
                 self.orientationInfoOut.append(currNiftiOrientation)
                 self.dwellTimes.append(dwellTime)
                 if args.json:
@@ -220,9 +224,14 @@ class spec2nii:
         else: # Loop over all the other dims from the second up
             if len(dims) ==1: # Only single file output, force singleton second dimensions
                 squeezedData = squeezedData.reshape((squeezedData.shape+(1,)))
+            
             for index in np.ndindex(squeezedData.shape[1:]):
                 modIndex = (slice(None),)+ index
-                self.imageOut.append(squeezedData[modIndex])
+
+                newshape = (1,1,1)+squeezedData[modIndex].shape
+                data_out = squeezedData[modIndex].reshape(newshape)
+
+                self.imageOut.append(data_out)
                 self.orientationInfoOut.append(currNiftiOrientation)
                 self.dwellTimes.append(dwellTime)
                 if args.json:
@@ -247,42 +256,47 @@ class spec2nii:
         
         # DICOM specific imports
         import nibabel.nicom.dicomwrappers
-        from spec2nii.dicomfunctions import extractDicomMetadata
+        from spec2nii.dicomfunctions import svs_or_CSI,process_siemens_svs,process_siemens_csi
 
         for idx,fn in enumerate(filenames):
-            print(f'Converting dicom file {args.file}')
+            print(f'Converting dicom file {op.join(basePath,fn)}')
             
             img = nibabel.nicom.dicomwrappers.wrapper_from_file(op.join(basePath,fn))
 
-            specData = np.frombuffer(img.dcm_data[('7fe1', '1010')].value, dtype=np.single)
-            specDataCmplx = specData[0::2]+1j*specData[1::2]
-            self.imageOut.append(specDataCmplx)
+            mrs_type = svs_or_CSI(img)
 
-            if args.fileout:
-                mainStr = args.fileout
-            else: 
-                mainStr = img.dcm_data.SeriesDescription
+            if mrs_type == 'SVS':
+                specDataCmplx,currNiftiOrientation,dwelltime,meta = process_siemens_svs(img,args)
+            
+                if args.fileout:
+                    mainStr = args.fileout
+                else: 
+                    mainStr = img.dcm_data.SeriesDescription
+                self.fileoutNames.append(f'{mainStr}_{idx :03d}')
 
-            self.fileoutNames.append(f'{mainStr}_{idx :03d}')
+                newshape = (1,1,1)+specDataCmplx.shape
+                specDataCmplx = specDataCmplx.reshape(newshape)
 
-            #1) Extract dicom parameters
-            imageOrientationPatient = np.array(img.csa_header['tags']['ImageOrientationPatient']['items']).reshape(2,3).transpose()
-            imagePositionPatient = img.csa_header['tags']['VoiPosition']['items']
-            xyzMM = np.array([img.csa_header['tags']['VoiPhaseFoV']['items'][0],
-                         img.csa_header['tags']['VoiReadoutFoV']['items'][0],
-                        img.csa_header['tags']['VoiThickness']['items'][0]])
-            # 2) in style of dcm2niix
-            # a) calculate Q44
-            Q44 = nifti_dicom2mat(imageOrientationPatient,imagePositionPatient,xyzMM)
-            # b) calculate nifti quaternion parameters
-            Q44[:2,:] *= -1
-            # qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(Q44)
-            # 3) place in data class for nifti orientation parameters 
-            currNiftiOrientation = NIFTIOrient(Q44)
-            self.orientationInfoOut.append(currNiftiOrientation)
-            self.dwellTimes.append(img.csa_header['tags']['RealDwellTime']['items'][0]*1E-9)
-            if args.json:
-                self.metaData.append(extractDicomMetadata(img))
+                self.imageOut.append(specDataCmplx)
+                self.orientationInfoOut.append(currNiftiOrientation)
+                self.dwellTimes.append(dwelltime)
+                if args.json:
+                    self.metaData.append(meta)
+
+            elif mrs_type == 'CSI':
+                specDataCmplx,currNiftiOrientation,dwelltime,meta = process_siemens_csi(img,args)
+            
+                if args.fileout:
+                    mainStr = args.fileout
+                else: 
+                    mainStr = img.dcm_data.SeriesDescription
+                self.fileoutNames.append(f'{mainStr}_{idx :03d}')
+
+                self.imageOut.append(specDataCmplx)
+                self.orientationInfoOut.append(currNiftiOrientation)
+                self.dwellTimes.append(dwelltime)
+                if args.json:
+                    self.metaData.append(meta)
 
 
     def ismrmrd(self,args):
@@ -303,6 +317,9 @@ class spec2nii:
             mainStr = op.splitext(op.basename(args.sdat))[0]
         else:
             mainStr = op.splitext(op.basename(args.sdat))[0]
+
+        newshape = (1,1,1)+data.shape
+        data = data.reshape(newshape)
 
         # Place in data output format
         self.imageOut.append(data)
@@ -325,14 +342,20 @@ class spec2nii:
 
         # Place in data output format
         for idx,d in enumerate(data):
-            self.imageOut.append(d.T)
+            d = d.T
+            newshape = (1,1,1)+d.shape
+            d = d.reshape(newshape)
+            self.imageOut.append(d)
             self.orientationInfoOut.append(orientation)
             self.dwellTimes.append(dwelltime)
             self.metaData.append(meta)
             self.fileoutNames.append(baseStr+f'_frame{idx:03.0f}')
         if ref_data is not None:
             for idx,d in enumerate(ref_data):
-                self.imageOut.append(d.T)
+                d = d.T
+                newshape = (1,1,1)+d.shape
+                d = d.reshape(newshape)
+                self.imageOut.append(d)
                 self.orientationInfoOut.append(orientation)
                 self.dwellTimes.append(dwelltime)
                 self.metaData.append(meta)
@@ -342,6 +365,9 @@ class spec2nii:
         # Read text from file
         data = np.loadtxt(args.file)
         data = data[:,0] + 1j*data[:,1] 
+        
+        newshape = (1,1,1)+data.shape
+        data = data.reshape(newshape)
 
         # Interpret required arguments (frequency and bandwidth)
         imagingfreq = args.imagingfreq
@@ -375,6 +401,9 @@ class spec2nii:
         # Read data from file
         data,header = jmrui_io.readjMRUItxt(args.file)
 
+        newshape = (1,1,1)+data.shape
+        data = data.reshape(newshape)
+
         # meta
         dwelltime = header['dwelltime']
         metadict = {'ImagingFrequency':header['centralFrequency'],'Dwelltime':header['dwelltime']}
@@ -404,9 +433,11 @@ class spec2nii:
     def raw(self,args):
         from fsl_mrs.utils.mrs_io import lcm_io
         # Read data from file
-        data,header = lcm_io.readLCModelRaw(args.file)
-        data = data.conj()
+        data,header = lcm_io.readLCModelRaw(args.file,conjugate=True)
         
+        newshape = (1,1,1)+data.shape
+        data = data.reshape(newshape)
+
         # meta
         dwelltime = header['dwelltime']
         metadict = {'ImagingFrequency':header['centralFrequency'],'Dwelltime':header['dwelltime']}

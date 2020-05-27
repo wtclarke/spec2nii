@@ -1,17 +1,10 @@
-""" Tests for conversion routines.
+""" Tests for conversion routines for "other" file types.
 Currently included:
 jMRUI
 txt
 LCModel Raw
 
-TODO:
-twix
-GE p-files
-philips spar/sdat files
-DICOM
-ISMRMRD
 """
-
 
 import pytest
 import numpy as np
@@ -19,14 +12,10 @@ import os.path as op
 import subprocess
 from fsl_mrs.utils import mrs_io
 
-testdata = {'txtfile':'testdata/metab.txt',
-            'jmruifile':'testdata/metab_jmrui.txt',
-            'rawfile':'testdata/metab.RAW',
-            'niftifile':'testdata/metab.nii'}
-
-# To do - test functions for DICOM and twix
-# def test_DICOM():
-# def test_twix(): 
+testdata = {'txtfile':'spec2nii_test_data/other/metab.txt',
+            'jmruifile':'spec2nii_test_data/other/metab_jmrui.txt',
+            'rawfile':'spec2nii_test_data/other/metab.RAW',
+            'niftifile':'spec2nii_test_data/other/metab.nii'}
 
 @pytest.fixture
 def affine_file(tmp_path):

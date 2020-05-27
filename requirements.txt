@@ -1,5 +1,6 @@
 numpy
 nibabel
+pydicom
 argparse
 pyMapVBVD
 fsl_mrs

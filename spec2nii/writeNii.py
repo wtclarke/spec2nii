@@ -21,10 +21,6 @@ def writeNii(filename,outdir,data,positionInfo,dwelltime):
     # Form full path
     fullfilepath = op.join(outdir,filename+'.nii.gz')
 
-    # reshape to have three singleton dimensions - this will have to be modified to accept CSI data
-    newshape = (1,1,1)+data.shape
-    data = data.reshape(newshape)
-
     # Create new nifti image
     newobj = nib.nifti2.Nifti2Image(data,positionInfo.Q44)
 
