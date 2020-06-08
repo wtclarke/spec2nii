@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from setuptools import setup
+import versioneer
 
 with open('requirements.txt', 'rt') as f:
     install_requires = [l.strip() for l in f.readlines()]
@@ -9,7 +10,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='spec2nii',
-      version='0.2.0',
+      version=versioneer.get_version(),
+      cmdclass=versioneer.get_cmdclass(),
       description='Multi-format in vivo MR spectroscopy conversion to NIFTI',
       author='Will Clarke',
       author_email='william.clarke@ndcn.ox.ac.uk',

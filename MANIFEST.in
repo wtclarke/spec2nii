@@ -1,0 +1,4 @@
+include versioneer.py
+include spec2nii/_version.py
+include requirements.txt
+include LICENSE
