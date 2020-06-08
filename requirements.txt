@@ -3,3 +3,4 @@ nibabel
 pydicom
 argparse
 pyMapVBVD
+scipy
