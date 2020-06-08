@@ -137,7 +137,7 @@ class spec2nii:
         # Call mapVBVD to load the twix file.
         from mapVBVD import mapVBVD
         from spec2nii.twixfunctions import twix2DCMOrientation,examineTwix,extractTwixMetadata
-        twixObj = mapVBVD.mapVBVD(args.file)
+        twixObj = mapVBVD(args.file)
 
         if  args.view:
             examineTwix(twixObj,op.basename(args.file),args.multiraid)

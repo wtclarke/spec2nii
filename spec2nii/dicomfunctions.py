@@ -41,7 +41,7 @@ def process_siemens_svs(img,args):
 
 def process_siemens_csi(img,args):
     specData = np.frombuffer(img.dcm_data[('7fe1', '1010')].value, dtype=np.single)
-    specDataCmplx = specData[0::2]+1j*specData[1::2]
+    specDataCmplx = specData[0::2]-1j*specData[1::2]
 
     rows = img.csa_header['tags']['Rows']['items'][0]
     cols = img.csa_header['tags']['Columns']['items'][0]
