@@ -1,4 +1,6 @@
 # spec2nii
+![PyPI](https://img.shields.io/pypi/v/spec2nii)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/spec2nii)  
 A program for multi-format in vivo MR spectroscopy conversion to NIFTI.
 
 ## Installation
