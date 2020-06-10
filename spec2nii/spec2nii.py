@@ -24,6 +24,7 @@ import numpy as np
 from spec2nii.writeNii import writeNii
 from spec2nii.writeJSON import writeJSON
 import os.path as op
+from pathlib import Path
 from os import walk
 from spec2nii.dcm2niiOrientation.orientationFuncs import nifti_dicom2mat
 from spec2nii.nifti_orientation import NIFTIOrient
@@ -46,7 +47,8 @@ class spec2nii:
         group.add_argument('-e','--evalinfo', type=str, help='evalInfo flag to convert')
         parser_twix.add_argument("-f", "--fileout", type=str,help="Output file base name (default = input file name)")
         parser_twix.add_argument("-o", "--outdir", type=str,help="Output location (default = .)",default='.')
-        parser_twix.add_argument("-m", "--multiraid", type=int,help="Select multiraid file to load (default = 2 i.e. 2nd file)",default=2)         
+        parser_twix.add_argument("-m", "--multiraid", type=int,help="Select multiraid file to load (default = 2 i.e. 2nd file)",default=2)      
+        parser_twix.add_argument("-q", "--quiet",help="Suppress text output",action='store_true')       
         parser_twix.set_defaults(func=self.twix)
 
         # Handle dicom subcommand
@@ -122,7 +124,9 @@ class spec2nii:
         args.func(args)
 
         if self.imageOut:
-            # Write nifti files
+            # Write nifti files            
+            Path(self.outputDir).mkdir(parents=True, exist_ok=True)
+
             for n,i,o,d in zip(self.fileoutNames,self.imageOut,self.orientationInfoOut,self.dwellTimes):
                 writeNii(n,self.outputDir,i,o,d)
             
@@ -137,7 +141,7 @@ class spec2nii:
         # Call mapVBVD to load the twix file.
         from mapVBVD import mapVBVD
         from spec2nii.twixfunctions import twix2DCMOrientation,examineTwix,extractTwixMetadata
-        twixObj = mapVBVD(args.file)
+        twixObj = mapVBVD(args.file,quiet=args.quiet)
 
         if  args.view:
             examineTwix(twixObj,op.basename(args.file),args.multiraid)
@@ -145,15 +149,17 @@ class spec2nii:
         
         if isinstance(twixObj,list):                       
             twixObj = twixObj[args.multiraid-1]
-            
-        print(f"Converting twix file {args.file}.")
-        print(f'Looking for evalinfo flag {args.evalinfo}.')
+
+        if not args.quiet:    
+            print(f"Converting twix file {args.file}.")
+            print(f'Looking for evalinfo flag {args.evalinfo}.')
         dataKey = args.evalinfo
 
         # Set squeeze data
         twixObj[dataKey].squeeze = True
         squeezedData = twixObj[dataKey]['']
-        print(f'Found data of size {squeezedData.shape}.')
+        if not args.quiet: 
+            print(f'Found data of size {squeezedData.shape}.')
 
         # Orientation calculations
         #1) Calculate dicom like imageOrientationPatient,imagePositionPatient,pixelSpacing and slicethickness
