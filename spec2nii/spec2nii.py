@@ -20,6 +20,7 @@ Copyright (C) 2020 University of Oxford
 """
 
 import argparse
+import sys
 import numpy as np
 from spec2nii.writeNii import writeNii
 from spec2nii.writeJSON import writeJSON
@@ -110,6 +111,10 @@ class spec2nii:
         parser_raw.set_defaults(func=self.raw)
 
         parser.add_argument('--verbose',action='store_true')        
+
+        if len(sys.argv)==1:
+            parser.print_usage(sys.stderr)
+            sys.exit(1)
 
         args = parser.parse_args()        
  
