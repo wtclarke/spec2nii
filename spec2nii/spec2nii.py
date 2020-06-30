@@ -26,7 +26,6 @@ from spec2nii.writeNii import writeNii
 from spec2nii.writeJSON import writeJSON
 import os.path as op
 from pathlib import Path
-from os import walk
 from spec2nii.dcm2niiOrientation.orientationFuncs import nifti_dicom2mat
 from spec2nii.nifti_orientation import NIFTIOrient
 # There are case specific imports below
@@ -139,7 +138,7 @@ class spec2nii:
                 for n,m in zip(self.fileoutNames,self.metaData):
                     writeJSON(n,self.outputDir,m)
 
-        elif not args.view:
+        elif hasattr(args, 'view') and not args.view:
             print('No files to write.')
 
     def twix(self,args):     
@@ -256,23 +255,30 @@ class spec2nii:
                         self.fileoutNames[len(self.fileoutNames)-1] += f'_{indexStr}{ii :03d}'
 
     def dicom(self,args):
-        if op.isdir(args.file):
-            basePath = args.file
-            (_, _, filenames) = next(walk(basePath))
-            print(f'Found {len(filenames)} files.')
+        path_in = Path(args.file)
+        if path_in.is_dir():
+            # Look for typical dicom file extensions
+            files_in = sorted(path_in.glob('*.IMA')) + \
+                       sorted(path_in.glob('*.ima')) + \
+                       sorted(path_in.glob('*.dcm'))
+
+            # If none found look for all files
+            if len(files_in) ==0:
+                files_in = sorted([x for x in path_in.iterdir() if x.is_file()])
+
+            print(f'Found {len(files_in)} files.')
         else:
             print('Single file conversion.')
-            basePath = op.dirname(args.file)
-            filenames = [op.basename(args.file),]
+            files_in = [path_in]
         
         # DICOM specific imports
         import nibabel.nicom.dicomwrappers
         from spec2nii.dicomfunctions import svs_or_CSI,process_siemens_svs,process_siemens_csi
 
-        for idx,fn in enumerate(filenames):
-            print(f'Converting dicom file {op.join(basePath,fn)}')
+        for idx,fn in enumerate(files_in):
+            print(f'Converting dicom file {fn}')
             
-            img = nibabel.nicom.dicomwrappers.wrapper_from_file(op.join(basePath,fn))
+            img = nibabel.nicom.dicomwrappers.wrapper_from_file(fn)
 
             mrs_type = svs_or_CSI(img)
 
