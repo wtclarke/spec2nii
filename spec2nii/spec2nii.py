@@ -142,8 +142,8 @@ class spec2nii:
             print('No files to write.')
 
     def twix(self,args):     
-        # Call mapVBVD to load the twix file.
-        from mapVBVD import mapVBVD
+        # Call mapvbvd to load the twix file.
+        from mapvbvd import mapVBVD
         from spec2nii.twixfunctions import twix2DCMOrientation,examineTwix,extractTwixMetadata
         twixObj = mapVBVD(args.file,quiet=args.quiet)
 
@@ -198,7 +198,7 @@ class spec2nii:
         else:
             mainStr = op.splitext(op.basename(args.file))[0]
 
-        dims = twixObj[dataKey].sqzDims()
+        dims = twixObj[dataKey].sqzDims
         if dims[0] != 'Col':
             raise ValueError('Col is expected to be the first dimension in the Twix file, it is not.')# This is very unlikely to occur  but would cause complete failure.
         if 'Cha' in dims:
