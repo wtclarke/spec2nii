@@ -1,5 +1,5 @@
 numpy
 nibabel
 pydicom
-pyMapVBVD>=0.3.2
+pyMapVBVD>=0.4.0
 scipy
