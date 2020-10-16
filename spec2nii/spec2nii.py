@@ -160,6 +160,7 @@ class spec2nii:
         dataKey = args.evalinfo
 
         # Set squeeze data
+        twixObj[dataKey].flagRemoveOS = False
         twixObj[dataKey].squeeze = True
         squeezedData = twixObj[dataKey]['']
         if not args.quiet: 

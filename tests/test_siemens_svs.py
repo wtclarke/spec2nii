@@ -159,3 +159,26 @@ def test_VE(tmp_path):
         draw.text((10+si.width*r, 10+si.height*c),svs_data_names_ve[idx],(255,0,0))
 
     final_img.save(op.join(op.dirname(__file__),'svs_ve.png'))
+
+def test_data_size(tmp_path):
+    for idx,(f_t,f_d,name) in enumerate(zip(svs_data_twix_vb,svs_Data_dicom_vb,svs_data_names_vb)):
+        # Convert twix
+        subprocess.check_call(['spec2nii','twix','-e','image',
+                                '-f',name+'_t',
+                                '-o',tmp_path,
+                                '-j',op.join(vb_path,f_t)])
+
+        data_t,header_t = mrs_io.read_FID(op.join(tmp_path,name+'_t_Set000.nii.gz'))
+
+        assert data_t.shape == (1056,32)
+
+    for idx,(f_t,f_d,name) in enumerate(zip(svs_data_twix_ve,svs_Data_dicom_ve,svs_data_names_ve)):
+        # Convert twix
+        subprocess.check_call(['spec2nii','twix','-e','image',
+                                '-f',name+'_t',
+                                '-o',tmp_path,
+                                '-j',op.join(ve_path,f_t)])
+        
+        data_t,header_t = mrs_io.read_FID(op.join(tmp_path,name+'_t_Ave000.nii.gz'))
+
+        assert data_t.shape == (1056,32)
