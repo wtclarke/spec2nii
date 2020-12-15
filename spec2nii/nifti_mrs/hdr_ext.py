@@ -73,16 +73,21 @@ class hdr_ext:
 
         self.standard_data[key] = value
 
-    def set_user_def(self, all_keys=None, key=None, value=None):
+    def set_user_def(self, all_keys=None, key=None, value=None, doc=None):
         """Add user defined meda data keys to the header extension.
         Pass dict as kwarg all_keys to set all key/value pairs, or
-        add keys and values one at a time usign key and value.
+        add keys and values one at a time using key, value and doc.
         """
 
         if all_keys is not None:
             self.user_data = all_keys
         else:
-            self.user_data[key] = value
+            if isinstance(value, dict):
+                self.user_data[key] = value
+                self.user_data[key].update({'Description': doc})
+            else:
+                self.user_data[key] = {'Value': value,
+                                       'Description': doc}
 
     def get_json(self, dimensions=7):
         """Generate json from properties."""

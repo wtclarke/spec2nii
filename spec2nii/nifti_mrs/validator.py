@@ -118,18 +118,21 @@ def validate_hdr_ext(header_ex, data_dimensions):
     # 4. Check standard-defined data types
     for key in json_dict:
         if key in standard_defined.keys():
-            if not check_type(json_dict[key], standard_defined[key]['type']):
-                raise headerExtensionError(f'{key} must be a {standard_defined[key]["type"]}')
+            if not check_type(json_dict[key], standard_defined[key][0]):
+                raise headerExtensionError(f'{key} must be a {standard_defined[key][0]}')
 
     print('Header extension validated!')
 
 
 def check_type(value, json_type):
 
-    if json_type == 'number':
+    if json_type.lower() == 'number':
         if isinstance(value, (float, int)):
             return True
-        else:
-            return False
+    if json_type.lower() == 'string':
+        if isinstance(value, str):
+            return True
     else:
         return True
+
+    return False
