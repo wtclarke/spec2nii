@@ -54,12 +54,14 @@ class spec2nii:
         parser_twix.set_defaults(func=self.twix)
 
         # Handle dicom subcommand
-        parser_dicom = subparsers.add_parser('dicom', help='Convert from DICOM format.')
+        parser_dicom = subparsers.add_parser('dicom', help='Convert from Siemens DICOM format.')
         parser_dicom.add_argument('file', help='file or directory to convert', type=str)
         parser_dicom.add_argument("-f", "--fileout", type=str,
                                   help="Output file base name (default = DCM SeriesDescription tag)")
-        parser_dicom.add_argument("-o", "--outdir", type=str, help="Output location (default = .)", default='.')
+        parser_dicom.add_argument("-o", "--outdir", type=Path, help="Output location (default = .)", default='.')
         parser_dicom.add_argument('-j', '--json', help='Create json sidecar.', action='store_true')
+        parser_dicom.add_argument("-t", "--tag", type=str, help="Specify NIfTI MRS tag used for 5th "
+                                                                "dimension if multiple files are passed.")
         parser_dicom.set_defaults(func=self.dicom)
 
         # Handle philips subcommand
@@ -193,68 +195,28 @@ class spec2nii:
 
     # (Siemens) DICOM (.ima) format
     def dicom(self, args):
+        """Siemens DICOM format handler."""
+        from spec2nii.dicomfunctions import multi_file_dicom
         path_in = Path(args.file)
         if path_in.is_dir():
             # Look for typical dicom file extensions
             files_in = sorted(path_in.glob('*.IMA')) + \
-                       sorted(path_in.glob('*.ima')) + \
-                       sorted(path_in.glob('*.dcm'))
+                sorted(path_in.glob('*.ima')) + \
+                sorted(path_in.glob('*.dcm'))
 
             # If none found look for all files
-            if len(files_in) ==0:
+            if len(files_in) == 0:
                 files_in = sorted([x for x in path_in.iterdir() if x.is_file()])
 
             print(f'Found {len(files_in)} files.')
         else:
             print('Single file conversion.')
             files_in = [path_in]
-        
-        # DICOM specific imports
-        import nibabel.nicom.dicomwrappers
-        from spec2nii.dicomfunctions import svs_or_CSI,process_siemens_svs,process_siemens_csi
 
-        for idx,fn in enumerate(files_in):
-            print(f'Converting dicom file {fn}')
-            
-            img = nibabel.nicom.dicomwrappers.wrapper_from_file(fn)
+        self.imageOut, self.fileoutNames = multi_file_dicom(files_in, args.fileout, args.tag, args.verbose)
 
-            mrs_type = svs_or_CSI(img)
-
-            if mrs_type == 'SVS':
-                specDataCmplx,currNiftiOrientation,dwelltime,meta = process_siemens_svs(img,args)
-            
-                if args.fileout:
-                    mainStr = args.fileout
-                else: 
-                    mainStr = img.dcm_data.SeriesDescription
-                self.fileoutNames.append(f'{mainStr}_{idx :03d}')
-
-                newshape = (1,1,1)+specDataCmplx.shape
-                specDataCmplx = specDataCmplx.reshape(newshape)
-
-                self.imageOut.append(specDataCmplx)
-                self.orientationInfoOut.append(currNiftiOrientation)
-                self.dwellTimes.append(dwelltime)
-                if args.json:
-                    self.metaData.append(meta)
-
-            elif mrs_type == 'CSI':
-                specDataCmplx,currNiftiOrientation,dwelltime,meta = process_siemens_csi(img,args)
-            
-                if args.fileout:
-                    mainStr = args.fileout
-                else: 
-                    mainStr = img.dcm_data.SeriesDescription
-                self.fileoutNames.append(f'{mainStr}_{idx :03d}')
-
-                self.imageOut.append(specDataCmplx)
-                self.orientationInfoOut.append(currNiftiOrientation)
-                self.dwellTimes.append(dwelltime)
-                if args.json:
-                    self.metaData.append(meta)
-
-
-    def philips(self,args):
+    # Philips SDAP/SPAR handler
+    def philips(self, args):
         # philips specific imports
         from spec2nii.philips import read_sdat_spar_pair
 
