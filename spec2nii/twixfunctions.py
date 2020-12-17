@@ -72,6 +72,9 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overides, quiet=Fa
     if not quiet:
         print(f'Found data of size {squeezedData.shape}.')
 
+    # Conjugate the data from the twix file to match the phase conventions of the format
+    squeezedData = squeezedData.conj()
+
     # Perform Orientation calculations
     # 1) Calculate dicom like imageOrientationPatient,imagePositionPatient,pixelSpacing and slicethickness
     orient = twix2DCMOrientation(twixObj['hdr'], verbose=verbose)
