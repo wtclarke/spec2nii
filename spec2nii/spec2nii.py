@@ -36,50 +36,58 @@ class spec2nii:
         subparsers = parser.add_subparsers(title='subcommands',
                                            description='File types supported')
 
+        def add_common_parameters(subparser):
+            # Add options that are common to all subcommands
+            subparser.add_argument('-j', '--json', help='Create json sidecar.', action='store_true')
+            subparser.add_argument("-f", "--fileout", type=str,
+                                   help="Output file base name (default = input file name)")
+            subparser.add_argument("-o", "--outdir", type=Path,
+                                   help="Output location (default = .)", default='.')
+            subparser.add_argument('--verbose', action='store_true')
+            return subparser
+
         # Handle twix subcommand
         parser_twix = subparsers.add_parser('twix', help='Convert from Siemens .dat twix format.')
         parser_twix.add_argument('file', help='file to convert', type=Path)
-        parser_twix.add_argument('-j', '--json', help='Create json sidecar.', action='store_true')
         group = parser_twix.add_mutually_exclusive_group(required=True)
         group.add_argument("-v", "--view", help="View contents of twix file, no files converted", action='store_true')
         group.add_argument('-e', '--evalinfo', type=str, help='evalInfo flag to convert')
-        parser_twix.add_argument("-f", "--fileout", type=str, help="Output file base name (default = input file name)")
-        parser_twix.add_argument("-o", "--outdir", type=Path, help="Output location (default = .)", default='.')
         parser_twix.add_argument("-m", "--multiraid", type=int, help="Select multiraid file to load"
                                  " (default = 2 i.e. 2nd file)", default=2)
         parser_twix.add_argument("-q", "--quiet", help="Suppress text output", action='store_true')
         for idx in range(5, 8):
             parser_twix.add_argument(f"-d{idx}", f"--dim{idx}", type=str, help=f"Specify dim {idx} loop counter.")
             parser_twix.add_argument(f"-t{idx}", f"--tag{idx}", type=str, help=f"Specify dim {idx} NIfTI MRS tag.")
+        parser_twix = add_common_parameters(parser_twix)
         parser_twix.set_defaults(func=self.twix)
 
         # Handle dicom subcommand
         parser_dicom = subparsers.add_parser('dicom', help='Convert from Siemens DICOM format.')
         parser_dicom.add_argument('file', help='file or directory to convert', type=str)
-        parser_dicom.add_argument("-f", "--fileout", type=str,
-                                  help="Output file base name (default = DCM SeriesDescription tag)")
-        parser_dicom.add_argument("-o", "--outdir", type=Path, help="Output location (default = .)", default='.')
-        parser_dicom.add_argument('-j', '--json', help='Create json sidecar.', action='store_true')
         parser_dicom.add_argument("-t", "--tag", type=str, help="Specify NIfTI MRS tag used for 5th "
                                                                 "dimension if multiple files are passed.")
+        parser_dicom = add_common_parameters(parser_dicom)
         parser_dicom.set_defaults(func=self.dicom)
+
+        # Handle UIH DICOM subcommand
+        parser_uih_dicom = subparsers.add_parser('uih', help='Convert from UIH DICOM format.')
+        parser_uih_dicom.add_argument('file', help='file or directory to convert', type=str)
+        parser_uih_dicom.add_argument("-t", "--tag", type=str, help="Specify NIfTI MRS tag used for 5th "
+                                                                    "dimension if multiple files are passed.")
+        parser_uih_dicom = add_common_parameters(parser_uih_dicom)
+        parser_uih_dicom.set_defaults(func=self.uih_dicom)
 
         # Handle philips subcommand
         parser_philips = subparsers.add_parser('philips', help='Convert from Philips spar/sdat format.')
         parser_philips.add_argument('sdat', help='SDAT file', type=str)
         parser_philips.add_argument('spar', help='SPAR file', type=str)
-        parser_philips.add_argument("-f", "--fileout", type=str,
-                                    help="Output file base name (default = SDAT/SPAR name)")
-        parser_philips.add_argument("-o", "--outdir", type=str, help="Output location (default = .)", default='.')
-        parser_philips.add_argument('-j', '--json', help='Create json sidecar.', action='store_true')
+        parser_philips = add_common_parameters(parser_philips)
         parser_philips.set_defaults(func=self.philips)
 
         # Handle GE subcommand
         parser_ge = subparsers.add_parser('ge', help='Convert from GE p-file format.')
         parser_ge.add_argument('file', help='file to convert', type=str)
-        parser_ge.add_argument("-f", "--fileout", type=str, help="Output file name (default = input name)")
-        parser_ge.add_argument("-o", "--outdir", type=str, help="Output location (default = .)", default='.')
-        parser_ge.add_argument('-j', '--json', help='Create json sidecar.', action='store_true')
+        parser_ge = add_common_parameters(parser_ge)
         parser_ge.set_defaults(func=self.ge)
 
         # # Handle ismrmrd subcommand
@@ -91,34 +99,26 @@ class spec2nii:
         # Handle text subcommand
         parser_txt = subparsers.add_parser('text', help='Convert from plain text format.')
         parser_txt.add_argument('file', help='file to convert', type=str)
-        parser_txt.add_argument('-j', '--json', help='Create json sidecar.', action='store_true')
         parser_txt.add_argument("-i", "--imagingfreq", type=float,
                                 help="Imaging (central) frequency in MHz", required=True)
         parser_txt.add_argument("-b", "--bandwidth", type=float,
                                 help="Reciever bandwidth (sweepwidth) in Hz.", required=True)
         parser_txt.add_argument("-a", "--affine", type=str, help="NIfTI affine file", required=False, metavar='<file>')
-        parser_txt.add_argument("-f", "--fileout", type=str, help="Output file base name (default = input file name)")
-        parser_txt.add_argument("-o", "--outdir", type=str, help="Output location (default = .)", default='.')
+        parser_txt = add_common_parameters(parser_txt)
         parser_txt.set_defaults(func=self.text)
 
         parser_jmrui = subparsers.add_parser('jmrui', help='Convert from jMRUI text format.')
         parser_jmrui.add_argument('file', help='file to convert', type=str)
-        parser_jmrui.add_argument('-j', '--json', help='Create json sidecar.', action='store_true')
         parser_jmrui.add_argument("-a", "--affine", type=str, help="NIfTI affine file", required=False,
                                   metavar='<file>')
-        parser_jmrui.add_argument("-f", "--fileout", type=str, help="Output file base name (default = input file name)")
-        parser_jmrui.add_argument("-o", "--outdir", type=str, help="Output location (default = .)", default='.')
+        parser_jmrui = add_common_parameters(parser_jmrui)
         parser_jmrui.set_defaults(func=self.jmrui)
 
         parser_raw = subparsers.add_parser('raw', help='Convert from LCModel RAW text format.')
         parser_raw.add_argument('file', help='file to convert', type=str)
-        parser_raw.add_argument('-j', '--json', help='Create json sidecar.', action='store_true')
         parser_raw.add_argument("-a", "--affine", type=str, help="NIfTI affine file", required=False, metavar='<file>')
-        parser_raw.add_argument("-f", "--fileout", type=str, help="Output file base name (default = input file name)")
-        parser_raw.add_argument("-o", "--outdir", type=str, help="Output location (default = .)", default='.')
+        parser_raw = add_common_parameters(parser_raw)
         parser_raw.set_defaults(func=self.raw)
-
-        parser.add_argument('--verbose', action='store_true')
 
         if len(sys.argv) == 1:
             parser.print_usage(sys.stderr)
@@ -203,6 +203,26 @@ class spec2nii:
             files_in = sorted(path_in.glob('*.IMA')) + \
                 sorted(path_in.glob('*.ima')) + \
                 sorted(path_in.glob('*.dcm'))
+
+            # If none found look for all files
+            if len(files_in) == 0:
+                files_in = sorted([x for x in path_in.iterdir() if x.is_file()])
+
+            print(f'Found {len(files_in)} files.')
+        else:
+            print('Single file conversion.')
+            files_in = [path_in]
+
+        self.imageOut, self.fileoutNames = multi_file_dicom(files_in, args.fileout, args.tag, args.verbose)
+
+    # (Siemens) DICOM (.ima) format
+    def uih_dicom(self, args):
+        """UIH (and other?) DICOM format handler."""
+        from spec2nii.uih import multi_file_dicom
+        path_in = Path(args.file)
+        if path_in.is_dir():
+            # Look for typical dicom file extensions
+            files_in = sorted(path_in.glob('*.dcm'))
 
             # If none found look for all files
             if len(files_in) == 0:

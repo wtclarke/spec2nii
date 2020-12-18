@@ -1,4 +1,5 @@
-"""spec2nii module containing functions specific to interpreting Siemens DICOM
+"""spec2nii module containing functions specific to interpreting UIH DICOM
+Possibly also suitable for other manufacturer's DICOM (except Siemens)
 Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
 Copyright (C) 2020 University of Oxford
 """
@@ -11,19 +12,17 @@ from datetime import datetime
 
 
 def svs_or_CSI(img):
-    """Identify from the csa headers whether data is CSI or SVS."""
-    rows = img.csa_header['tags']['Rows']['items'][0]
-    cols = img.csa_header['tags']['Columns']['items'][0]
-    slices = img.csa_header['tags']['NumberOfFrames']['items'][0]
-
-    if np.prod([rows, cols, slices]) > 1.0:
+    """Identify from the headers whether data is CSI or SVS."""
+    # Currently this only looks in-plane. I don't have examples of CSI from
+    # UIH.
+    if np.product(img.image_shape) > 1.0:
         return 'CSI'
     else:
         return 'SVS'
 
 
 def multi_file_dicom(files_in, fname_out, tag, verbose):
-    """Parse a list of Siemens DICOM files"""
+    """Parse a list of UIH DICOM files"""
 
     # Convert each file (combine after)
     data_list = []
@@ -40,13 +39,13 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         mrs_type = svs_or_CSI(img)
 
         if mrs_type == 'SVS':
-            specDataCmplx, orientation, dwelltime, meta_obj = process_siemens_svs(img)
+            specDataCmplx, orientation, dwelltime, meta_obj = process_uih_svs(img)
 
             newshape = (1, 1, 1) + specDataCmplx.shape
             specDataCmplx = specDataCmplx.reshape(newshape)
 
         else:
-            specDataCmplx, orientation, dwelltime, meta_obj = process_siemens_csi(img)
+            specDataCmplx, orientation, dwelltime, meta_obj = process_uih_csi(img)
 
         data_list.append(specDataCmplx)
         orientation_list.append(orientation)
@@ -105,18 +104,16 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
     return nifti_mrs_out, fnames_out
 
 
-def process_siemens_svs(img):
-    """Process Siemens DICOM SVS data"""
+def process_uih_svs(img):
+    """Process UIH DICOM SVS data"""
 
-    specData = np.frombuffer(img.dcm_data[('7fe1', '1010')].value, dtype=np.single)
+    specData = np.frombuffer(img.dcm_data[('5600', '0020')].value, dtype=np.single)
     specDataCmplx = specData[0::2] - 1j * specData[1::2]
 
     # 1) Extract dicom parameters
-    imageOrientationPatient = np.array(img.csa_header['tags']['ImageOrientationPatient']['items']).reshape(2, 3)
-    imagePositionPatient = img.csa_header['tags']['VoiPosition']['items']
-    xyzMM = np.array([img.csa_header['tags']['VoiPhaseFoV']['items'][0],
-                      img.csa_header['tags']['VoiReadoutFoV']['items'][0],
-                      img.csa_header['tags']['VoiThickness']['items'][0]])
+    imageOrientationPatient = img.image_orient_patient.T
+    imagePositionPatient = img.image_position
+    xyzMM = np.asarray(img.voxel_sizes)
 
     # 2) in style of dcm2niix
     # a) calculate Q44
@@ -125,45 +122,20 @@ def process_siemens_svs(img):
     Q44[:2, :] *= -1
     # 3) place in data class for nifti orientation parameters
     currNiftiOrientation = NIFTIOrient(Q44)
-    dwelltime = img.csa_header['tags']['RealDwellTime']['items'][0] * 1E-9
+    dwelltime = 1.0 / img.dcm_data.SpectralWidth
     meta = extractDicomMetadata(img)
 
     return specDataCmplx, currNiftiOrientation, dwelltime, meta
 
 
-def process_siemens_csi(img):
-    specData = np.frombuffer(img.dcm_data[('7fe1', '1010')].value, dtype=np.single)
-    specDataCmplx = specData[0::2] - 1j * specData[1::2]
-
-    rows = img.csa_header['tags']['Rows']['items'][0]
-    cols = img.csa_header['tags']['Columns']['items'][0]
-    slices = img.csa_header['tags']['NumberOfFrames']['items'][0]
-    spectral_points = img.csa_header['tags']['DataPointColumns']['items'][0]
-
-    specDataCmplx = specDataCmplx.reshape((slices, rows, cols, spectral_points))
-    specDataCmplx = np.moveaxis(specDataCmplx, (0, 1, 2), (2, 1, 0))
-
-    # 1) Extract dicom parameters
-    imageOrientationPatient = np.array(img.csa_header['tags']['ImageOrientationPatient']['items']).reshape(2, 3)
-    imagePositionPatient = np.array(img.csa_header['tags']['ImagePositionPatient']['items'])
-    xyzMM = np.array([img.csa_header['tags']['PixelSpacing']['items'][0],
-                      img.csa_header['tags']['PixelSpacing']['items'][1],
-                      img.csa_header['tags']['SliceThickness']['items'][0]])
-    # 2) in style of dcm2niix
-    # a) calculate Q44
-    Q44 = nifti_dicom2mat(imageOrientationPatient, imagePositionPatient, xyzMM)
-    # b) calculate nifti quaternion parameters
-    Q44[:2, :] *= -1
-    # 3) place in data class for nifti orientation parameters
-    currNiftiOrientation = NIFTIOrient(Q44)
-    dwelltime = img.csa_header['tags']['RealDwellTime']['items'][0] * 1E-9
-    meta = extractDicomMetadata(img)
-
-    return specDataCmplx, currNiftiOrientation, dwelltime, meta
+def process_uih_csi(img):
+    raise NotImplementedError('UIH CSI not currently handled. No test data availible!')
 
 
 def extractDicomMetadata(dcmdata):
     """ Extract information from the nibabel DICOM object to insert into the json header ext.
+
+    There seems to be a large 'uprotocol' in tag 0065,1007 but I don't know how to interpret it.
 
     Args:
         dcmdata: nibabel.nicom image object
@@ -172,8 +144,8 @@ def extractDicomMetadata(dcmdata):
     """
 
     # Extract required metadata and create hdr_ext object
-    obj = nifti_mrs.hdr_ext(dcmdata.csa_header['tags']['ImagingFrequency']['items'][0],
-                            dcmdata.csa_header['tags']['ImagedNucleus']['items'][0])
+    obj = nifti_mrs.hdr_ext(dcmdata.dcm_data.TransmitterFrequency,
+                            dcmdata.dcm_data.ResonantNucleus)
 
     # Some scanner information
     obj.set_standard_def('Manufacturer', dcmdata.dcm_data.Manufacturer)
@@ -184,39 +156,33 @@ def extractDicomMetadata(dcmdata):
     obj.set_standard_def('InstitutionName', dcmdata.dcm_data.InstitutionName)
     obj.set_standard_def('InstitutionAddress', dcmdata.dcm_data.InstitutionAddress)
 
-    if len(dcmdata.csa_header['tags']['ReceivingCoil']['items']) > 0:
-        obj.set_user_def(key='ReceiveCoilName',
-                         value=dcmdata.csa_header['tags']['ReceivingCoil']['items'][0],
-                         doc='Rx coil name.')
-    else:
-        obj.set_user_def(key='ReceiveCoilName',
-                         value=dcmdata.csa_header['tags']['ImaCoilString']['items'][0],
-                         doc='Rx coil name.')
+    # No apparent Rx Coil name in header.
 
     # Some sequence information
-    obj.set_standard_def('SequenceName', dcmdata.csa_header['tags']['SequenceName']['items'][0])
+    obj.set_standard_def('SequenceName', dcmdata.dcm_data.SequenceName)
     obj.set_standard_def('ProtocolName', dcmdata.dcm_data.ProtocolName)
-
-    obj.set_user_def(key='PulseSequenceFile',
-                     value=dcmdata.csa_header['tags']['SequenceName']['items'][0],
-                     doc='Sequence binary path.')
-    # obj.set_user_def(key='IceProgramFile',
-    #                  value=mapVBVDHdr['Meas'][('tICEProgramName')],
-    #                  doc='Reconstruction binary path.')
 
     # Some subject information
     obj.set_standard_def('PatientPosition', dcmdata.dcm_data.PatientPosition)
-    obj.set_standard_def('PatientName', dcmdata.dcm_data.PatientName.family_name)
-    obj.set_standard_def('PatientWeight', float(dcmdata.dcm_data.PatientWeight))
-    obj.set_standard_def('PatientDoB', dcmdata.dcm_data.PatientBirthDate)
-    obj.set_standard_def('PatientSex', dcmdata.dcm_data.PatientSex)
+
+    def set_if_present(tag, val):
+        if val:
+            obj.set_standard_def(tag, val)
+    set_if_present('PatientDoB', dcmdata.dcm_data.PatientBirthDate)
+    set_if_present('PatientSex', dcmdata.dcm_data.PatientSex)
+
+    if dcmdata.dcm_data.PatientName:
+        obj.set_standard_def('PatientName', dcmdata.dcm_data.PatientName.family_name)
+
+    if dcmdata.dcm_data.PatientWeight:
+        obj.set_standard_def('PatientWeight', float(dcmdata.dcm_data.PatientWeight))
 
     # Timing and sequence parameters
-    obj.set_standard_def('EchoTime', dcmdata.csa_header['tags']['EchoTime']['items'][0] * 1E-3)
-    if dcmdata.csa_header['tags']['InversionTime']['n_items'] > 0:
-        obj.set_standard_def('InversionTime', dcmdata.csa_header['tags']['InversionTime']['items'][0])
-    obj.set_standard_def('ExcitationFlipAngle', dcmdata.csa_header['tags']['FlipAngle']['items'][0])
-    obj.set_standard_def('RepetitionTime', dcmdata.csa_header['tags']['RepetitionTime']['items'][0] / 1E3)
+    obj.set_standard_def('EchoTime', float(dcmdata.dcm_data.EchoTime) * 1E-3)
+    if 'InversionTime' in dcmdata.dcm_data:
+        obj.set_standard_def('InversionTime', float(dcmdata.dcm_data.InversionTime) * 1E-3)
+    obj.set_standard_def('ExcitationFlipAngle', float(dcmdata.dcm_data.FlipAngle))
+    obj.set_standard_def('RepetitionTime', float(dcmdata.dcm_data.RepetitionTime) / 1E3)
     # TO DO  - nibabel might need updating.
     # obj.set_standard_def('TxOffset', )
 
