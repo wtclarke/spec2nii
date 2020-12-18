@@ -15,6 +15,7 @@ This table lists the currently supported formats. I have very limited experience
 | Siemens DICOM | .ima / .dcm    | Yes | Yes | Yes                   |
 | Philips       | .SPAR/.SDAT    | Yes | No  | No                    |
 | GE            | .7 (pfile)     | Yes | No  | No                    |
+| UIH DICOM     | .dcm           | Yes | No  | Yes                   |
 | LCModel       | .RAW           | Yes | No  | No                    |
 | jMRUI         | .txt           | Yes | No  | No                    |
 | ASCII         | .txt           | Yes | No  | No                    |
