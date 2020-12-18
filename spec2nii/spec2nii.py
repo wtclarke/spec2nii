@@ -220,17 +220,17 @@ class spec2nii:
         # philips specific imports
         from spec2nii.philips import read_sdat_spar_pair
 
-        data, orientation, dwelltime, meta = read_sdat_spar_pair(args.sdat,args.spar)
+        data, orientation, dwelltime, meta = read_sdat_spar_pair(args.sdat, args.spar)
 
         # name of output
         if args.fileout:
             mainStr = args.fileout
-        elif op.splitext(op.basename(args.sdat))[0]==op.splitext(op.basename(args.spar))[0]:
+        elif op.splitext(op.basename(args.sdat))[0] == op.splitext(op.basename(args.spar))[0]:
             mainStr = op.splitext(op.basename(args.sdat))[0]
         else:
             mainStr = op.splitext(op.basename(args.sdat))[0]
 
-        newshape = (1,1,1)+data.shape
+        newshape = (1, 1, 1) + data.shape
         data = data.reshape(newshape)
 
         # Place in data output format
@@ -240,11 +240,11 @@ class spec2nii:
         self.metaData.append(meta)
         self.fileoutNames.append(mainStr)
 
-    def ge(self,args):
+    def ge(self, args):
         # philips specific imports
         from spec2nii.GE import read_p_file
 
-        data,ref_data, orientation, dwelltime, meta = read_p_file(args.file)
+        data, ref_data, orientation, dwelltime, meta = read_p_file(args.file)
 
         # name of output
         if args.fileout:
@@ -253,52 +253,52 @@ class spec2nii:
             baseStr = op.splitext(op.basename(args.file))[0]
 
         # Place in data output format
-        for idx,d in enumerate(data):
+        for idx, d in enumerate(data):
             d = d.T
-            newshape = (1,1,1)+d.shape
+            newshape = (1, 1, 1) + d.shape
             d = d.reshape(newshape)
             self.imageOut.append(d)
             self.orientationInfoOut.append(orientation)
             self.dwellTimes.append(dwelltime)
             self.metaData.append(meta)
-            self.fileoutNames.append(baseStr+f'_frame{idx:03.0f}')
+            self.fileoutNames.append(baseStr + f'_frame{idx:03.0f}')
         if ref_data is not None:
-            for idx,d in enumerate(ref_data):
+            for idx, d in enumerate(ref_data):
                 d = d.T
-                newshape = (1,1,1)+d.shape
+                newshape = (1, 1, 1) + d.shape
                 d = d.reshape(newshape)
                 self.imageOut.append(d)
                 self.orientationInfoOut.append(orientation)
                 self.dwellTimes.append(dwelltime)
                 self.metaData.append(meta)
-                self.fileoutNames.append(baseStr+f'_ref_frame{idx:03.0f}')
+                self.fileoutNames.append(baseStr + f'_ref_frame{idx:03.0f}')
 
-    def text(self,args):
+    def text(self, args):
         # Read text from file
         data = np.loadtxt(args.file)
-        data = data[:,0] + 1j*data[:,1] 
-        
-        newshape = (1,1,1)+data.shape
+        data = data[:, 0] + 1j * data[:, 1]
+
+        newshape = (1, 1, 1) + data.shape
         data = data.reshape(newshape)
 
         # Interpret required arguments (frequency and bandwidth)
         imagingfreq = args.imagingfreq
-        dwelltime = 1.0/args.bandwidth
-        metadict = {'ImagingFrequency':imagingfreq,'Dwelltime':dwelltime}
-        
+        dwelltime = 1.0 / args.bandwidth
+        metadict = {'ImagingFrequency': imagingfreq, 'Dwelltime': dwelltime}
+
         # Read optional affine file
         if args.affine:
             affine = np.loadtxt(args.affine)
         else:
             affine = np.eye(4)
-        # qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(affine)        
+        # qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(affine)
         currNiftiOrientation = NIFTIOrient(affine)
 
         # File names
         if args.fileout:
             mainStr = args.fileout
         else:
-            base=op.basename(args.file)
+            base = op.basename(args.file)
             mainStr = op.splitext(base)[0]
 
         # Place in data output format
@@ -308,31 +308,32 @@ class spec2nii:
         self.metaData.append(metadict)
         self.fileoutNames.append(mainStr)
 
-    def jmrui(self,args):
+    def jmrui(self, args):
         from fsl_mrs.utils.mrs_io import jmrui_io
         # Read data from file
-        data,header = jmrui_io.readjMRUItxt(args.file)
+        data, header = jmrui_io.readjMRUItxt(args.file)
 
-        newshape = (1,1,1)+data.shape
+        newshape = (1, 1, 1) + data.shape
         data = data.reshape(newshape)
 
         # meta
         dwelltime = header['dwelltime']
-        metadict = {'ImagingFrequency':header['centralFrequency'],'Dwelltime':header['dwelltime']}
-        
+        metadict = {'ImagingFrequency': header['centralFrequency'],
+                    'Dwelltime': header['dwelltime']}
+
         # Read optional affine file
         if args.affine:
             affine = np.loadtxt(args.affine)
         else:
             affine = np.eye(4)
-        # qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(affine)        
+
         currNiftiOrientation = NIFTIOrient(affine)
 
         # File names
         if args.fileout:
             mainStr = args.fileout
         else:
-            base=op.basename(args.file)
+            base = op.basename(args.file)
             mainStr = op.splitext(base)[0]
 
         # Place in data output format
@@ -342,31 +343,32 @@ class spec2nii:
         self.metaData.append(metadict)
         self.fileoutNames.append(mainStr)
 
-    def raw(self,args):
+    def raw(self, args):
         from fsl_mrs.utils.mrs_io import lcm_io
         # Read data from file
-        data,header = lcm_io.readLCModelRaw(args.file,conjugate=True)
-        
-        newshape = (1,1,1)+data.shape
+        data, header = lcm_io.readLCModelRaw(args.file, conjugate=True)
+
+        newshape = (1, 1, 1) + data.shape
         data = data.reshape(newshape)
 
         # meta
         dwelltime = header['dwelltime']
-        metadict = {'ImagingFrequency':header['centralFrequency'],'Dwelltime':header['dwelltime']}
-        
+        metadict = {'ImagingFrequency': header['centralFrequency'],
+                    'Dwelltime': header['dwelltime']}
+
         # Read optional affine file
         if args.affine:
             affine = np.loadtxt(args.affine)
         else:
             affine = np.eye(4)
-        # qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(affine)        
+
         currNiftiOrientation = NIFTIOrient(affine)
 
         # File names
         if args.fileout:
             mainStr = args.fileout
         else:
-            base=op.basename(args.file)
+            base = op.basename(args.file)
             mainStr = op.splitext(base)[0]
 
         # Place in data output format
@@ -375,10 +377,8 @@ class spec2nii:
         self.dwellTimes.append(dwelltime)
         self.metaData.append(metadict)
         self.fileoutNames.append(mainStr)
+
 
 def main(*args):
     spec2nii(*args)
     return 0
-
-# if __name__== "__main__":
-#     spec2nii()
