@@ -1,9 +1,11 @@
 # spec2nii
 ![PyPI](https://img.shields.io/pypi/v/spec2nii)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/spec2nii)  
-A program for multi-format in vivo MR spectroscopy conversion to NIFTI.
+A program for multi-format conversion of in vivo MR s to the [NIfTI MRS format](https://github.com/wexeee/mrs_nifti_standard).
 
 ## Installation
+`conda install -c conda-forge spec2nii`  
+or  
 `pip install spec2nii`
 
 ## Currently supported formats
@@ -34,8 +36,11 @@ Call `spec2nii twix -v FILE` to view a list of contained MDH flags. -m can be us
 Call with the -e flag to specify which MDH flag to convert. e.g.  
 `spec2nii twix -e image FILE`
 
-### DICOM
+### Siemens DICOM
 `spec2nii dicom DCM_FILE_or_DIR`
+
+### UIH DICOM
+`spec2nii uih DCM_FILE_or_DIR`
 
 ### GE (limited support)
 `spec2nii GE FILE`

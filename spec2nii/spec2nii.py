@@ -21,10 +21,8 @@ Copyright (C) 2020 University of Oxford
 
 import argparse
 import sys
-import numpy as np
 import os.path as op
 from pathlib import Path
-from spec2nii.nifti_orientation import NIFTIOrient
 import json
 # There are case specific imports below
 
@@ -103,6 +101,8 @@ class spec2nii:
                                 help="Imaging (central) frequency in MHz", required=True)
         parser_txt.add_argument("-b", "--bandwidth", type=float,
                                 help="Reciever bandwidth (sweepwidth) in Hz.", required=True)
+        parser_txt.add_argument("-n", "--nucleus", type=str,
+                                help="Nucleus string. e.g. 1H or 31P.", required=True)
         parser_txt.add_argument("-a", "--affine", type=str, help="NIfTI affine file", required=False, metavar='<file>')
         parser_txt = add_common_parameters(parser_txt)
         parser_txt.set_defaults(func=self.text)
@@ -116,6 +116,8 @@ class spec2nii:
 
         parser_raw = subparsers.add_parser('raw', help='Convert from LCModel RAW text format.')
         parser_raw.add_argument('file', help='file to convert', type=str)
+        parser_raw.add_argument("-n", "--nucleus", type=str,
+                                help="Nucleus string. e.g. 1H or 31P.", required=True)
         parser_raw.add_argument("-a", "--affine", type=str, help="NIfTI affine file", required=False, metavar='<file>')
         parser_raw = add_common_parameters(parser_raw)
         parser_raw.set_defaults(func=self.raw)
@@ -215,7 +217,7 @@ class spec2nii:
 
         self.imageOut, self.fileoutNames = multi_file_dicom(files_in, args.fileout, args.tag, args.verbose)
 
-    # (Siemens) DICOM (.ima) format
+    # (UIH) DICOM (.dcm) format
     def uih_dicom(self, args):
         """UIH (and other?) DICOM format handler."""
         from spec2nii.uih import multi_file_dicom
@@ -294,109 +296,18 @@ class spec2nii:
                 self.fileoutNames.append(baseStr + f'_ref_frame{idx:03.0f}')
 
     def text(self, args):
-        # Read text from file
-        data = np.loadtxt(args.file)
-        data = data[:, 0] + 1j * data[:, 1]
-
-        newshape = (1, 1, 1) + data.shape
-        data = data.reshape(newshape)
-
-        # Interpret required arguments (frequency and bandwidth)
-        imagingfreq = args.imagingfreq
-        dwelltime = 1.0 / args.bandwidth
-        metadict = {'ImagingFrequency': imagingfreq, 'Dwelltime': dwelltime}
-
-        # Read optional affine file
-        if args.affine:
-            affine = np.loadtxt(args.affine)
-        else:
-            affine = np.eye(4)
-        # qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(affine)
-        currNiftiOrientation = NIFTIOrient(affine)
-
-        # File names
-        if args.fileout:
-            mainStr = args.fileout
-        else:
-            base = op.basename(args.file)
-            mainStr = op.splitext(base)[0]
-
-        # Place in data output format
-        self.imageOut.append(data)
-        self.orientationInfoOut.append(currNiftiOrientation)
-        self.dwellTimes.append(dwelltime)
-        self.metaData.append(metadict)
-        self.fileoutNames.append(mainStr)
+        from spec2nii.other_formats import text
+        # Simply pass through to the specific text function
+        self.imageOut, self.fileoutNames = text(args)
 
     def jmrui(self, args):
-        from fsl_mrs.utils.mrs_io import jmrui_io
-        # Read data from file
-        data, header = jmrui_io.readjMRUItxt(args.file)
-
-        newshape = (1, 1, 1) + data.shape
-        data = data.reshape(newshape)
-
-        # meta
-        dwelltime = header['dwelltime']
-        metadict = {'ImagingFrequency': header['centralFrequency'],
-                    'Dwelltime': header['dwelltime']}
-
-        # Read optional affine file
-        if args.affine:
-            affine = np.loadtxt(args.affine)
-        else:
-            affine = np.eye(4)
-
-        currNiftiOrientation = NIFTIOrient(affine)
-
-        # File names
-        if args.fileout:
-            mainStr = args.fileout
-        else:
-            base = op.basename(args.file)
-            mainStr = op.splitext(base)[0]
-
-        # Place in data output format
-        self.imageOut.append(data)
-        self.orientationInfoOut.append(currNiftiOrientation)
-        self.dwellTimes.append(dwelltime)
-        self.metaData.append(metadict)
-        self.fileoutNames.append(mainStr)
+        from spec2nii.jmrui import jmrui_txt
+        # Pass straight through to dedicated function
+        self.imageOut, self.fileoutNames = jmrui_txt(args)
 
     def raw(self, args):
-        from fsl_mrs.utils.mrs_io import lcm_io
-        # Read data from file
-        data, header = lcm_io.readLCModelRaw(args.file, conjugate=True)
-
-        newshape = (1, 1, 1) + data.shape
-        data = data.reshape(newshape)
-
-        # meta
-        dwelltime = header['dwelltime']
-        metadict = {'ImagingFrequency': header['centralFrequency'],
-                    'Dwelltime': header['dwelltime']}
-
-        # Read optional affine file
-        if args.affine:
-            affine = np.loadtxt(args.affine)
-        else:
-            affine = np.eye(4)
-
-        currNiftiOrientation = NIFTIOrient(affine)
-
-        # File names
-        if args.fileout:
-            mainStr = args.fileout
-        else:
-            base = op.basename(args.file)
-            mainStr = op.splitext(base)[0]
-
-        # Place in data output format
-        self.imageOut.append(data)
-        self.orientationInfoOut.append(currNiftiOrientation)
-        self.dwellTimes.append(dwelltime)
-        self.metaData.append(metadict)
-        self.fileoutNames.append(mainStr)
+        from spec2nii.other_formats import lcm_raw
+        self.imageOut, self.fileoutNames = lcm_raw(args)
 
 
 def main(*args):
