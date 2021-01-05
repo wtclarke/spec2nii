@@ -23,11 +23,11 @@ This table lists the currently supported formats. I have very limited experience
 | ASCII         | .txt           | Yes | No  | No                    |
 
 ## Instructions
-spec2nii is called on the comandline, and the conversion file type is specified with a subcommand.
+spec2nii is called on the command line, and the conversion file type is specified with a subcommand.
 
 The -f and -o options specify output file name and directory respectively for all formats.
 
-If -j is specified a sidecar JSON file containing usefull meta data will be generated from the file headers. This is similar to the BIDs format.
+If -j is specified a sidecar JSON file containing useful meta data will be generated from the file headers. This is similar to the BIDs format.
 
 ### Twix
 `spec2nii twix`
