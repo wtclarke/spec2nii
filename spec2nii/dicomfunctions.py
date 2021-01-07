@@ -4,8 +4,7 @@ Copyright (C) 2020 University of Oxford
 """
 import numpy as np
 import nibabel.nicom.dicomwrappers
-from spec2nii.dcm2niiOrientation.orientationFuncs import nifti_dicom2mat
-from spec2nii.nifti_orientation import NIFTIOrient
+from spec2nii.dcm2niiOrientation.orientationFuncs import dcm_to_nifti_orientation
 from spec2nii import nifti_mrs
 from datetime import datetime
 
@@ -40,13 +39,13 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         mrs_type = svs_or_CSI(img)
 
         if mrs_type == 'SVS':
-            specDataCmplx, orientation, dwelltime, meta_obj = process_siemens_svs(img)
+            specDataCmplx, orientation, dwelltime, meta_obj = process_siemens_svs(img, verbose=verbose)
 
             newshape = (1, 1, 1) + specDataCmplx.shape
             specDataCmplx = specDataCmplx.reshape(newshape)
 
         else:
-            specDataCmplx, orientation, dwelltime, meta_obj = process_siemens_csi(img)
+            specDataCmplx, orientation, dwelltime, meta_obj = process_siemens_csi(img, verbose=verbose)
 
         data_list.append(specDataCmplx)
         orientation_list.append(orientation)
@@ -105,7 +104,7 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
     return nifti_mrs_out, fnames_out
 
 
-def process_siemens_svs(img):
+def process_siemens_svs(img, verbose):
     """Process Siemens DICOM SVS data"""
 
     specData = np.frombuffer(img.dcm_data[('7fe1', '1010')].value, dtype=np.single)
@@ -113,25 +112,25 @@ def process_siemens_svs(img):
 
     # 1) Extract dicom parameters
     imageOrientationPatient = np.array(img.csa_header['tags']['ImageOrientationPatient']['items']).reshape(2, 3)
+    # VoiPosition - this does not have the FOV shift that imagePositionPatient has
     imagePositionPatient = img.csa_header['tags']['VoiPosition']['items']
     xyzMM = np.array([img.csa_header['tags']['VoiPhaseFoV']['items'][0],
                       img.csa_header['tags']['VoiReadoutFoV']['items'][0],
                       img.csa_header['tags']['VoiThickness']['items'][0]])
 
-    # 2) in style of dcm2niix
-    # a) calculate Q44
-    Q44 = nifti_dicom2mat(imageOrientationPatient, imagePositionPatient, xyzMM)
-    # b) calculate nifti quaternion parameters
-    Q44[:2, :] *= -1
-    # 3) place in data class for nifti orientation parameters
-    currNiftiOrientation = NIFTIOrient(Q44)
+    currNiftiOrientation = dcm_to_nifti_orientation(imageOrientationPatient,
+                                                    imagePositionPatient,
+                                                    xyzMM,
+                                                    (1, 1, 1),
+                                                    verbose=verbose)
+
     dwelltime = img.csa_header['tags']['RealDwellTime']['items'][0] * 1E-9
     meta = extractDicomMetadata(img)
 
     return specDataCmplx, currNiftiOrientation, dwelltime, meta
 
 
-def process_siemens_csi(img):
+def process_siemens_csi(img, verbose):
     specData = np.frombuffer(img.dcm_data[('7fe1', '1010')].value, dtype=np.single)
     specDataCmplx = specData[0::2] - 1j * specData[1::2]
 
@@ -149,13 +148,15 @@ def process_siemens_csi(img):
     xyzMM = np.array([img.csa_header['tags']['PixelSpacing']['items'][0],
                       img.csa_header['tags']['PixelSpacing']['items'][1],
                       img.csa_header['tags']['SliceThickness']['items'][0]])
-    # 2) in style of dcm2niix
-    # a) calculate Q44
-    Q44 = nifti_dicom2mat(imageOrientationPatient, imagePositionPatient, xyzMM)
-    # b) calculate nifti quaternion parameters
-    Q44[:2, :] *= -1
-    # 3) place in data class for nifti orientation parameters
-    currNiftiOrientation = NIFTIOrient(Q44)
+
+    # Note that half_shift = True. For an explination see spec2nii/notes/seimens.md
+    currNiftiOrientation = dcm_to_nifti_orientation(imageOrientationPatient,
+                                                    imagePositionPatient,
+                                                    xyzMM,
+                                                    specDataCmplx.shape[:3],
+                                                    half_shift=True,
+                                                    verbose=verbose)
+
     dwelltime = img.csa_header['tags']['RealDwellTime']['items'][0] * 1E-9
     meta = extractDicomMetadata(img)
 

@@ -5,10 +5,11 @@ Copyright (C) 2020 University of Oxford
 """
 import numpy as np
 import nibabel.nicom.dicomwrappers
-from spec2nii.dcm2niiOrientation.orientationFuncs import nifti_dicom2mat
+from spec2nii.dcm2niiOrientation.orientationFuncs import dcm_to_nifti_orientation
 from spec2nii.nifti_orientation import NIFTIOrient
 from spec2nii import nifti_mrs
 from datetime import datetime
+from warnings import warn
 
 
 def svs_or_CSI(img):
@@ -39,13 +40,13 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         mrs_type = svs_or_CSI(img)
 
         if mrs_type == 'SVS':
-            specDataCmplx, orientation, dwelltime, meta_obj = process_uih_svs(img)
+            specDataCmplx, orientation, dwelltime, meta_obj = process_uih_svs(img, verbose)
 
             newshape = (1, 1, 1) + specDataCmplx.shape
             specDataCmplx = specDataCmplx.reshape(newshape)
 
         else:
-            specDataCmplx, orientation, dwelltime, meta_obj = process_uih_csi(img)
+            specDataCmplx, orientation, dwelltime, meta_obj = process_uih_csi(img, verbose)
 
         data_list.append(specDataCmplx)
         orientation_list.append(orientation)
@@ -82,7 +83,10 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         meta_used.set_standard_def('OriginalFile', [str(ff) for ff in files_in])
 
         # Combine data into 5th dimension if needed
-        combined_data = np.stack(data_list, axis=-1)
+        if len(data_list) > 1:
+            combined_data = np.stack(data_list, axis=-1)
+        else:
+            combined_data = data_list[0]
 
         # Add dimension information (if not None for default)
         if tag:
@@ -104,7 +108,7 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
     return nifti_mrs_out, fnames_out
 
 
-def process_uih_svs(img):
+def process_uih_svs(img, verbose):
     """Process UIH DICOM SVS data"""
 
     specData = np.frombuffer(img.dcm_data[('5600', '0020')].value, dtype=np.single)
@@ -115,21 +119,64 @@ def process_uih_svs(img):
     imagePositionPatient = img.image_position
     xyzMM = np.asarray(img.voxel_sizes)
 
-    # 2) in style of dcm2niix
-    # a) calculate Q44
-    Q44 = nifti_dicom2mat(imageOrientationPatient, imagePositionPatient, xyzMM)
-    # b) calculate nifti quaternion parameters
-    Q44[:2, :] *= -1
-    # 3) place in data class for nifti orientation parameters
-    currNiftiOrientation = NIFTIOrient(Q44)
+    currNiftiOrientation = dcm_to_nifti_orientation(imageOrientationPatient,
+                                                    imagePositionPatient,
+                                                    xyzMM,
+                                                    (1, 1, 1),
+                                                    half_shift=True,
+                                                    verbose=verbose)
     dwelltime = 1.0 / img.dcm_data.SpectralWidth
     meta = extractDicomMetadata(img)
 
     return specDataCmplx, currNiftiOrientation, dwelltime, meta
 
 
-def process_uih_csi(img):
-    raise NotImplementedError('UIH CSI not currently handled. No test data availible!')
+def process_uih_csi(img, verbose):
+    """Process UIH DICOM MRSI data"""
+
+    specData = np.frombuffer(img.dcm_data[('5600', '0020')].value, dtype=np.single)
+    specDataCmplx = specData[0::2] - 1j * specData[1::2]
+
+    warn('The orientation of UIH MRSI is relatively untested.'
+         ' Please contribute data to help fix this!')
+    shape = (img.dcm_data.Columns,
+             img.dcm_data.Rows,
+             int(img.dcm_data.NumberOfFrames),
+             img.dcm_data.SpectroscopyAcquisitionDataColumns)
+
+    specDataCmplx = specDataCmplx.reshape(shape)
+
+    # WTC 05/01/21 From the limited test data I have I think there is this transposition.
+    specDataCmplx = np.swapaxes(specDataCmplx, 0, 1)
+
+    # Extract dicom parameters
+    imageOrientationPatient = img.image_orient_patient.T
+    imagePositionPatient = img.image_position
+    xyzMM = np.asarray(img.voxel_sizes)
+
+    currNiftiOrientation = dcm_to_nifti_orientation(imageOrientationPatient,
+                                                    imagePositionPatient,
+                                                    xyzMM,
+                                                    specDataCmplx.shape[:3],
+                                                    half_shift=True,
+                                                    verbose=verbose)
+
+    # UIH specific tweaks
+    Q44 = currNiftiOrientation.Q44
+    # 1) negate 3rd direction if ('0065', 'ff06') 3rd element is negative
+    if float(img.dcm_data[('0065', 'ff06')].value[2]) < 0.0:
+        Q44[:3, :3] = Q44[:3, :3] @ np.array([[1, 0, 0], [0, 1, 0], [0, 0, -1]])
+
+    # 2) A half voxel shift is needed in the third dimension
+    v = np.asarray([0, 0, 0.5]) @ Q44[:3, :3].T
+    Q44[:3, 3] += v
+
+    currNiftiOrientation = NIFTIOrient(Q44)
+
+    dwelltime = 1.0 / img.dcm_data.SpectralWidth
+    meta = extractDicomMetadata(img)
+
+    return specDataCmplx, currNiftiOrientation, dwelltime, meta
 
 
 def extractDicomMetadata(dcmdata):
