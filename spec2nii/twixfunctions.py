@@ -4,8 +4,7 @@ Copyright (C) 2020 University of Oxford
 """
 import spec2nii.GSL.gslfunctions as GSL
 import numpy as np
-from spec2nii.dcm2niiOrientation.orientationFuncs import nifti_dicom2mat
-from spec2nii.nifti_orientation import NIFTIOrient
+from spec2nii.dcm2niiOrientation.orientationFuncs import dcm_to_nifti_orientation
 from spec2nii import nifti_mrs
 from datetime import datetime
 from os.path import basename
@@ -80,16 +79,23 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overides, quiet=Fa
     orient = twix2DCMOrientation(twixObj['hdr'], verbose=verbose)
     imageOrientationPatient, imagePositionPatient, pixelSpacing, slicethickness = orient
 
-    # 2) in style of dcm2niix
-    #   a) calculate Q44
-    xyzMM = np.append(pixelSpacing, slicethickness)
-    Q44 = nifti_dicom2mat(imageOrientationPatient, imagePositionPatient, xyzMM, verbose=verbose)
+    # 2) In the style of dcm2niix calculate the affine matrix
+    orientation = dcm_to_nifti_orientation(imageOrientationPatient,
+                                           imagePositionPatient,
+                                           np.append(pixelSpacing, slicethickness),
+                                           (1, 1, 1),
+                                           verbose=verbose)
 
-    #   b) calculate nifti quaternion parameters
-    Q44[:2, :] *= -1
+    # # 2) in style of dcm2niix
+    # #   a) calculate Q44
+    # xyzMM = np.append(pixelSpacing, slicethickness)
+    # Q44 = nifti_dicom2mat(imageOrientationPatient, imagePositionPatient, xyzMM, verbose=verbose)
 
-    # 3) place in data class for nifti orientation parameters
-    orientation = NIFTIOrient(Q44)
+    # #   b) calculate nifti quaternion parameters
+    # Q44[:2, :] *= -1
+
+    # # 3) place in data class for nifti orientation parameters
+    # orientation = NIFTIOrient(Q44)
 
     # Extract dwellTime
     dwellTime = twixObj['hdr']['MeasYaps'][('sRXSPEC', 'alDwellTime', '0')] / 1E9
@@ -239,7 +245,7 @@ def twix2DCMOrientation(mapVBVDHdr, verbose=False):
     RoFoV = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'dReadoutFOV')]
     PeFoV = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'dPhaseFOV')]
 
-    dColVec_vector, dRowVec_vector = GSL.fGSLCalcPRS(TwixSliceNormal, inplaneRotation, verbose)
+    dColVec_vector, dRowVec_vector = GSL.calc_prs(TwixSliceNormal, inplaneRotation, verbose)
 
     imageOrientationPatient = np.stack((dRowVec_vector, dColVec_vector), axis=0)
 
