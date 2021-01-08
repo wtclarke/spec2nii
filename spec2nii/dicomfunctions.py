@@ -29,6 +29,8 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
     orientation_list = []
     dwelltime_list = []
     meta_list = []
+    series_num = []
+    inst_num = []
     mainStr = ''
     for idx, fn in enumerate(files_in):
         if verbose:
@@ -52,13 +54,16 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         dwelltime_list.append(dwelltime)
         meta_list.append(meta_obj)
 
+        series_num.append(int(img.dcm_data.SeriesNumber))
+        inst_num.append(int(img.dcm_data.InstanceNumber))
+
         if idx == 0:
             if fname_out:
                 mainStr = fname_out
             else:
                 mainStr = img.dcm_data.SeriesDescription
 
-    # If data shape, orientation and dwelltime match combine
+    # If data shape, orientation, dwelltime and series_num match combine
     # into one NIFTI MRS object.
     # Otherwise return a list of files/names
     def all_equal(lst):
@@ -66,7 +71,29 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
 
     combine = all_equal([d.shape for d in data_list])\
         and all_equal([o.Q44.tolist() for o in orientation_list])\
-        and all_equal(dwelltime_list)
+        and all_equal(dwelltime_list)\
+        and all_equal(series_num)
+
+    # Sort by series and instance number
+    data_list = np.asarray(data_list)
+    orientation_list = np.asarray(orientation_list)
+    dwelltime_list = np.asarray(dwelltime_list)
+    meta_list = np.asarray(meta_list)
+    series_num = np.asarray(series_num)
+    inst_num = np.asarray(inst_num)
+
+    sort_index = np.lexsort((inst_num, series_num))  # Sort by series then inst
+
+    data_list = data_list[sort_index, :]
+    orientation_list = orientation_list[sort_index]
+    dwelltime_list = dwelltime_list[sort_index]
+    meta_list = meta_list[sort_index]
+    series_num = series_num[sort_index]
+    inst_num = inst_num[sort_index]
+
+    if verbose:
+        print(f'Sorted series numbers: {series_num}')
+        print(f'Sorted instance numbers: {inst_num}')
 
     nifti_mrs_out, fnames_out = [], []
     if combine:
@@ -82,7 +109,10 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         meta_used.set_standard_def('OriginalFile', [str(ff) for ff in files_in])
 
         # Combine data into 5th dimension if needed
-        combined_data = np.stack(data_list, axis=-1)
+        if len(data_list) > 1:
+            combined_data = np.stack(data_list, axis=-1)
+        else:
+            combined_data = data_list[0]
 
         # Add dimension information (if not None for default)
         if tag:
@@ -98,7 +128,7 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
                                                    files_in)):
             # Add original files to nifti meta information.
             mm.set_standard_def('OriginalFile', [str(ff), ])
-            fnames_out.append(f'{mainStr}_{idx:03}')
+            fnames_out.append(f'{mainStr}_{series_num[idx]:03}_{inst_num[idx]:03}')
             nifti_mrs_out.append(nifti_mrs.NIfTI_MRS(dd, oo.Q44, dt, mm))
 
     return nifti_mrs_out, fnames_out
@@ -177,13 +207,22 @@ def extractDicomMetadata(dcmdata):
                             dcmdata.csa_header['tags']['ImagedNucleus']['items'][0])
 
     # Some scanner information
-    obj.set_standard_def('Manufacturer', dcmdata.dcm_data.Manufacturer)
-    obj.set_standard_def('ManufacturersModelName', dcmdata.dcm_data.ManufacturerModelName)
-    obj.set_standard_def('DeviceSerialNumber', str(dcmdata.dcm_data.DeviceSerialNumber))
-    obj.set_standard_def('SoftwareVersions', dcmdata.dcm_data.SoftwareVersions)
+    def set_standard_def(nifti_mrs_key, location, key, cast=None):
+        try:
+            if cast is not None:
+                obj.set_standard_def(nifti_mrs_key, cast(getattr(location, key)))
+            else:
+                obj.set_standard_def(nifti_mrs_key, getattr(location, key))
+        except AttributeError:
+            pass
 
-    obj.set_standard_def('InstitutionName', dcmdata.dcm_data.InstitutionName)
-    obj.set_standard_def('InstitutionAddress', dcmdata.dcm_data.InstitutionAddress)
+    set_standard_def('Manufacturer', dcmdata.dcm_data, 'Manufacturer')
+    set_standard_def('ManufacturersModelName', dcmdata.dcm_data, 'ManufacturerModelName')
+    set_standard_def('DeviceSerialNumber', dcmdata.dcm_data, 'DeviceSerialNumber', cast=str)
+    set_standard_def('SoftwareVersions', dcmdata.dcm_data, 'SoftwareVersions')
+
+    set_standard_def('InstitutionName', dcmdata.dcm_data, 'InstitutionName')
+    set_standard_def('InstitutionAddress', dcmdata.dcm_data, 'InstitutionAddress')
 
     if len(dcmdata.csa_header['tags']['ReceivingCoil']['items']) > 0:
         obj.set_user_def(key='ReceiveCoilName',
@@ -196,7 +235,7 @@ def extractDicomMetadata(dcmdata):
 
     # Some sequence information
     obj.set_standard_def('SequenceName', dcmdata.csa_header['tags']['SequenceName']['items'][0])
-    obj.set_standard_def('ProtocolName', dcmdata.dcm_data.ProtocolName)
+    set_standard_def('ProtocolName', dcmdata.dcm_data, 'ProtocolName')
 
     obj.set_user_def(key='PulseSequenceFile',
                      value=dcmdata.csa_header['tags']['SequenceName']['items'][0],
@@ -206,11 +245,11 @@ def extractDicomMetadata(dcmdata):
     #                  doc='Reconstruction binary path.')
 
     # Some subject information
-    obj.set_standard_def('PatientPosition', dcmdata.dcm_data.PatientPosition)
-    obj.set_standard_def('PatientName', dcmdata.dcm_data.PatientName.family_name)
-    obj.set_standard_def('PatientWeight', float(dcmdata.dcm_data.PatientWeight))
-    obj.set_standard_def('PatientDoB', dcmdata.dcm_data.PatientBirthDate)
-    obj.set_standard_def('PatientSex', dcmdata.dcm_data.PatientSex)
+    set_standard_def('PatientPosition', dcmdata.dcm_data, 'PatientPosition')
+    set_standard_def('PatientName', dcmdata.dcm_data.PatientName, 'family_name')
+    set_standard_def('PatientWeight', dcmdata.dcm_data, 'PatientWeight', cast=float)
+    set_standard_def('PatientDoB', dcmdata.dcm_data, 'PatientBirthDate')
+    set_standard_def('PatientSex', dcmdata.dcm_data, 'PatientSex')
 
     # Timing and sequence parameters
     obj.set_standard_def('EchoTime', dcmdata.csa_header['tags']['EchoTime']['items'][0] * 1E-3)
