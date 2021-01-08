@@ -26,7 +26,7 @@ import sys
 import os.path as op
 from pathlib import Path
 import json
-from spec2nii.nifti_mrs.nifti_mrs import set_nifti1
+from spec2nii import nifti_mrs
 # There are case specific imports below
 
 
@@ -141,7 +141,9 @@ class spec2nii:
         self.outputDir = args.outdir
 
         if args.nifti1:
-            set_nifti1()
+            nifti_mrs.NIfTI_MRS = nifti_mrs.get_mrs_class(nifti=1)
+        else:
+            nifti_mrs.NIfTI_MRS = nifti_mrs.get_mrs_class(nifti=2)
 
         args.func(args)
 

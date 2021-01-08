@@ -1,35 +1,11 @@
 import nibabel as nib
 from .validator import validate_nifti_mrs
 
-base_class = nib.nifti2.Nifti2Image
 
+def get_mrs_class(nifti=2):
+    '''Generate the NIfTI_MRS class using either NIFTI2 (default) or NIFTI1 formatting.'''
 
-def set_nifti1():
-    '''Set the base class of NIfTI_MRS to be nibabel.nifti1.Nifti1Image'''
-    global base_class
-    base_class = nib.nifti1.Nifti1Image
-
-
-def NIfTI_MRS(*args, **kwargs):
-    '''Wrapper function around NIfTI_MRS class that allows for dynamic inheritance.
-    Initilise a NIfTI MRS object which can be saved to disk.
-    :param dataobj: Four to seven dimensional complex numpy array.
-    :param affine: None or (4,4) array-like
-                    homogenous affine giving relationship between voxel coordinates and
-                    world coordinates.  Affine can also be None.  In this case,
-                    ``obj.affine`` also returns None, and the affine as written to disk
-                    will depend on the file format.
-    :param float dwelltime: Spectroscopic time-domain dwelltime in seconds.
-    :param header_ext : nifti_mrs.hdr_ext object.
-    :param header: None or mapping or header instance, optional
-                    metadata for this image format
-    :param extra: None or mapping, optional
-                    metadata to associate with image that cannot be stored in the
-                    metadata of this image type
-    :param file_map : mapping, optional
-                    mapping giving file information for this image format
-    '''
-    global base_class
+    base_class = nib.nifti1.Nifti1Image if nifti == 1 else nib.nifti2.Nifti2Image
 
     class NIfTI_MRS(base_class):
         """Class to contain a NIfTI MRS dataset. Derived from nibabel's Nifti2Image."""
@@ -83,4 +59,4 @@ def NIfTI_MRS(*args, **kwargs):
             """ Utility function """
             nib.save(self, filename)
 
-    return NIfTI_MRS(*args, **kwargs)
+    return NIfTI_MRS
