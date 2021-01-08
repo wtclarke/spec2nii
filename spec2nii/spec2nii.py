@@ -6,12 +6,14 @@ Supporting SVS:
     Siemens DICOM
     Philips SPAR/SDAT files
     GE p-files
+    UIH DICOM
     LCModel RAW
     jMRUI text
     Plain text
 
 Supporting CSI/MRSI:
     Siemens DICOM
+    UIH DICOM
 
 This module contains the main class to be called as a script (through the main function).
 
@@ -24,6 +26,7 @@ import sys
 import os.path as op
 from pathlib import Path
 import json
+from spec2nii.nifti_mrs.nifti_mrs import set_nifti1
 # There are case specific imports below
 
 
@@ -41,6 +44,7 @@ class spec2nii:
                                    help="Output file base name (default = input file name)")
             subparser.add_argument("-o", "--outdir", type=Path,
                                    help="Output location (default = .)", default='.')
+            subparser.add_argument('--nifti1', action='store_true')
             subparser.add_argument('--verbose', action='store_true')
             return subparser
 
@@ -135,6 +139,9 @@ class spec2nii:
         self.metaData = []
 
         self.outputDir = args.outdir
+
+        if args.nifti1:
+            set_nifti1()
 
         args.func(args)
 
