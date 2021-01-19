@@ -81,8 +81,8 @@ class spec2nii:
 
         # Handle philips subcommand
         parser_philips = subparsers.add_parser('philips', help='Convert from Philips spar/sdat format.')
-        parser_philips.add_argument('sdat', help='SDAT file', type=str)
-        parser_philips.add_argument('spar', help='SPAR file', type=str)
+        parser_philips.add_argument('sdat', help='SDAT file', type=Path)
+        parser_philips.add_argument('spar', help='SPAR file', type=Path)
         parser_philips = add_common_parameters(parser_philips)
         parser_philips.set_defaults(func=self.philips)
 
@@ -251,24 +251,16 @@ class spec2nii:
         # philips specific imports
         from spec2nii.philips import read_sdat_spar_pair
 
-        data, orientation, dwelltime, meta = read_sdat_spar_pair(args.sdat, args.spar)
+        self.imageOut = read_sdat_spar_pair(args.sdat, args.spar)
 
         # name of output
         if args.fileout:
             mainStr = args.fileout
-        elif op.splitext(op.basename(args.sdat))[0] == op.splitext(op.basename(args.spar))[0]:
-            mainStr = op.splitext(op.basename(args.sdat))[0]
+        elif args.sdat.stem == args.spar.stem:
+            mainStr = args.sdat.stem
         else:
-            mainStr = op.splitext(op.basename(args.sdat))[0]
+            mainStr = args.sdat.stem
 
-        newshape = (1, 1, 1) + data.shape
-        data = data.reshape(newshape)
-
-        # Place in data output format
-        self.imageOut.append(data)
-        self.orientationInfoOut.append(orientation)
-        self.dwellTimes.append(dwelltime)
-        self.metaData.append(meta)
         self.fileoutNames.append(mainStr)
 
     def ge(self, args):

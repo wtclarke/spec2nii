@@ -2,11 +2,14 @@
 Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
 Copyright (C) 2020 University of Oxford
 """
-
-from ast import literal_eval
-import numpy as np
-from spec2nii.nifti_orientation import NIFTIOrient, calc_affine
 import warnings
+from datetime import datetime
+from ast import literal_eval
+
+import numpy as np
+
+from spec2nii.nifti_orientation import NIFTIOrient, calc_affine
+from spec2nii import nifti_mrs
 
 
 def read_sdat_spar_pair(sdat_file, spar_file):
@@ -16,21 +19,26 @@ def read_sdat_spar_pair(sdat_file, spar_file):
                      spar_params['samples'],
                      spar_params['rows'])
 
+    if data.ndim < 4:
+        data = data.reshape((1, 1, 1) + data.shape)
+
+    # Move to right handed frame
+    data = data.conj()
+
     # Dwelltime
     dwelltime = 1.0 / float(spar_params["sample_frequency"])
 
-    # Meta - which will be written to the JSON side car requires
-    # a few parameters. Set these first. Then set the ones from
-    # the spar file
-    cf = float(spar_params["synthesizer_frequency"]) / 1E6
-    meta = {'ImagingFrequency': cf, 'Dwelltime': dwelltime}
-    meta.update(spar_params)
+    # Meta
+    meta = spar_to_nmrs_hdrext(spar_params)
+    meta.set_standard_def('OriginalFile', [sdat_file.name])
+
+    # meta_used.set_dim_info(0, tag)
 
     # Orientation
     affine = _philips_orientation(spar_params)
     orientation = NIFTIOrient(affine)
 
-    return data, orientation, dwelltime, meta
+    return [nifti_mrs.NIfTI_MRS(data, orientation.Q44, dwelltime, meta), ]
 
 
 def read_spar(filename):
@@ -52,7 +60,7 @@ def read_spar(filename):
             key, value = map(str.strip, line.split(":", 1))
             try:
                 val = literal_eval(value)
-            except ValueError or SyntaxError:
+            except (ValueError, SyntaxError):
                 if value == '':
                     val = None
                 else:
@@ -101,6 +109,67 @@ def _philips_orientation(params):
     shift = [-shift_lr, -shift_ap, shift_hf]
 
     return calc_affine(angles, dimensions, shift)
+
+
+def spar_to_nmrs_hdrext(spar_dict):
+    """ Extract information from the dict of keys read from the spar file to insert into the json header ext.
+
+    :param dict spar_dict: key-value pairs read from spar file
+    :return: NIfTI MRS hdr ext object.
+    """
+
+    # Extract required metadata and create hdr_ext object
+    cf = float(spar_dict["synthesizer_frequency"]) / 1E6
+    obj = nifti_mrs.hdr_ext(cf,
+                            spar_dict["nucleus"])
+
+    # Some scanner information
+    def set_standard_def(nifti_mrs_key, location, key, cast=None):
+        try:
+            if cast is not None:
+                obj.set_standard_def(nifti_mrs_key, cast(getattr(location, key)))
+            else:
+                obj.set_standard_def(nifti_mrs_key, getattr(location, key))
+        except AttributeError:
+            pass
+
+    obj.set_standard_def('Manufacturer', 'Philips')
+    # set_standard_def('ManufacturersModelName',)
+    # set_standard_def('DeviceSerialNumber', )
+    set_standard_def('SoftwareVersions', spar_dict, 'equipment_sw_verions')
+
+    # set_standard_def('InstitutionName', )
+    # set_standard_def('InstitutionAddress', )
+
+    # Some sequence information
+    # obj.set_standard_def('SequenceName', )
+    set_standard_def('ProtocolName', spar_dict, 'scan_id')
+
+    # Some subject information
+    try:
+        obj.set_standard_def('PatientPosition', spar_dict['patient_position'] + ' ' + spar_dict['patient_orientation'])
+    except AttributeError:
+        pass
+    set_standard_def('PatientName', spar_dict, 'patient_name')
+    # set_standard_def('PatientWeight', , cast=float)
+    set_standard_def('PatientDoB', spar_dict, 'patient_birth_date')
+    # set_standard_def('PatientSex', )
+
+    # Timing and sequence parameters
+    obj.set_standard_def('EchoTime', float(spar_dict['echo_time']) * 1E-3)
+    if spar_dict['spectrum_inversion_time'] > 0:
+        obj.set_standard_def('InversionTime', spar_dict['spectrum_inversion_time'])
+    # obj.set_standard_def('ExcitationFlipAngle', spar_dict['spectrum_inversion_time'])
+    obj.set_standard_def('RepetitionTime', spar_dict['repetition_time'] / 1E3)
+    # TO DO  - nibabel might need updating.
+    obj.set_standard_def('TxOffset', spar_dict['offset_frequency'] / cf)
+
+    # Conversion information
+    obj.set_standard_def('ConversionMethod', 'spec2nii')
+    conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')
+    obj.set_standard_def('ConversionTime', conversion_time)
+
+    return obj
 
 
 # From VESPA - BSD license. Ask for licence text from Brian.
