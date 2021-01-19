@@ -88,7 +88,7 @@ class spec2nii:
 
         # Handle GE subcommand
         parser_ge = subparsers.add_parser('ge', help='Convert from GE p-file format.')
-        parser_ge.add_argument('file', help='file to convert', type=str)
+        parser_ge.add_argument('file', help='file to convert', type=Path)
         parser_ge = add_common_parameters(parser_ge)
         parser_ge.set_defaults(func=self.ge)
 
@@ -267,34 +267,19 @@ class spec2nii:
         # philips specific imports
         from spec2nii.GE import read_p_file
 
-        data, ref_data, orientation, dwelltime, meta = read_p_file(args.file)
+        data, ref_data = read_p_file(args.file)
 
         # name of output
         if args.fileout:
             baseStr = args.fileout
         else:
-            baseStr = op.splitext(op.basename(args.file))[0]
+            baseStr = args.file.stem
 
-        # Place in data output format
-        for idx, d in enumerate(data):
-            d = d.T
-            newshape = (1, 1, 1) + d.shape
-            d = d.reshape(newshape)
-            self.imageOut.append(d)
-            self.orientationInfoOut.append(orientation)
-            self.dwellTimes.append(dwelltime)
-            self.metaData.append(meta)
-            self.fileoutNames.append(baseStr + f'_frame{idx:03.0f}')
-        if ref_data is not None:
-            for idx, d in enumerate(ref_data):
-                d = d.T
-                newshape = (1, 1, 1) + d.shape
-                d = d.reshape(newshape)
-                self.imageOut.append(d)
-                self.orientationInfoOut.append(orientation)
-                self.dwellTimes.append(dwelltime)
-                self.metaData.append(meta)
-                self.fileoutNames.append(baseStr + f'_ref_frame{idx:03.0f}')
+        self.imageOut.append(data)
+        self.imageOut.append(ref_data)
+
+        self.fileoutNames.append(baseStr)
+        self.fileoutNames.append(baseStr + '_ref')
 
     def text(self, args):
         from spec2nii.other_formats import text

@@ -8,9 +8,14 @@ Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
 Copyright (C) 2020 University of Oxford
 '''
 
-import numpy as np
 import warnings
+from datetime import datetime
+from copy import deepcopy
+
+import numpy as np
+
 from spec2nii.nifti_orientation import NIFTIOrient, calc_affine
+from spec2nii import nifti_mrs
 
 
 class IsMRSI(Exception):
@@ -29,19 +34,36 @@ def read_p_file(filename):
 
     data, ref_data = _read_data(filename, hdr)
 
+    data = data.reshape((1, 1, 1) + data.shape)
+    if ref_data is not None:
+        ref_data = ref_data.reshape((1, 1, 1) + ref_data.shape)
+
     affine = _calc_affine(hdr)
     orientation = NIFTIOrient(affine)
 
     dwelltime = 1 / hdr['spec_width']
 
-    # Meta - which will be written to the JSON side car requires
-    # a few parameters. Set these first. Then set the hdrs from
-    # the files.
-    cf = float(hdr["ps_mps_freq"]) / 1E7
-    meta = {'ImagingFrequency': cf, 'Dwelltime': dwelltime}
-    meta.update(hdr)
+    # Metadata
+    warnings.warn('Assuming 1H data!')
+    meta = nifti_mrs.hdr_ext(float(hdr["ps_mps_freq"]) / 1E7,
+                             '1H')
+    meta.set_standard_def('EchoTime', hdr['te'])
+    meta.set_standard_def('RepetitionTime', hdr['tr'])
 
-    return data, ref_data, orientation, dwelltime, meta
+    meta.set_standard_def('ConversionMethod', 'spec2nii')
+    conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')
+    meta.set_standard_def('ConversionTime', conversion_time)
+
+    meta_ref = deepcopy(meta)
+
+    meta.set_dim_info(0, 'DIM_COIL')
+    meta.set_dim_info(1, 'DIM_DYN')
+
+    meta_ref.set_dim_info(0, 'DIM_COIL')
+    meta_ref.set_dim_info(1, 'DIM_DYN')
+
+    return nifti_mrs.NIfTI_MRS(data, orientation.Q44, dwelltime, meta),\
+        nifti_mrs.NIfTI_MRS(ref_data, orientation.Q44, dwelltime, meta_ref)
 
 
 def _calc_affine(hdrs):
@@ -97,20 +119,18 @@ def _read_data(filename, hdrs):
     dynamics = frames * echoes + echoes
     data = data.reshape((coils, dynamics, fid_pnts))
 
-    data = np.conj(data)
+    # data = np.conj(data)
 
     # Remove empty frame
     data = data[:, 1:, ]
 
-    data = np.moveaxis(data, 1, 0)
+    # Make order fid_pnts, coils, dynamics
+    data = np.moveaxis(data, (0, 1, 2), (1, 2, 0))
     if ref_frames == 0:
         ref_data = None
     else:
-        ref_data = data[0:ref_frames, :, :].copy()
-    data = data[ref_frames:, :, :]
-
-    data = list(data)
-    ref_data = list(ref_data)
+        ref_data = data[:, :, 0:ref_frames].copy()
+    data = data[:, :, ref_frames:]
 
     return data, ref_data
 
