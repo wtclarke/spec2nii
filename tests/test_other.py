@@ -1,21 +1,22 @@
 """ Tests for conversion routines for "other" file types.
 Currently included:
-jMRUI .txt
 txt
 LCModel Raw
 
+Copyright William Clarke, University of Oxford 2021
+Subject to the BSD 3-Clause License.
 """
-
-import pytest
-import numpy as np
 import os.path as op
 import subprocess
-from fsl_mrs.utils import mrs_io
 from pathlib import Path
+
+import pytest
+import nibabel as nib
+import numpy as np
+
 
 file_path = Path(__file__).parent
 testdata = {'txtfile': file_path / 'spec2nii_test_data/other/metab.txt',
-            'jmruifile': file_path / 'spec2nii_test_data/other/metab_jmrui.txt',
             'rawfile': file_path / 'spec2nii_test_data/other/metab.RAW',
             'niftifile': file_path / 'spec2nii_test_data/other/metab.nii'}
 
@@ -44,31 +45,21 @@ def test_text(affine_file, tmp_path):
                      '-o', str(tmp_path / "outdir"),
                      '-b', '12000',
                      '-i', '297.219948',
+                     '-n', '1H',
                      '-a', affine_file,
                      '-j', testdata['txtfile']])
+
     # Load the new nifti file
-    data, _ = mrs_io.read_FID(str(tmp_path / "outdir" / 'text.nii.gz'))
+    converted = nib.load(tmp_path / "outdir" / 'text.nii.gz')
 
     # Compare to original nifti file
-    data_orig, _ = mrs_io.read_FID(str(testdata['niftifile']))
+    original = nib.load(testdata['niftifile'])
 
-    assert np.allclose(data, data_orig)
-
-
-def test_jmrui(affine_file, tmp_path):
-    """Test the 'jmrui' format conversion """
-    # Run spec2nii on text
-    subprocess.call(['spec2nii', 'jmrui',
-                     '-f', 'jmrui',
-                     '-o', str(tmp_path),
-                     '-a', affine_file,
-                     '-j', testdata['jmruifile']])
-    # Load the new nifti file
-    data, header = mrs_io.read_FID(str(tmp_path / 'jmrui.nii.gz'))
-    # Compare to original nifti file
-    data_orig, header_orig = mrs_io.read_FID(str(testdata['niftifile']))
-
-    assert np.allclose(data, data_orig)
+    assert converted.shape == (1, 1, 1, 4096)
+    assert np.iscomplexobj(converted.dataobj)
+    assert np.allclose(np.loadtxt(affine_file), converted.affine)
+    assert np.allclose(converted.dataobj, original.dataobj)
+    assert (tmp_path / "outdir" / 'text.json').exists()
 
 
 def test_raw(affine_file, tmp_path):
@@ -76,12 +67,17 @@ def test_raw(affine_file, tmp_path):
     # Run spec2nii on text
     subprocess.call(['spec2nii', 'raw',
                      '-f', 'raw',
+                     '-n', '1H',
                      '-o', str(tmp_path),
                      '-a', affine_file,
                      '-j', testdata['rawfile']])
     # Load the new nifti file
-    data, header = mrs_io.read_FID(str(tmp_path / 'raw.nii.gz'))
+    converted = nib.load(tmp_path / 'raw.nii.gz')
     # Compare to original nifti file
-    data_orig, header_orig = mrs_io.read_FID(str(testdata['niftifile']))
+    original = nib.load(testdata['niftifile'])
 
-    assert np.allclose(data, data_orig)
+    assert converted.shape == (1, 1, 1, 4096)
+    assert np.iscomplexobj(converted.dataobj)
+    assert np.allclose(np.loadtxt(affine_file), converted.affine)
+    assert np.allclose(converted.dataobj, original.dataobj)
+    assert (tmp_path / 'raw.json').exists()

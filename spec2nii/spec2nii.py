@@ -111,13 +111,15 @@ class spec2nii:
         parser_txt = add_common_parameters(parser_txt)
         parser_txt.set_defaults(func=self.text)
 
-        parser_jmrui = subparsers.add_parser('jmrui', help='Convert from jMRUI text format.')
-        parser_jmrui.add_argument('file', help='file to convert', type=str)
+        # jMRUI formats (.txt and .mrui)
+        parser_jmrui = subparsers.add_parser('jmrui', help='Convert from jMRUI text or binary formats.')
+        parser_jmrui.add_argument('file', help='file to convert', type=Path)
         parser_jmrui.add_argument("-a", "--affine", type=str, help="NIfTI affine file", required=False,
                                   metavar='<file>')
         parser_jmrui = add_common_parameters(parser_jmrui)
         parser_jmrui.set_defaults(func=self.jmrui)
 
+        # LCModel RAW/H2O formats
         parser_raw = subparsers.add_parser('raw', help='Convert from LCModel RAW text format.')
         parser_raw.add_argument('file', help='file to convert', type=str)
         parser_raw.add_argument("-n", "--nucleus", type=str,
@@ -287,9 +289,9 @@ class spec2nii:
         self.imageOut, self.fileoutNames = text(args)
 
     def jmrui(self, args):
-        from spec2nii.jmrui import jmrui_txt
+        from spec2nii.jmrui import jmrui_format
         # Pass straight through to dedicated function
-        self.imageOut, self.fileoutNames = jmrui_txt(args)
+        self.imageOut, self.fileoutNames = jmrui_format(args)
 
     def raw(self, args):
         from spec2nii.other_formats import lcm_raw

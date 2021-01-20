@@ -23,7 +23,7 @@ def text(args):
     dwelltime = 1.0 / args.bandwidth
 
     meta = nifti_mrs.hdr_ext(args.imagingfreq,
-                             args.nulceus)
+                             args.nucleus)
 
     meta.set_standard_def('ConversionMethod', 'spec2nii')
     conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')
@@ -68,7 +68,7 @@ def lcm_raw(args):
     dwelltime = header['dwelltime']
 
     meta = nifti_mrs.hdr_ext(header['centralFrequency'],
-                             args.nulceus)
+                             args.nucleus)
 
     meta.set_standard_def('ConversionMethod', 'spec2nii')
     conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')

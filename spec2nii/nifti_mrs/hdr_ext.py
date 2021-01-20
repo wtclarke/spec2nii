@@ -22,7 +22,7 @@ class hdr_ext:
                 and isinstance(spec_frequency[0], float):
             self.SpectrometerFrequency = spec_frequency
         else:
-            raise ValueError('spec_frequency must be a string or array of strings.')
+            raise ValueError('spec_frequency must be a float or array of floats.')
 
         if isinstance(resonant_nucleus, str):
             self.ResonantNucleus = [resonant_nucleus, ]
