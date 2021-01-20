@@ -1,4 +1,8 @@
-"""Run tests for UIH data."""
+"""Run tests for UIH data.
+
+Copyright William Clarke, University of Oxford 2021
+Subject to the BSD 3-Clause License.
+"""
 
 from pathlib import Path
 import subprocess
