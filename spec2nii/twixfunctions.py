@@ -252,7 +252,7 @@ def twix2DCMOrientation(mapVBVDHdr, verbose=False):
     pixelSpacing = np.array([PeFoV, RoFoV])  # [RoFoV PeFoV];
     sliceThickness = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'dThickness')]
 
-    # Position info
+    # Position info (including table position)
     if ('sSpecPara', 'sVoI', 'sPosition', 'dSag') in mapVBVDHdr['MeasYaps']:
         PosdSag = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'sPosition', 'dSag')]
     else:
@@ -267,6 +267,13 @@ def twix2DCMOrientation(mapVBVDHdr, verbose=False):
         PosdTra = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'sPosition', 'dTra')]
     else:
         PosdTra = 0.0
+
+    if ('lScanRegionPosSag',) in mapVBVDHdr['MeasYaps']:
+        PosdSag += mapVBVDHdr['MeasYaps'][('lScanRegionPosSag',)]
+    if ('lScanRegionPosCor',) in mapVBVDHdr['MeasYaps']:
+        PosdCor += mapVBVDHdr['MeasYaps'][('lScanRegionPosCor',)]
+    if ('lScanRegionPosTra',) in mapVBVDHdr['MeasYaps']:
+        PosdTra += mapVBVDHdr['MeasYaps'][('lScanRegionPosTra',)]
 
     basePosition = np.array([PosdSag, PosdCor, PosdTra], dtype=float)
     imagePositionPatient = basePosition
