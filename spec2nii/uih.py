@@ -112,7 +112,7 @@ def process_uih_svs(img, verbose):
     """Process UIH DICOM SVS data"""
 
     specData = np.frombuffer(img.dcm_data[('5600', '0020')].value, dtype=np.single)
-    specDataCmplx = specData[0::2] - 1j * specData[1::2]
+    specDataCmplx = specData[0::2] + 1j * specData[1::2]
 
     # 1) Extract dicom parameters
     imageOrientationPatient = img.image_orient_patient.T
@@ -135,7 +135,7 @@ def process_uih_csi(img, verbose):
     """Process UIH DICOM MRSI data"""
 
     specData = np.frombuffer(img.dcm_data[('5600', '0020')].value, dtype=np.single)
-    specDataCmplx = specData[0::2] - 1j * specData[1::2]
+    specDataCmplx = specData[0::2] + 1j * specData[1::2]
 
     warn('The orientation of UIH MRSI is relatively untested.'
          ' Please contribute data to help fix this!')
