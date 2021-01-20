@@ -14,6 +14,8 @@ jobs:
             os: ["ubuntu-latest"]
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: true
       - uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: test
@@ -35,4 +37,6 @@ jobs:
         run: |
             conda install pytest
             conda install -c conda-forge pillow
+            pip install .
+            spec2nii -h
             pytest tests
