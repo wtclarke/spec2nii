@@ -34,4 +34,5 @@ jobs:
         shell: bash -l {0}
         run: |
             conda install pytest
+            conda install -c conda-forge pillow
             pytest tests
