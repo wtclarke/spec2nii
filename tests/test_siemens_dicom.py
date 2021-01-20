@@ -6,7 +6,7 @@ Subject to the BSD 3-Clause License.
 
 import subprocess
 from pathlib import Path
-import json
+# import json
 
 import numpy as np
 
