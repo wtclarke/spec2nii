@@ -2,11 +2,19 @@
 Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
 Copyright (C) 2020 University of Oxford
 """
+from datetime import datetime
+
 import numpy as np
 import nibabel.nicom.dicomwrappers
+from nibabel.nicom import csareader as csar
+
 from spec2nii.dcm2niiOrientation.orientationFuncs import dcm_to_nifti_orientation
 from spec2nii import nifti_mrs
-from datetime import datetime
+from mapvbvd.read_twix_hdr import parse_buffer
+
+
+class inconsistentDataError(Exception):
+    pass
 
 
 def svs_or_CSI(img):
@@ -31,6 +39,8 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
     meta_list = []
     series_num = []
     inst_num = []
+    reference = []
+    str_suffix = []
     mainStr = ''
     for idx, fn in enumerate(files_in):
         if verbose:
@@ -57,22 +67,15 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         series_num.append(int(img.dcm_data.SeriesNumber))
         inst_num.append(int(img.dcm_data.InstanceNumber))
 
+        ref_ind, str_suf = identify_integrated_references(img, img.dcm_data.InstanceNumber)
+        reference.append(ref_ind)
+        str_suffix.append(str_suf)
+
         if idx == 0:
             if fname_out:
                 mainStr = fname_out
             else:
                 mainStr = img.dcm_data.SeriesDescription
-
-    # If data shape, orientation, dwelltime and series_num match combine
-    # into one NIFTI MRS object.
-    # Otherwise return a list of files/names
-    def all_equal(lst):
-        return lst[:-1] == lst[1:]
-
-    combine = all_equal([d.shape for d in data_list])\
-        and all_equal([o.Q44.tolist() for o in orientation_list])\
-        and all_equal(dwelltime_list)\
-        and all_equal(series_num)
 
     # Sort by series and instance number
     data_list = np.asarray(data_list)
@@ -81,6 +84,9 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
     meta_list = np.asarray(meta_list)
     series_num = np.asarray(series_num)
     inst_num = np.asarray(inst_num)
+    reference = np.asarray(reference)
+    str_suffix = np.asarray(str_suffix)
+    files_in = np.asarray(files_in)
 
     sort_index = np.lexsort((inst_num, series_num))  # Sort by series then inst
 
@@ -90,29 +96,49 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
     meta_list = meta_list[sort_index]
     series_num = series_num[sort_index]
     inst_num = inst_num[sort_index]
+    reference = reference[sort_index]
+    str_suffix = str_suffix[sort_index]
+    files_in = files_in[sort_index]
+
+    group_ind = []
+    for sn in np.unique(series_num):
+        for rn in np.unique(reference):
+            group_ind.append(list(np.where(np.logical_and(series_num == sn, reference == rn))[0]))
 
     if verbose:
         print(f'Sorted series numbers: {series_num}')
         print(f'Sorted instance numbers: {inst_num}')
+        print(f'Sorted reference index: {reference}')
+        print(f'Output groups: {group_ind}')
 
     nifti_mrs_out, fnames_out = [], []
-    if combine:
-        # Combine files into single MRS NIfTI
-        # Single file name
-        fnames_out.append(mainStr)
+    for idx, gr in enumerate(group_ind):
 
-        dt_used = dwelltime_list[0]
-        or_used = orientation_list[0]
+        # If data shape, orientation, dwelltime match then
+        # proceed
+        def not_equal(lst):
+            return lst[:-1] != lst[1:]
+
+        if not_equal([d.shape for d in data_list[gr]])\
+                and not_equal([o.Q44.tolist() for o in orientation_list[gr]])\
+                and not_equal(dwelltime_list[gr]):
+            raise inconsistentDataError('Shape, orientation and dwelltime must match in combined data.')
+
+        fnames_out.append(mainStr + str_suffix[gr[0]])
+
+        dt_used = dwelltime_list[gr[0]]
+        or_used = orientation_list[gr[0]]
 
         # Add original files to nifti meta information.
-        meta_used = meta_list[0]
-        meta_used.set_standard_def('OriginalFile', [str(ff) for ff in files_in])
+        meta_used = meta_list[gr[0]]
+        meta_used.set_standard_def('OriginalFile', [str(ff) for ff in files_in[gr]])
 
         # Combine data into 5th dimension if needed
-        if len(data_list) > 1:
-            combined_data = np.stack(data_list, axis=-1)
+        data_in_gr = data_list[gr]
+        if len(data_in_gr) > 1:
+            combined_data = np.stack(data_in_gr, axis=-1)
         else:
-            combined_data = data_list[0]
+            combined_data = data_in_gr[0]
 
         # Add dimension information (if not None for default)
         if tag:
@@ -120,25 +146,30 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
 
         # Create NIFTI MRS object.
         nifti_mrs_out.append(nifti_mrs.NIfTI_MRS(combined_data, or_used.Q44, dt_used, meta_used))
-    else:
-        for idx, (dd, oo, dt, mm, ff) in enumerate(zip(data_list,
-                                                   orientation_list,
-                                                   dwelltime_list,
-                                                   meta_list,
-                                                   files_in)):
-            # Add original files to nifti meta information.
-            mm.set_standard_def('OriginalFile', [str(ff), ])
-            fnames_out.append(f'{mainStr}_{series_num[idx]:03}_{inst_num[idx]:03}')
-            nifti_mrs_out.append(nifti_mrs.NIfTI_MRS(dd, oo.Q44, dt, mm))
 
-    return nifti_mrs_out, fnames_out
+    # If there are any identical names then append an index
+    seen = np.unique(fnames_out)
+    if seen.size < len(fnames_out):
+        seen_count = np.zeros(seen.shape, dtype=int)
+        fnames_out_checked = []
+        for fn in fnames_out:
+            if fn in seen:
+                seen_index = seen == fn
+                fnames_out_checked.append(fn + f'_{seen_count[seen_index][0]:03}')
+                seen_count[seen_index] += 1
+            else:
+                fnames_out_checked.append(fn)
+
+        return nifti_mrs_out, fnames_out_checked
+    else:
+        return nifti_mrs_out, fnames_out
 
 
 def process_siemens_svs(img, verbose):
     """Process Siemens DICOM SVS data"""
 
     specData = np.frombuffer(img.dcm_data[('7fe1', '1010')].value, dtype=np.single)
-    specDataCmplx = specData[0::2] - 1j * specData[1::2]
+    specDataCmplx = specData[0::2] + 1j * specData[1::2]
 
     # 1) Extract dicom parameters
     imageOrientationPatient = np.array(img.csa_header['tags']['ImageOrientationPatient']['items']).reshape(2, 3)
@@ -162,7 +193,7 @@ def process_siemens_svs(img, verbose):
 
 def process_siemens_csi(img, verbose):
     specData = np.frombuffer(img.dcm_data[('7fe1', '1010')].value, dtype=np.single)
-    specDataCmplx = specData[0::2] - 1j * specData[1::2]
+    specDataCmplx = specData[0::2] + 1j * specData[1::2]
 
     rows = img.csa_header['tags']['Rows']['items'][0]
     cols = img.csa_header['tags']['Columns']['items'][0]
@@ -266,3 +297,45 @@ def extractDicomMetadata(dcmdata):
     obj.set_standard_def('ConversionTime', conversion_time)
 
     return obj
+
+
+def identify_integrated_references(img, inst_num):
+    '''Heuristics for identifying integrated reference scans in known sequences.
+    Sequences handled: CMRR svs_slaserVOI_dkd
+
+    :param img: nibable dicom image
+
+    :return: Ref scan index 0 = not refderence scan, higher integer splits into groups.
+    :return: name suffix
+    '''
+
+    fullcsa = csar.get_csa_header(img.dcm_data, csa_type='series')
+    xprot = parse_buffer(fullcsa['tags']['MrPhoenixProtocol']['items'][0])
+
+    # Handle CMRR DKD sequence
+    # https://www.cmrr.umn.edu/spectro/
+    # SEMI-LASER (MRM 2011, NMB 2019) Release 2016-12
+    if xprot[('tSequenceFileName',)].strip('"').lower() == '%customerseq%\\svs_slaservoi_dkd'\
+            and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0:
+        num_ref = int(xprot[('sSpecPara', 'lAutoRefScanNo')])
+        num_dyn = int(xprot[('lAverages',)])
+        total_dyn = num_dyn + (num_ref * 4)
+        if inst_num <= num_ref:
+            # First ecc calibration references
+            return 1, '_ecc'
+        elif inst_num > num_ref\
+                and inst_num <= (num_ref * 2):
+            # First quantitation calibration references
+            return 2, '_quant'
+        elif inst_num <= (total_dyn - num_ref)\
+                and inst_num > (total_dyn - (2 * num_ref)):
+            # Second ecc calibration references
+            return 1, '_ecc'
+        elif inst_num <= total_dyn\
+                and inst_num > (total_dyn - num_ref):
+            # Second quantitation calibration references
+            return 2, '_quant'
+        else:
+            return 0, ''
+    else:
+        return 0, ''
