@@ -1,119 +1,341 @@
-""" spec2nii module containing functions specific to interpreting Siemens DICOM
+"""spec2nii module containing functions specific to interpreting Siemens DICOM
 Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
-Copyright (C) 2020 University of Oxford 
+Copyright (C) 2020 University of Oxford
 """
+from datetime import datetime
+
 import numpy as np
-from spec2nii.dcm2niiOrientation.orientationFuncs import nifti_dicom2mat
-from spec2nii.nifti_orientation import NIFTIOrient
+import nibabel.nicom.dicomwrappers
+from nibabel.nicom import csareader as csar
+
+from spec2nii.dcm2niiOrientation.orientationFuncs import dcm_to_nifti_orientation
+from spec2nii import nifti_mrs
+from mapvbvd.read_twix_hdr import parse_buffer
+
+
+class inconsistentDataError(Exception):
+    pass
+
 
 def svs_or_CSI(img):
+    """Identify from the csa headers whether data is CSI or SVS."""
     rows = img.csa_header['tags']['Rows']['items'][0]
     cols = img.csa_header['tags']['Columns']['items'][0]
     slices = img.csa_header['tags']['NumberOfFrames']['items'][0]
 
-    if np.prod([rows,cols,slices])>1.0:
+    if np.prod([rows, cols, slices]) > 1.0:
         return 'CSI'
     else:
         return 'SVS'
 
-def process_siemens_svs(img,args):
-    specData = np.frombuffer(img.dcm_data[('7fe1', '1010')].value, dtype=np.single)
-    specDataCmplx = specData[0::2]+1j*specData[1::2]    
 
-    #1) Extract dicom parameters
-    imageOrientationPatient = np.array(img.csa_header['tags']['ImageOrientationPatient']['items']).reshape(2,3)
+def multi_file_dicom(files_in, fname_out, tag, verbose):
+    """Parse a list of Siemens DICOM files"""
+
+    # Convert each file (combine after)
+    data_list = []
+    orientation_list = []
+    dwelltime_list = []
+    meta_list = []
+    series_num = []
+    inst_num = []
+    reference = []
+    str_suffix = []
+    mainStr = ''
+    for idx, fn in enumerate(files_in):
+        if verbose:
+            print(f'Converting dicom file {fn}')
+
+        img = nibabel.nicom.dicomwrappers.wrapper_from_file(fn)
+
+        mrs_type = svs_or_CSI(img)
+
+        if mrs_type == 'SVS':
+            specDataCmplx, orientation, dwelltime, meta_obj = process_siemens_svs(img, verbose=verbose)
+
+            newshape = (1, 1, 1) + specDataCmplx.shape
+            specDataCmplx = specDataCmplx.reshape(newshape)
+
+        else:
+            specDataCmplx, orientation, dwelltime, meta_obj = process_siemens_csi(img, verbose=verbose)
+
+        data_list.append(specDataCmplx)
+        orientation_list.append(orientation)
+        dwelltime_list.append(dwelltime)
+        meta_list.append(meta_obj)
+
+        series_num.append(int(img.dcm_data.SeriesNumber))
+        inst_num.append(int(img.dcm_data.InstanceNumber))
+
+        ref_ind, str_suf = identify_integrated_references(img, img.dcm_data.InstanceNumber)
+        reference.append(ref_ind)
+        str_suffix.append(str_suf)
+
+        if idx == 0:
+            if fname_out:
+                mainStr = fname_out
+            else:
+                mainStr = img.dcm_data.SeriesDescription
+
+    # Sort by series and instance number
+    data_list = np.asarray(data_list)
+    orientation_list = np.asarray(orientation_list)
+    dwelltime_list = np.asarray(dwelltime_list)
+    meta_list = np.asarray(meta_list)
+    series_num = np.asarray(series_num)
+    inst_num = np.asarray(inst_num)
+    reference = np.asarray(reference)
+    str_suffix = np.asarray(str_suffix)
+    files_in = np.asarray(files_in)
+
+    sort_index = np.lexsort((inst_num, series_num))  # Sort by series then inst
+
+    data_list = data_list[sort_index, :]
+    orientation_list = orientation_list[sort_index]
+    dwelltime_list = dwelltime_list[sort_index]
+    meta_list = meta_list[sort_index]
+    series_num = series_num[sort_index]
+    inst_num = inst_num[sort_index]
+    reference = reference[sort_index]
+    str_suffix = str_suffix[sort_index]
+    files_in = files_in[sort_index]
+
+    group_ind = []
+    for sn in np.unique(series_num):
+        for rn in np.unique(reference):
+            group_ind.append(list(np.where(np.logical_and(series_num == sn, reference == rn))[0]))
+
+    if verbose:
+        print(f'Sorted series numbers: {series_num}')
+        print(f'Sorted instance numbers: {inst_num}')
+        print(f'Sorted reference index: {reference}')
+        print(f'Output groups: {group_ind}')
+
+    nifti_mrs_out, fnames_out = [], []
+    for idx, gr in enumerate(group_ind):
+
+        # If data shape, orientation, dwelltime match then
+        # proceed
+        def not_equal(lst):
+            return lst[:-1] != lst[1:]
+
+        if not_equal([d.shape for d in data_list[gr]])\
+                and not_equal([o.Q44.tolist() for o in orientation_list[gr]])\
+                and not_equal(dwelltime_list[gr]):
+            raise inconsistentDataError('Shape, orientation and dwelltime must match in combined data.')
+
+        fnames_out.append(mainStr + str_suffix[gr[0]])
+
+        dt_used = dwelltime_list[gr[0]]
+        or_used = orientation_list[gr[0]]
+
+        # Add original files to nifti meta information.
+        meta_used = meta_list[gr[0]]
+        meta_used.set_standard_def('OriginalFile', [str(ff) for ff in files_in[gr]])
+
+        # Combine data into 5th dimension if needed
+        data_in_gr = data_list[gr]
+        if len(data_in_gr) > 1:
+            combined_data = np.stack(data_in_gr, axis=-1)
+        else:
+            combined_data = data_in_gr[0]
+
+        # Add dimension information (if not None for default)
+        if tag:
+            meta_used.set_dim_info(0, tag)
+
+        # Create NIFTI MRS object.
+        nifti_mrs_out.append(nifti_mrs.NIfTI_MRS(combined_data, or_used.Q44, dt_used, meta_used))
+
+    # If there are any identical names then append an index
+    seen = np.unique(fnames_out)
+    if seen.size < len(fnames_out):
+        seen_count = np.zeros(seen.shape, dtype=int)
+        fnames_out_checked = []
+        for fn in fnames_out:
+            if fn in seen:
+                seen_index = seen == fn
+                fnames_out_checked.append(fn + f'_{seen_count[seen_index][0]:03}')
+                seen_count[seen_index] += 1
+            else:
+                fnames_out_checked.append(fn)
+
+        return nifti_mrs_out, fnames_out_checked
+    else:
+        return nifti_mrs_out, fnames_out
+
+
+def process_siemens_svs(img, verbose):
+    """Process Siemens DICOM SVS data"""
+
+    specData = np.frombuffer(img.dcm_data[('7fe1', '1010')].value, dtype=np.single)
+    specDataCmplx = specData[0::2] + 1j * specData[1::2]
+
+    # 1) Extract dicom parameters
+    imageOrientationPatient = np.array(img.csa_header['tags']['ImageOrientationPatient']['items']).reshape(2, 3)
+    # VoiPosition - this does not have the FOV shift that imagePositionPatient has
     imagePositionPatient = img.csa_header['tags']['VoiPosition']['items']
     xyzMM = np.array([img.csa_header['tags']['VoiPhaseFoV']['items'][0],
-                    img.csa_header['tags']['VoiReadoutFoV']['items'][0],
-                img.csa_header['tags']['VoiThickness']['items'][0]])
-    # 2) in style of dcm2niix
-    # a) calculate Q44
-    Q44 = nifti_dicom2mat(imageOrientationPatient,imagePositionPatient,xyzMM)
-    # b) calculate nifti quaternion parameters
-    Q44[:2,:] *= -1
-    # qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(Q44)
-    # 3) place in data class for nifti orientation parameters 
-    currNiftiOrientation = NIFTIOrient(Q44)
-    dwelltime = img.csa_header['tags']['RealDwellTime']['items'][0]*1E-9
+                      img.csa_header['tags']['VoiReadoutFoV']['items'][0],
+                      img.csa_header['tags']['VoiThickness']['items'][0]])
+
+    currNiftiOrientation = dcm_to_nifti_orientation(imageOrientationPatient,
+                                                    imagePositionPatient,
+                                                    xyzMM,
+                                                    (1, 1, 1),
+                                                    verbose=verbose)
+
+    dwelltime = img.csa_header['tags']['RealDwellTime']['items'][0] * 1E-9
     meta = extractDicomMetadata(img)
 
-    return specDataCmplx,currNiftiOrientation,dwelltime,meta
+    return specDataCmplx, currNiftiOrientation, dwelltime, meta
 
-def process_siemens_csi(img,args):
+
+def process_siemens_csi(img, verbose):
     specData = np.frombuffer(img.dcm_data[('7fe1', '1010')].value, dtype=np.single)
-    specDataCmplx = specData[0::2]-1j*specData[1::2]
+    specDataCmplx = specData[0::2] + 1j * specData[1::2]
 
     rows = img.csa_header['tags']['Rows']['items'][0]
     cols = img.csa_header['tags']['Columns']['items'][0]
     slices = img.csa_header['tags']['NumberOfFrames']['items'][0]
-    spectral_points = img.csa_header['tags']['DataPointColumns']['items'][0]    
+    spectral_points = img.csa_header['tags']['DataPointColumns']['items'][0]
 
-    specDataCmplx = specDataCmplx.reshape((slices,rows,cols,spectral_points))
-    specDataCmplx = np.moveaxis(specDataCmplx,(0,1,2),(2,1,0))
+    specDataCmplx = specDataCmplx.reshape((slices, rows, cols, spectral_points))
+    specDataCmplx = np.moveaxis(specDataCmplx, (0, 1, 2), (2, 1, 0))
 
-    #1) Extract dicom parameters
-    imageOrientationPatient = np.array(img.csa_header['tags']['ImageOrientationPatient']['items']).reshape(2,3)
+    # 1) Extract dicom parameters
+    imageOrientationPatient = np.array(img.csa_header['tags']['ImageOrientationPatient']['items']).reshape(2, 3)
     imagePositionPatient = np.array(img.csa_header['tags']['ImagePositionPatient']['items'])
     xyzMM = np.array([img.csa_header['tags']['PixelSpacing']['items'][0],
-                  img.csa_header['tags']['PixelSpacing']['items'][1],
-                  img.csa_header['tags']['SliceThickness']['items'][0]])
-    # 2) in style of dcm2niix
-    # a) calculate Q44
-    Q44 = nifti_dicom2mat(imageOrientationPatient,imagePositionPatient,xyzMM)
-    # b) calculate nifti quaternion parameters
-    Q44[:2,:] *= -1
-    # qb,qc,qd,qx,qy,qz,dx,dy,dz,qfac = nifti_mat44_to_quatern(Q44)
-    # 3) place in data class for nifti orientation parameters 
-    currNiftiOrientation = NIFTIOrient(Q44)
-    dwelltime = img.csa_header['tags']['RealDwellTime']['items'][0]*1E-9
+                      img.csa_header['tags']['PixelSpacing']['items'][1],
+                      img.csa_header['tags']['SliceThickness']['items'][0]])
+
+    # Note that half_shift = True. For an explination see spec2nii/notes/seimens.md
+    currNiftiOrientation = dcm_to_nifti_orientation(imageOrientationPatient,
+                                                    imagePositionPatient,
+                                                    xyzMM,
+                                                    specDataCmplx.shape[:3],
+                                                    half_shift=True,
+                                                    verbose=verbose)
+
+    dwelltime = img.csa_header['tags']['RealDwellTime']['items'][0] * 1E-9
     meta = extractDicomMetadata(img)
-    
-    return specDataCmplx,currNiftiOrientation,dwelltime,meta
+
+    return specDataCmplx, currNiftiOrientation, dwelltime, meta
 
 
 def extractDicomMetadata(dcmdata):
-    """ Extract information from the nibabel DICOM objhect to insert into the json sidecar.
-    
+    """ Extract information from the nibabel DICOM object to insert into the json header ext.
+
     Args:
         dcmdata: nibabel.nicom image object
     Returns:
-        metaDict (dict): Json sidecard output
+        obj (hdr_ext): NIfTI MRS hdr ext object.
     """
 
-    metaDict = {}
-    metaDict.update({'Modality':'MR'})
-    metaDict.update({'Manufacturer':dcmdata.dcm_data.Manufacturer})
-    metaDict.update({'ManufacturersModelName':dcmdata.dcm_data.ManufacturerModelName})
-    metaDict.update({'DeviceSerialNumber':dcmdata.dcm_data.DeviceSerialNumber})
-    metaDict.update({'StationName':dcmdata.dcm_data.StationName}) # Not an exact match but close
-    metaDict.update({'SoftwareVersions':dcmdata.dcm_data.SoftwareVersions})
-    metaDict.update({'MagneticFieldStrength':dcmdata.csa_header['tags']['MagneticFieldStrength']['items'][0]})
-    if len(dcmdata.csa_header['tags']['ReceivingCoil']['items'])>0:
-        metaDict.update({'ReceiveCoilName':dcmdata.csa_header['tags']['ReceivingCoil']['items'][0]})
+    # Extract required metadata and create hdr_ext object
+    obj = nifti_mrs.hdr_ext(dcmdata.csa_header['tags']['ImagingFrequency']['items'][0],
+                            dcmdata.csa_header['tags']['ImagedNucleus']['items'][0])
+
+    # Some scanner information
+    def set_standard_def(nifti_mrs_key, location, key, cast=None):
+        try:
+            if cast is not None:
+                obj.set_standard_def(nifti_mrs_key, cast(getattr(location, key)))
+            else:
+                obj.set_standard_def(nifti_mrs_key, getattr(location, key))
+        except AttributeError:
+            pass
+
+    set_standard_def('Manufacturer', dcmdata.dcm_data, 'Manufacturer')
+    set_standard_def('ManufacturersModelName', dcmdata.dcm_data, 'ManufacturerModelName')
+    set_standard_def('DeviceSerialNumber', dcmdata.dcm_data, 'DeviceSerialNumber', cast=str)
+    set_standard_def('SoftwareVersions', dcmdata.dcm_data, 'SoftwareVersions')
+
+    set_standard_def('InstitutionName', dcmdata.dcm_data, 'InstitutionName')
+    set_standard_def('InstitutionAddress', dcmdata.dcm_data, 'InstitutionAddress')
+
+    if len(dcmdata.csa_header['tags']['ReceivingCoil']['items']) > 0:
+        obj.set_user_def(key='ReceiveCoilName',
+                         value=dcmdata.csa_header['tags']['ReceivingCoil']['items'][0],
+                         doc='Rx coil name.')
     else:
-         metaDict.update({'ReceiveCoilName':dcmdata.csa_header['tags']['ImaCoilString']['items'][0]})
-    
-    metaDict.update({'ScanningSequence':dcmdata.csa_header['tags']['ScanningSequence']['items'][0]})
-    metaDict.update({'SequenceVariant':''})
-    metaDict.update({'ScanOptions':''})
-    metaDict.update({'SequenceName':dcmdata.csa_header['tags']['SequenceName']['items'][0]})
-    metaDict.update({'PulseSequenceDetails':''})
-    metaDict.update({'EchoTime':dcmdata.csa_header['tags']['EchoTime']['items'][0]*1E-3})
-    try: 
-        metaDict.update({'InversionTime':dcmdata.csa_header['tags']['InversionTime']['items'][0]})
-    except:
-        metaDict.update({'InversionTime':''})
-    metaDict.update({'Dwelltime':dcmdata.csa_header['tags']['RealDwellTime']['items'][0]*1E-9})
-    metaDict.update({'FlipAngle':dcmdata.csa_header['tags']['FlipAngle']['items'][0]})
-    metaDict.update({'InstitutionName':dcmdata.dcm_data.InstitutionName})
-    metaDict.update({'InstitutionAddress':dcmdata.dcm_data.InstitutionAddress})
-    metaDict.update({'InstitutionalDepartmentName':''})
-    metaDict.update({'TimeStamp':dcmdata.dcm_data.AcquisitionTime})
-    metaDict.update({'Nucleus':dcmdata.csa_header['tags']['ImagedNucleus']['items'][0]})
-    metaDict.update({'ImagingFrequency':dcmdata.csa_header['tags']['ImagingFrequency']['items'][0]})
-    metaDict.update({'RepetitionTime':dcmdata.csa_header['tags']['RepetitionTime']['items'][0]/1E3})
-    if dcmdata.csa_header['tags']['PatientOrientation']['items']:
-        metaDict.update({'PatientPosition':dcmdata.csa_header['tags']['PatientOrientation']['items'][0]})
-    metaDict.update({'ProtocolName':dcmdata.dcm_data.ProtocolName})
-    metaDict.update({'ConversionSoftware':'spec2nii dicom'})
-    return metaDict
+        obj.set_user_def(key='ReceiveCoilName',
+                         value=dcmdata.csa_header['tags']['ImaCoilString']['items'][0],
+                         doc='Rx coil name.')
+
+    # Some sequence information
+    obj.set_standard_def('SequenceName', dcmdata.csa_header['tags']['SequenceName']['items'][0])
+    set_standard_def('ProtocolName', dcmdata.dcm_data, 'ProtocolName')
+
+    obj.set_user_def(key='PulseSequenceFile',
+                     value=dcmdata.csa_header['tags']['SequenceName']['items'][0],
+                     doc='Sequence binary path.')
+    # obj.set_user_def(key='IceProgramFile',
+    #                  value=mapVBVDHdr['Meas'][('tICEProgramName')],
+    #                  doc='Reconstruction binary path.')
+
+    # Some subject information
+    set_standard_def('PatientPosition', dcmdata.dcm_data, 'PatientPosition')
+    set_standard_def('PatientName', dcmdata.dcm_data.PatientName, 'family_name')
+    set_standard_def('PatientWeight', dcmdata.dcm_data, 'PatientWeight', cast=float)
+    set_standard_def('PatientDoB', dcmdata.dcm_data, 'PatientBirthDate')
+    set_standard_def('PatientSex', dcmdata.dcm_data, 'PatientSex')
+
+    # Timing and sequence parameters
+    obj.set_standard_def('EchoTime', dcmdata.csa_header['tags']['EchoTime']['items'][0] * 1E-3)
+    if dcmdata.csa_header['tags']['InversionTime']['n_items'] > 0:
+        obj.set_standard_def('InversionTime', dcmdata.csa_header['tags']['InversionTime']['items'][0])
+    obj.set_standard_def('ExcitationFlipAngle', dcmdata.csa_header['tags']['FlipAngle']['items'][0])
+    obj.set_standard_def('RepetitionTime', dcmdata.csa_header['tags']['RepetitionTime']['items'][0] / 1E3)
+    # TO DO  - nibabel might need updating.
+    # obj.set_standard_def('TxOffset', )
+
+    # Conversion information
+    obj.set_standard_def('ConversionMethod', 'spec2nii')
+    conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')
+    obj.set_standard_def('ConversionTime', conversion_time)
+
+    return obj
+
+
+def identify_integrated_references(img, inst_num):
+    '''Heuristics for identifying integrated reference scans in known sequences.
+    Sequences handled: CMRR svs_slaserVOI_dkd
+
+    :param img: nibable dicom image
+
+    :return: Ref scan index 0 = not refderence scan, higher integer splits into groups.
+    :return: name suffix
+    '''
+
+    fullcsa = csar.get_csa_header(img.dcm_data, csa_type='series')
+    xprot = parse_buffer(fullcsa['tags']['MrPhoenixProtocol']['items'][0])
+
+    # Handle CMRR DKD sequence
+    # https://www.cmrr.umn.edu/spectro/
+    # SEMI-LASER (MRM 2011, NMB 2019) Release 2016-12
+    if xprot[('tSequenceFileName',)].strip('"').lower() == '%customerseq%\\svs_slaservoi_dkd'\
+            and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0:
+        num_ref = int(xprot[('sSpecPara', 'lAutoRefScanNo')])
+        num_dyn = int(xprot[('lAverages',)])
+        total_dyn = num_dyn + (num_ref * 4)
+        if inst_num <= num_ref:
+            # First ecc calibration references
+            return 1, '_ecc'
+        elif inst_num > num_ref\
+                and inst_num <= (num_ref * 2):
+            # First quantitation calibration references
+            return 2, '_quant'
+        elif inst_num <= (total_dyn - num_ref)\
+                and inst_num > (total_dyn - (2 * num_ref)):
+            # Second ecc calibration references
+            return 1, '_ecc'
+        elif inst_num <= total_dyn\
+                and inst_num > (total_dyn - num_ref):
+            # Second quantitation calibration references
+            return 2, '_quant'
+        else:
+            return 0, ''
+    else:
+        return 0, ''
