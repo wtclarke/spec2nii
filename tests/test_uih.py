@@ -52,8 +52,8 @@ def test_uih_svs(tmp_path):
 
     # Manual orientation check
     # Make fsleyes rendering
-    subprocess.check_call(['pythonw', '/Users/wclarke/opt/miniconda3/envs/fsl_mrs/bin/fsleyes',
-                           'render', '-of', tmp_path / 'svs.png',
+    subprocess.check_call(['fsleyes', 'render',
+                           '-of', tmp_path / 'svs.png',
                            '-vl', '245', '296', '10',
                            '-hc', data_base / 'mrs_data/2D_tra.nii.gz',
                            tmp_path / 'svs.nii.gz', '-a', '50', '-cm', 'blue'])
@@ -80,8 +80,8 @@ def test_uih_2d_csi(tmp_path):
 
     # Manual orientation check
     # Make fsleyes rendering
-    subprocess.check_call(['pythonw', '/Users/wclarke/opt/miniconda3/envs/fsl_mrs/bin/fsleyes',
-                           'render', '-of', tmp_path / 'csi_2d.png',
+    subprocess.check_call(['fsleyes', 'render',
+                           '-of', tmp_path / 'csi_2d.png',
                            '-vl', '245', '296', '9',
                            '-hc', data_base / 'mrs_data/2D_tra.nii.gz',
                            tmp_path / 'csi_2d.nii.gz', '-a', '50', '-cm', 'blue', '-dr', '-0.9', '9.7'])
@@ -108,8 +108,8 @@ def test_uih_3d_csi(tmp_path):
 
     # Manual orientation check
     # Make fsleyes rendering
-    subprocess.check_call(['pythonw', '/Users/wclarke/opt/miniconda3/envs/fsl_mrs/bin/fsleyes',
-                           'render', '-of', tmp_path / 'csi_3d.png',
+    subprocess.check_call(['fsleyes', 'render',
+                           '-of', tmp_path / 'csi_3d.png',
                            '-vl', '245', '296', '9',
                            '-hc', data_base / 'mrs_3d/3d_tra.nii.gz',
                            tmp_path / 'csi_3d.nii.gz', '-a', '50', '-cm', 'blue', '-dr', '-0.9', '9.7'])
