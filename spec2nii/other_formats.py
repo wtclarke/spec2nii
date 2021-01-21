@@ -164,6 +164,9 @@ def unpackHeader(header):
         if line.lower().find('dwelltime') > 0:
             tidy_header['dwelltime'] = float(tidy(line).split()[-1])
             tidy_header['bandwidth'] = 1 / float(tidy(line).split()[-1])
+        if line.lower().find('deltat') > 0:
+            tidy_header['dwelltime'] = float(tidy(line).split()[-1])
+            tidy_header['bandwidth'] = 1 / float(tidy(line).split()[-1])
         if line.lower().find('echot') > 0:
             tidy_header['echotime'] = float(tidy(line).split()[-1]) / 1e3
         if line.lower().find('badelt') > 0:
