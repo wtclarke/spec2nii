@@ -38,6 +38,8 @@ jobs:
         run: |
             conda install pytest
             conda install -c conda-forge pillow fsleyes
+            export PYOPENGL_PLATFORM=osmesa
+            printenv PYOPENGL_PLATFORM
             pip install .
             spec2nii -h
             pytest tests --ignore tests/test_siemens_mrsi_orientation.py --ignore tests/test_siemens_svs_orientation.py
