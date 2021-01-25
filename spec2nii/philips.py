@@ -2,7 +2,6 @@
 Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
 Copyright (C) 2020 University of Oxford
 """
-import warnings
 from datetime import datetime
 from ast import literal_eval
 
@@ -91,7 +90,6 @@ def read_sdat(filename, samples, rows):
 
 def _philips_orientation(params):
     '''Calculate the orientation affine from the spar parmaeters.'''
-    warnings.warn('Philips orientation not yet tested.')
 
     angle_lr = params['lr_angulation']
     angle_ap = params['ap_angulation']
