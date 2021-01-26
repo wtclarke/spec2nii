@@ -4,7 +4,7 @@ from setuptools import setup
 import versioneer
 
 with open('requirements.txt', 'rt') as f:
-    install_requires = [l.strip() for l in f.readlines()]
+    install_requires = [line.strip() for line in f.readlines()]
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -21,18 +21,16 @@ setup(name='spec2nii',
       packages=['spec2nii',
                 'spec2nii.GSL',
                 'spec2nii.dcm2niiOrientation',
-                'spec2nii.nifti_mrs'],
+                'spec2nii.nifti_mrs',
+                'spec2nii.GE'],
       install_requires=install_requires,
       classifiers=[
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "License :: OSI Approved :: BSD License",
-        "Operating System :: OS Independent",
-        ],
-      python_requires='>=3.7', 
+          "Programming Language :: Python :: 3",
+          "Programming Language :: Python :: 3.7",
+          "Programming Language :: Python :: 3.8",
+          "License :: OSI Approved :: BSD License",
+          "Operating System :: OS Independent"],
+      python_requires='>=3.7',
       entry_points={"console_scripts": [
-            "spec2nii = spec2nii.spec2nii:main"]
-            }         
-     )
-
+          "spec2nii = spec2nii.spec2nii:main"]}
+      )
