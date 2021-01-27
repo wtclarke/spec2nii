@@ -12,6 +12,9 @@ from PIL import Image, ImageDraw
 
 ge_path = Path(__file__).parent / 'spec2nii_test_data' / 'ge'
 
+output_path = Path(__file__).parent / 'orientation_img'
+output_path.mkdir(exist_ok=True)
+
 # SVS Data paths
 '''1.  Filename:  P03072.7
 Voxel position:  RL 0 - AP 0 - SI 0
@@ -151,7 +154,7 @@ def test_svs_orientation(tmp_path):
         final_img.paste(si, (si.width * r, si.height * c))
         draw.text((10 + si.width * r, 10 + si.height * c), svs_path[idx].stem, (255, 0, 0))
 
-    final_img.save(Path(__file__).parent / 'ge_svs.png')
+    final_img.save(output_path / 'ge_svs.png')
 
 
 @pytest.mark.orientation
@@ -194,4 +197,4 @@ def test_mrsi_orientation(tmp_path):
         final_img.paste(si, (si.width * r, si.height * c))
         draw.text((10 + si.width * r, 10 + si.height * c), mrsi_path[idx].stem, (255, 0, 0))
 
-    final_img.save(Path(__file__).parent / 'ge_mrsi.png')
+    final_img.save(output_path / 'ge_mrsi.png')
