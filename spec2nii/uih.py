@@ -80,7 +80,7 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
 
         # Add original files to nifti meta information.
         meta_used = meta_list[0]
-        meta_used.set_standard_def('OriginalFile', [str(ff) for ff in files_in])
+        meta_used.set_standard_def('OriginalFile', [str(ff.name) for ff in files_in])
 
         # Combine data into 5th dimension if needed
         if len(data_list) > 1:
@@ -101,7 +101,7 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
                                                    meta_list,
                                                    files_in)):
             # Add original files to nifti meta information.
-            mm.set_standard_def('OriginalFile', [str(ff), ])
+            mm.set_standard_def('OriginalFile', [str(ff.name), ])
             fnames_out.append(f'{mainStr}_{idx:03}')
             nifti_mrs_out.append(nifti_mrs.NIfTI_MRS(dd, oo.Q44, dt, mm))
 

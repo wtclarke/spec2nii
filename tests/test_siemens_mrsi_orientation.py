@@ -1,8 +1,13 @@
 import os.path as op
+from pathlib import Path
 import subprocess
 from PIL import Image, ImageDraw
+import pytest
 
 # Data paths
+output_path = Path(__file__).parent / 'orientation_img'
+output_path.mkdir(exist_ok=True)
+
 siemens_path = op.join(op.dirname(__file__), 'spec2nii_test_data', 'Siemens')
 vb_path = op.join(siemens_path, 'VBData')
 ve_path = op.join(siemens_path, 'VEData')
@@ -77,6 +82,7 @@ def crop_and_flip_first_third(img_in):
 
 
 # Test siemens VB svs
+@pytest.mark.orientation
 def test_VB(tmp_path):
     sub_images = []
     for idx, (f_d, name) in enumerate(zip(csi_Data_dicom_vb, csi_data_names_vb)):
@@ -119,9 +125,10 @@ def test_VB(tmp_path):
                   csi_data_names_vb[idx],
                   (255, 0, 0))
 
-    final_img.save(op.join(op.dirname(__file__), 'csi_vb.png'))
+    final_img.save(output_path / 'csi_vb.png')
 
 
+@pytest.mark.orientation
 def test_VE(tmp_path):
     sub_images = []
     for idx, (f_d, name) in enumerate(zip(csi_Data_dicom_ve, csi_data_names_ve)):
@@ -162,4 +169,4 @@ def test_VE(tmp_path):
                   csi_data_names_ve[idx],
                   (255, 0, 0))
 
-    final_img.save(op.join(op.dirname(__file__), 'csi_ve.png'))
+    final_img.save(output_path / 'csi_ve.png')

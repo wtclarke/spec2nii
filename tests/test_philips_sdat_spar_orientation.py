@@ -11,6 +11,9 @@ import pytest
 from PIL import Image, ImageDraw
 
 # Data paths
+output_path = Path(__file__).parent / 'orientation_img'
+output_path.mkdir(exist_ok=True)
+
 philips_path = Path(__file__).parent / 'spec2nii_test_data' / 'philips'
 
 svs_path_sdat = [philips_path / 'P1' / 'SV_PRESS_sh_6_2_raw_act.SDAT',
@@ -103,4 +106,4 @@ def test_svs_orientation(tmp_path):
         final_img.paste(si, (si.width * r, si.height * c))
         draw.text((10 + si.width * r, 10 + si.height * c), f'P{idx + 1}', (255, 0, 0))
 
-    final_img.save(Path(__file__).parent / 'philips_svs.png')
+    final_img.save(output_path / 'philips_svs.png')

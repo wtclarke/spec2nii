@@ -3,8 +3,13 @@ import os.path as op
 import subprocess
 from PIL import Image, ImageDraw
 from .io_for_tests import read_nifti_mrs
+import pytest
+from pathlib import Path
 
 # Data paths
+output_path = Path(__file__).parent / 'orientation_img'
+output_path.mkdir(exist_ok=True)
+
 siemens_path = op.join(op.dirname(__file__), 'spec2nii_test_data', 'Siemens')
 vb_path = op.join(siemens_path, 'VBData')
 ve_path = op.join(siemens_path, 'VEData')
@@ -71,6 +76,7 @@ def crop_and_flip_first_third(img_in):
 
 
 # Test siemens VB svs
+@pytest.mark.orientation
 def test_VB(tmp_path):
     sub_images = []
     for idx, (f_t, f_d, name) in enumerate(zip(svs_data_twix_vb, svs_Data_dicom_vb, svs_data_names_vb)):
@@ -118,9 +124,10 @@ def test_VB(tmp_path):
         final_img.paste(si, (si.width * r, si.height * c))
         draw.text((10 + si.width * r, 10 + si.height * c), svs_data_names_vb[idx], (255, 0, 0))
 
-    final_img.save(op.join(op.dirname(__file__), 'svs_vb.png'))
+    final_img.save(output_path / 'svs_vb.png')
 
 
+@pytest.mark.orientation
 def test_VE(tmp_path):
     sub_images = []
     for idx, (f_t, f_d, name) in enumerate(zip(svs_data_twix_ve, svs_Data_dicom_ve, svs_data_names_ve)):
@@ -175,30 +182,4 @@ def test_VE(tmp_path):
                   svs_data_names_ve[idx],
                   (255, 0, 0))
 
-    final_img.save(op.join(op.dirname(__file__), 'svs_ve.png'))
-
-
-def test_data_size(tmp_path):
-    for idx, (f_t, f_d, name) in enumerate(zip(svs_data_twix_vb, svs_Data_dicom_vb, svs_data_names_vb)):
-        # Convert twix
-        subprocess.check_call(['spec2nii', 'twix',
-                               '-e', 'image',
-                               '-f', name + '_t',
-                               '-o', tmp_path,
-                               '-j', op.join(vb_path, f_t)])
-
-        data_t = read_nifti_mrs(op.join(tmp_path, name + '_t.nii.gz'))
-
-        assert data_t.shape == (1, 1, 1, 1056, 32, 2)
-
-    for idx, (f_t, f_d, name) in enumerate(zip(svs_data_twix_ve, svs_Data_dicom_ve, svs_data_names_ve)):
-        # Convert twix
-        subprocess.check_call(['spec2nii', 'twix',
-                               '-e', 'image',
-                               '-f', name + '_t',
-                               '-o', tmp_path,
-                               '-j', op.join(ve_path, f_t)])
-
-        data_t = read_nifti_mrs(op.join(tmp_path, name + '_t.nii.gz'))
-
-        assert data_t.shape == (1, 1, 1, 1056, 32, 16)
+    final_img.save(output_path / 'svs_ve.png')
