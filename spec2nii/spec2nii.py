@@ -266,22 +266,9 @@ class spec2nii:
         self.fileoutNames.append(mainStr)
 
     def ge(self, args):
-        # philips specific imports
-        from spec2nii.GE import read_p_file
-
-        data, ref_data = read_p_file(args.file)
-
-        # name of output
-        if args.fileout:
-            baseStr = args.fileout
-        else:
-            baseStr = args.file.stem
-
-        self.imageOut.append(data)
-        self.imageOut.append(ref_data)
-
-        self.fileoutNames.append(baseStr)
-        self.fileoutNames.append(baseStr + '_ref')
+        # ge specific imports
+        from spec2nii.GE.ge_pfile import read_pfile
+        self.imageOut, self.fileoutNames = read_pfile(args.file, args.fileout)
 
     def text(self, args):
         from spec2nii.other_formats import text
