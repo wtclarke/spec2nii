@@ -192,6 +192,6 @@ def test_mrsi_orientation(tmp_path):
         c = idx % 2
         r = int(idx / 2)
         final_img.paste(si, (si.width * r, si.height * c))
-        draw.text((10 + si.width * r, 10 + si.height * c), svs_path[idx].stem, (255, 0, 0))
+        draw.text((10 + si.width * r, 10 + si.height * c), mrsi_path[idx].stem, (255, 0, 0))
 
     final_img.save(Path(__file__).parent / 'ge_mrsi.png')
