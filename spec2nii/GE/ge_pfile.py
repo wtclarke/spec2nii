@@ -1,4 +1,7 @@
-'''GE p-file reader
+'''spec2nii module containing functions specific to interpreting the GE pfile format
+
+Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
+Copyright (C) 2020 University of Oxford
 
 This code is adapted from the VESPA project https://scion.duhs.duke.edu/vespa/project.
 I therefore include their BSD statement here.
@@ -35,6 +38,7 @@ I therefore include their BSD statement here.
 # Python modules
 from datetime import datetime
 from os.path import basename
+from warnings import warn
 
 # 3rd party modules
 import numpy as np
@@ -47,11 +51,6 @@ from spec2nii.nifti_orientation import NIFTIOrient
 
 class UnsupportedPulseSequenceError(Exception):
     """Raised when a user selected file does not contain the desired pulse sequence """
-    pass
-
-
-class SIDataError(Exception):
-    '''Currently we don't handle SI data.'''
     pass
 
 
@@ -68,7 +67,7 @@ def read_pfile(filename, fname_out):
     if pfile.is_svs:
         data, fname_suffix = _process_svs_pfile(pfile)
     else:
-        raise SIDataError
+        data, fname_suffix = _process_mrsi_pfile(pfile)
 
     fnames = []
     for fns in fname_suffix:
@@ -159,17 +158,75 @@ def _process_oslaser(pfile):
     return data, fname_suffix
 
 
+def _process_mrsi_pfile(pfile):
+    '''Handle MRSI data
+
+    :param Pfile pfile: Pfile object
+    :return: List of NIFTI MRS data objects
+    :return: List of file name suffixes
+    '''
+    psd = pfile.hdr.rhi_psdname.decode('utf-8').lower()
+
+    if psd != 'probe-p':
+        raise UnsupportedPulseSequenceError('Unrecognised sequence, psdname must be "prob-p".')
+
+    warn('The interpretation of pfile CSI data is poorly tested; rotations or transpositions of the'
+         ' CSI grid could be present. Spec2nii currently lacks a complete set of CSI test data.'
+         ' Please get in touch to help solve this issue!')
+
+    data = np.transpose(pfile.map.raw_data, [0, 1, 2, 5, 4, 3])
+    if data.shape[5] == 1:
+        data = data.squeeze(axis=5)
+
+    # Perform fft
+    def fft_and_shift(x, axis):
+        return np.fft.fftshift(np.fft.fft(x, axis=axis), axes=axis)
+
+    data = fft_and_shift(data, 0)
+    data = fft_and_shift(data, 1)
+    data = fft_and_shift(data, 2)
+
+    dwelltime = 1 / pfile.hdr.rhr_spectral_width
+    meta = _populate_metadata(pfile)
+    orientation = NIFTIOrient(_calculate_affine_mrsi(pfile))
+
+    return [nifti_mrs.NIfTI_MRS(data, orientation.Q44, dwelltime, meta), ], ['', ]
+
+
+def _calculate_affine_mrsi(pfile):
+    '''Calculate the 4x4 affine matrix for mrsi'''
+
+    dcos = pfile.map.get_dcos.T
+    dcos[dcos == 0.0] = 0.0             # remove -0.0 values
+
+    voxel_size = pfile.map.get_voxel_spacing
+    voxel_size_eye = np.diag(voxel_size)
+    voi_position = pfile.map.get_origin_from_center(pfile.map.get_select_box_center,
+                                                    pfile.map.get_num_voxels,
+                                                    pfile.map.get_voxel_spacing,
+                                                    pfile.map.get_dcos)
+
+    affine = np.zeros((4, 4), dtype=np.float)
+    affine[:3, :3] = dcos @ voxel_size_eye
+
+    affine[:3, 3] = voi_position
+    affine[3, 3] = 1.0
+
+    return affine
+
+
 def _calculate_affine(pfile):
     '''Calculate the 4x4 affine matrix'''
 
     dcos = pfile.map.get_dcos.T
     dcos[dcos == 0.0] = 0.0             # remove -0.0 values
 
-    voxel_size = np.diag(pfile.map.get_select_box_size)
+    voxel_size = pfile.map.get_select_box_size
+    voxel_size_eye = np.diag(voxel_size)
     voi_position = pfile.map.get_select_box_center
 
     affine = np.zeros((4, 4), dtype=np.float)
-    affine[:3, :3] = dcos @ voxel_size
+    affine[:3, :3] = dcos @ voxel_size_eye
 
     affine[:3, 3] = voi_position
     affine[3, 3] = 1.0

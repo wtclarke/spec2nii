@@ -901,6 +901,7 @@ class PfileMapper(object):
             center[i] = origin[i]
             for j in range(3):
                 center[i] += dcos[j][i] * voxelSpacing[j] * (numVoxels[j] / 2.0 - 0.5)
+        return center
 
     def get_origin_from_center(self, center, numVoxels, voxelSpacing, dcos): 
         """
@@ -913,6 +914,7 @@ class PfileMapper(object):
             origin[i] = center[i]
             for j in range(3):
                 origin[i] -= dcos[j][i] * voxelSpacing[j] * (numVoxels[j] / 2.0 - 0.5)
+        return origin
 
     def read_data(self):            
         """

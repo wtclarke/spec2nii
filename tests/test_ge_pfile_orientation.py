@@ -39,12 +39,49 @@ svs_path = [ge_path / 'pFiles' / 'svMRS' / 'P03072.7',
             ge_path / 'pFiles' / 'svMRS' / 'P08704.7',
             ge_path / 'pFiles' / 'svMRS' / 'P10240.7']
 
-svs_ss_path = ge_path / 'screenshots'
+ss_path = ge_path / 'screenshots'
 
 t1_pos = [(98, 158, 149),
           (112, 138, 180),
           (79, 117, 90),
           (125, 97, 158)]
+
+# MRSI Data paths
+'''1.  Filename:  P13824.7
+Start:  S 4.8 - R 41.3 - A 3.0
+End:  I 5.1 - L 44.7 - P 66.3
+Rotation:  None
+
+2.  Filename: P15360.7
+Start:  S 37.0 - R 41.7 - P 0.4
+End:  S 27.0 - L 44.3 - P 69.8
+Rotation: Cor 10 deg cw - Ax 30 deg cw
+
+3.  Filename: P16896.7
+Start:  S 5.0 - L 5.8 - A 44.5
+End:  I 4.9 - L 91.9 - P 24.9
+Rotation: Sag 10 deg cw - Cor 30 deg cw
+
+4.  Filename: P18432.7
+Start:  S 6.0 - R 79.4 - P 31.1
+End:  I 3.9 - L 6.6 - P 100.6
+Rotation: Ax 10 deg ccw - Sag 30 deg ccw
+'''
+
+mrsi_path = [ge_path / 'pFiles' / 'MRSI' / 'P13824.7',
+             ge_path / 'pFiles' / 'MRSI' / 'P15360.7',
+             ge_path / 'pFiles' / 'MRSI' / 'P16896.7',
+             ge_path / 'pFiles' / 'MRSI' / 'P18432.7']
+
+mrsi_dcm_path = [ge_path / 'from_dicom' / '9_PROBE_3D_CSI-no_rotation_cNova32ch_i00001.nii.gz',
+                 ge_path / 'from_dicom' / '10_PROBE_3D_CSI-rotation_1_cNova32ch_i00001.nii.gz',
+                 ge_path / 'from_dicom' / '11_PROBE_3D_CSI-rotation_2_cNova32ch_i00001.nii.gz',
+                 ge_path / 'from_dicom' / '12_PROBE_3D_CSI-rotation_3_cNova32ch_i00001.nii.gz']
+
+mrsi_t1_pos = [(98, 128, 149),
+               (98, 118, 180),
+               (72, 166, 157),
+               (130, 102, 146)]
 
 
 def get_concat_v(im1, im2):
@@ -96,13 +133,11 @@ def test_svs_orientation(tmp_path):
                                tmp_path / 'svs.nii.gz', '-a', '50', '-cm', 'blue'])
 
         fsl_ss = Image.open(tmp_path / f'svs_{idx}.png')
-        width, height = fsl_ss.size
         fsl_ss_cropped = crop_and_flip_first_third(fsl_ss)
 
-        ss = get_concat_h(Image.open(svs_ss_path / f'svs_{idx + 1}.0001.jpg'),
-                          Image.open(svs_ss_path / f'svs_{idx + 1}.0002.jpg'),
-                          Image.open(svs_ss_path / f'svs_{idx + 1}.0003.jpg'))
-        width, height = ss.size
+        ss = get_concat_h(Image.open(ss_path / f'svs_{idx + 1}.0001.jpg'),
+                          Image.open(ss_path / f'svs_{idx + 1}.0002.jpg'),
+                          Image.open(ss_path / f'svs_{idx + 1}.0003.jpg'))
         ss_cropped = ss  # ss.crop((0, 110, width - 50, height / 2 - 30))
 
         fsl_ss_cropped = fsl_ss_cropped.resize(ss_cropped.size)
@@ -117,3 +152,46 @@ def test_svs_orientation(tmp_path):
         draw.text((10 + si.width * r, 10 + si.height * c), svs_path[idx].stem, (255, 0, 0))
 
     final_img.save(Path(__file__).parent / 'ge_svs.png')
+
+
+@pytest.mark.orientation
+def test_mrsi_orientation(tmp_path):
+
+    sub_images = []
+    for idx, (pfile, dcm, pos) in enumerate(zip(mrsi_path, mrsi_dcm_path, mrsi_t1_pos)):
+        subprocess.check_call(['spec2nii', 'ge',
+                               '-f', 'mrsi',
+                               '-o', tmp_path,
+                               '-j',
+                               str(pfile)])
+
+        # Make fsleyes rendering
+        subprocess.check_call(['fsleyes', 'render',
+                               '-of', tmp_path / f'mrsi_{idx}.png',
+                               '-vl', str(pos[0]), str(pos[1]), str(pos[2]),
+                               '-xc', '0', '0', '-yc', '0', '0', '-zc', '0', '0',
+                               '-hc', ge_path / 'from_dicom' / 'T1.nii.gz',
+                               '-dr', '-211', '7400',
+                               str(dcm), '-a', '50', '-cm', 'red',
+                               tmp_path / 'mrsi.nii.gz', '-a', '50', '-cm', 'blue'])
+
+        fsl_ss = Image.open(tmp_path / f'mrsi_{idx}.png')
+        fsl_ss_cropped = crop_and_flip_first_third(fsl_ss)
+
+        ss = get_concat_h(Image.open(ss_path / f'mrsi_{idx + 1}.0001.jpg'),
+                          Image.open(ss_path / f'mrsi_{idx + 1}.0002.jpg'),
+                          Image.open(ss_path / f'mrsi_{idx + 1}.0003.jpg'))
+        ss_cropped = ss  # ss.crop((0, 110, width - 50, height / 2 - 30))
+
+        fsl_ss_cropped = fsl_ss_cropped.resize(ss_cropped.size)
+        sub_images.append(get_concat_v(fsl_ss_cropped, ss_cropped))
+
+    final_img = Image.new('RGB', (sub_images[0].width * 2, sub_images[0].height * 2))
+    draw = ImageDraw.Draw(final_img)
+    for idx, si in enumerate(sub_images):
+        c = idx % 2
+        r = int(idx / 2)
+        final_img.paste(si, (si.width * r, si.height * c))
+        draw.text((10 + si.width * r, 10 + si.height * c), svs_path[idx].stem, (255, 0, 0))
+
+    final_img.save(Path(__file__).parent / 'ge_mrsi.png')
