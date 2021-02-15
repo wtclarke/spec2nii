@@ -1,0 +1,33 @@
+{
+    "SpectrometerFrequency": [
+        {
+          "cmd": "[#VisuAcqImagingFrequency,]",
+          "conditions": []
+        }
+    ],
+    "ResonantNucleus": [
+        {
+          "cmd": "[#VisuAcqImagedNucleus[1:-1]]",
+          "conditions": []
+        }
+    ],
+    "is_spectroscopy": [
+      {
+        "cmd": "'spectroscopic' in #VisuCoreDimDesc.list",
+        "conditions": []
+      }
+    ],
+    "is_complex": [
+      {
+        "cmd": "True",
+        "conditions": [
+          "#VisuCoreFrameType.list[0]=='REAL_IMAGE'"
+        ]
+      },
+      {
+        "cmd": "False",
+        "conditions": [
+        ]
+      }
+    ]
+  }
