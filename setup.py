@@ -32,5 +32,6 @@ setup(name='spec2nii',
           "Operating System :: OS Independent"],
       python_requires='>=3.7',
       entry_points={"console_scripts": [
-          "spec2nii = spec2nii.spec2nii:main"]}
+          "spec2nii = spec2nii.spec2nii:main"]},
+      data_files=[('spec2nii', ['spec2nii/bruker_properties.json'])]
       )
