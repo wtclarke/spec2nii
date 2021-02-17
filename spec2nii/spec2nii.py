@@ -86,6 +86,14 @@ class spec2nii:
         parser_philips = add_common_parameters(parser_philips)
         parser_philips.set_defaults(func=self.philips)
 
+        # Handle philips DICOM subcommand
+        parser_philips_dicom = subparsers.add_parser('philips_dcm', help='Convert from Philips DICOM format.')
+        parser_philips_dicom.add_argument('file', help='file or directory to convert', type=str)
+        parser_philips_dicom.add_argument("-t", "--tag", type=str, help="Specify NIfTI MRS tag used for 5th "
+                                                                        "dimension if multiple files are passed.")
+        parser_philips_dicom = add_common_parameters(parser_philips_dicom)
+        parser_philips_dicom.set_defaults(func=self.philips_dicom)
+
         # Handle GE subcommand
         parser_ge = subparsers.add_parser('ge', help='Convert from GE p-file format.')
         parser_ge.add_argument('file', help='file to convert', type=Path)
@@ -230,7 +238,7 @@ class spec2nii:
 
     # (UIH) DICOM (.dcm) format
     def uih_dicom(self, args):
-        """UIH (and other?) DICOM format handler."""
+        """UIH DICOM format handler."""
         from spec2nii.uih import multi_file_dicom
         path_in = Path(args.file)
         if path_in.is_dir():
@@ -265,6 +273,30 @@ class spec2nii:
 
         self.fileoutNames.append(mainStr)
 
+    # Philips DICOM handler
+    def philips_dicom(self, args):
+        """Philips DICOM format handler."""
+        from warnings import warn
+        from spec2nii.philips_dcm import multi_file_dicom
+        warn('This Philips DICOM conversion routine is experimental and poorly tested.'
+             ' Please get in contact with test data to help improve it.')
+        path_in = Path(args.file)
+        if path_in.is_dir():
+            # Look for typical dicom file extensions
+            files_in = sorted(path_in.glob('*.dcm'))
+
+            # If none found look for all files
+            if len(files_in) == 0:
+                files_in = sorted([x for x in path_in.iterdir() if x.is_file()])
+
+            print(f'Found {len(files_in)} files.')
+        else:
+            print('Single file conversion.')
+            files_in = [path_in]
+
+        self.imageOut, self.fileoutNames = multi_file_dicom(files_in, args.fileout, args.tag, args.verbose)
+
+    # GE p file handler
     def ge(self, args):
         # ge specific imports
         from spec2nii.GE.ge_pfile import read_pfile

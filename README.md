@@ -51,10 +51,17 @@ NIfTI MRS dimension tags (e.g. `DIM_COIL`) can be specified using the `-t` comma
 NIfTI MRS dimension tags (e.g. `DIM_COIL`) can be specified using the `-t` command line argument.
 
 ### GE
-`spec2nii GE FILE`
+`spec2nii ge FILE`
 
 ### Philips
-`spec2nii GE SDAT_FILE SPAR_FILE`
+`spec2nii philips SDAT_FILE SPAR_FILE`
+
+### Philips DICOM
+`spec2nii philips_dcm DCM_FILE_or_DIR`
+
+NIfTI MRS dimension tags (e.g. `DIM_COIL`) can be specified using the `-t` command line argument.
+
+Generates separate reference file.
 
 ### Text/LCModel/jMRUI
 Conversion from processed formats.
