@@ -16,6 +16,7 @@ This table lists the currently supported formats. I have very limited experience
 | Siemens Twix  | .dat           | Yes | No  | Yes                   |
 | Siemens DICOM | .ima / .dcm    | Yes | Yes | Yes                   |
 | Philips       | .SPAR/.SDAT    | Yes | No  | Yes                   |
+| Philips DICOM | .dcm           | Yes | No  | Yes                   |
 | GE            | .7 (pfile)     | Yes | Yes | Yes                   |
 | UIH DICOM     | .dcm           | Yes | Yes | Yes                   |
 | LCModel       | .RAW           | Yes | No  | No                    |

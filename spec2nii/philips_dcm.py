@@ -51,12 +51,21 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
             newshape = (1, 1, 1) + specDataCmplx.shape
             spec_data = specDataCmplx.reshape(newshape)
             spec_ref = spec_ref.reshape(newshape)
+
+            # Data appears to require conjugation to meet standard's conventions.
+            spec_data = spec_data.conj()
+            spec_ref = spec_ref.conj()
+
         elif mrs_type == 'FID':
             specDataCmplx, spec_ref, orientation, dwelltime, meta_obj = _process_philips_fid(img, verbose)
 
             newshape = (1, 1, 1) + specDataCmplx.shape
             spec_data = specDataCmplx.reshape(newshape)
             spec_ref = spec_ref.reshape(newshape)
+
+            # Data appears to require conjugation to meet standard's conventions.
+            spec_data = spec_data.conj()
+            spec_ref = spec_ref.conj()
         else:
             raise CSINotHandledError('CSI data is currently not handled for the Philips DICOM format.'
                                      'Please contact the developers if you have examples of this type of data.')
