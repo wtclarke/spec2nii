@@ -7,6 +7,7 @@ import re
 from spec2nii.nifti_orientation import NIFTIOrient
 from spec2nii import nifti_mrs
 from datetime import datetime
+from spec2nii import __version__ as spec2nii_ver
 
 
 default_nuc_index = [None, "1H", "31P", "13C", "19F", "23NA"]
@@ -299,7 +300,7 @@ def jmrui_hdr_to_obj(header):
     if 'NameOfPatient' in header:
         meta.set_standard_def('PatientName', header['NameOfPatient'])
 
-    meta.set_standard_def('ConversionMethod', 'spec2nii')
+    meta.set_standard_def('ConversionMethod', f'spec2nii v{spec2nii_ver}')
     conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')
     meta.set_standard_def('ConversionTime', conversion_time)
 

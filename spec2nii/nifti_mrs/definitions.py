@@ -28,6 +28,43 @@ required = {'SpectrometerFrequency':
              'type': (list, str)}}
 
 # Defined metadata fields
+# # 5.1 MRS specific Tags
+# 'EchoTime'
+# 'RepetitionTime'
+# 'InversionTime'
+# 'MixingTime'
+# 'ExcitationFlipAngle'
+# 'TxOffset'
+# 'VOI'
+# 'WaterSuppressed'
+# 'WaterSuppressionType'
+# 'SequenceTriggered'
+# # 5.2 Scanner information
+# 'Manufacturer'
+# 'ManufacturersModelName'
+# 'DeviceSerialNumber'
+# 'SoftwareVersions'
+# 'InstitutionName'
+# 'InstitutionAddress'
+# 'TxCoil'
+# 'RxCoil'
+# # 5.3 Sequence information
+# 'SequenceName'
+# 'ProtocolName'
+# # 5.4 Sequence information
+# 'PatientPosition'
+# 'PatientName'
+# 'PatientID'
+# 'PatientWeight'
+# 'PatientDoB'
+# 'PatientSex'
+# # 5.5 Provenance and conversion metadata
+# 'ConversionMethod'
+# 'ConversionTime'
+# 'OriginalFile'
+# # 5.6 Spatial information
+# 'kSpace'
+
 # These fields are optional but must not be redefined.
 # Format is a dict of tuples containing (type, unit string, doc string, anonymisation state)
 standard_defined = {

@@ -11,6 +11,7 @@ from nibabel.nicom import csareader as csar
 from spec2nii.dcm2niiOrientation.orientationFuncs import dcm_to_nifti_orientation
 from spec2nii import nifti_mrs
 from mapvbvd.read_twix_hdr import parse_buffer
+from spec2nii import __version__ as spec2nii_ver
 
 
 class inconsistentDataError(Exception):
@@ -236,7 +237,7 @@ def extractDicomMetadata(dcmdata):
     obj = nifti_mrs.hdr_ext(dcmdata.csa_header['tags']['ImagingFrequency']['items'][0],
                             dcmdata.csa_header['tags']['ImagedNucleus']['items'][0])
 
-    # Some scanner information
+    # Standard defined metadata
     def set_standard_def(nifti_mrs_key, location, key, cast=None):
         try:
             if cast is not None:
@@ -246,54 +247,78 @@ def extractDicomMetadata(dcmdata):
         except AttributeError:
             pass
 
+    # # 5.1 MRS specific Tags
+    # 'EchoTime'
+    obj.set_standard_def('EchoTime', float(dcmdata.csa_header['tags']['EchoTime']['items'][0] * 1E-3))
+    # 'RepetitionTime'
+    obj.set_standard_def('RepetitionTime', float(dcmdata.csa_header['tags']['RepetitionTime']['items'][0] / 1E3))
+    # 'InversionTime'
+    if dcmdata.csa_header['tags']['InversionTime']['n_items'] > 0:
+        obj.set_standard_def('InversionTime', float(dcmdata.csa_header['tags']['InversionTime']['items'][0]))
+    # 'MixingTime'
+    # 'ExcitationFlipAngle'
+    obj.set_standard_def('ExcitationFlipAngle', float(dcmdata.csa_header['tags']['FlipAngle']['items'][0]))
+    # 'TxOffset'
+    # 'VOI'
+    # 'WaterSuppressed'
+    # 'WaterSuppressionType'
+    # 'SequenceTriggered'
+    # # 5.2 Scanner information
+    # 'Manufacturer'
     set_standard_def('Manufacturer', dcmdata.dcm_data, 'Manufacturer')
+    # 'ManufacturersModelName'
     set_standard_def('ManufacturersModelName', dcmdata.dcm_data, 'ManufacturerModelName')
+    # 'DeviceSerialNumber'
     set_standard_def('DeviceSerialNumber', dcmdata.dcm_data, 'DeviceSerialNumber', cast=str)
+    # 'SoftwareVersions'
     set_standard_def('SoftwareVersions', dcmdata.dcm_data, 'SoftwareVersions')
-
+    # 'InstitutionName'
     set_standard_def('InstitutionName', dcmdata.dcm_data, 'InstitutionName')
+    # 'InstitutionAddress'
     set_standard_def('InstitutionAddress', dcmdata.dcm_data, 'InstitutionAddress')
-
+    # 'TxCoil'
+    # 'RxCoil'
     if len(dcmdata.csa_header['tags']['ReceivingCoil']['items']) > 0:
-        obj.set_user_def(key='ReceiveCoilName',
-                         value=dcmdata.csa_header['tags']['ReceivingCoil']['items'][0],
-                         doc='Rx coil name.')
+        obj.set_standard_def('RxCoil',
+                             dcmdata.csa_header['tags']['ReceivingCoil']['items'][0])
     else:
-        obj.set_user_def(key='ReceiveCoilName',
-                         value=dcmdata.csa_header['tags']['ImaCoilString']['items'][0],
-                         doc='Rx coil name.')
-
-    # Some sequence information
+        obj.set_standard_def('RxCoil',
+                             dcmdata.csa_header['tags']['ImaCoilString']['items'][0])
+    # # 5.3 Sequence information
+    # 'SequenceName'
     obj.set_standard_def('SequenceName', dcmdata.csa_header['tags']['SequenceName']['items'][0])
+    # 'ProtocolName'
     set_standard_def('ProtocolName', dcmdata.dcm_data, 'ProtocolName')
+    # # 5.4 Sequence information
+    # 'PatientPosition'
+    set_standard_def('PatientPosition', dcmdata.dcm_data, 'PatientPosition')
+    # 'PatientName'
+    set_standard_def('PatientName', dcmdata.dcm_data.PatientName, 'family_name')
+    # 'PatientID'
+    # 'PatientWeight'
+    set_standard_def('PatientWeight', dcmdata.dcm_data, 'PatientWeight', cast=float)
+    # 'PatientDoB'
+    set_standard_def('PatientDoB', dcmdata.dcm_data, 'PatientBirthDate')
+    # 'PatientSex'
+    set_standard_def('PatientSex', dcmdata.dcm_data, 'PatientSex')
+    # # 5.5 Provenance and conversion metadata
+    obj.set_standard_def('ConversionMethod', f'spec2nii v{spec2nii_ver}')
+    # 'ConversionTime'
+    conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')
+    obj.set_standard_def('ConversionTime', conversion_time)
+    # 'OriginalFile'
+    # Set elsewhere
+    # # 5.6 Spatial information
+    # 'kSpace'
+    obj.set_standard_def('kSpace', [False, False, False])
 
+    # Some additional sequence information
     obj.set_user_def(key='PulseSequenceFile',
                      value=dcmdata.csa_header['tags']['SequenceName']['items'][0],
                      doc='Sequence binary path.')
     # obj.set_user_def(key='IceProgramFile',
     #                  value=mapVBVDHdr['Meas'][('tICEProgramName')],
     #                  doc='Reconstruction binary path.')
-
-    # Some subject information
-    set_standard_def('PatientPosition', dcmdata.dcm_data, 'PatientPosition')
-    set_standard_def('PatientName', dcmdata.dcm_data.PatientName, 'family_name')
-    set_standard_def('PatientWeight', dcmdata.dcm_data, 'PatientWeight', cast=float)
-    set_standard_def('PatientDoB', dcmdata.dcm_data, 'PatientBirthDate')
-    set_standard_def('PatientSex', dcmdata.dcm_data, 'PatientSex')
-
-    # Timing and sequence parameters
-    obj.set_standard_def('EchoTime', float(dcmdata.csa_header['tags']['EchoTime']['items'][0] * 1E-3))
-    if dcmdata.csa_header['tags']['InversionTime']['n_items'] > 0:
-        obj.set_standard_def('InversionTime', float(dcmdata.csa_header['tags']['InversionTime']['items'][0]))
-    obj.set_standard_def('ExcitationFlipAngle', float(dcmdata.csa_header['tags']['FlipAngle']['items'][0]))
-    obj.set_standard_def('RepetitionTime', float(dcmdata.csa_header['tags']['RepetitionTime']['items'][0] / 1E3))
-    # TO DO  - nibabel might need updating.
-    # obj.set_standard_def('TxOffset', )
-
-    # Conversion information
-    obj.set_standard_def('ConversionMethod', 'spec2nii')
-    conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')
-    obj.set_standard_def('ConversionTime', conversion_time)
 
     return obj
 

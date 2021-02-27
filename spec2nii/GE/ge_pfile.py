@@ -47,6 +47,7 @@ import numpy as np
 from spec2nii.GE.ge_read_pfile import Pfile
 from spec2nii import nifti_mrs
 from spec2nii.nifti_orientation import NIFTIOrient
+from spec2nii import __version__ as spec2nii_ver
 
 
 class UnsupportedPulseSequenceError(Exception):
@@ -89,18 +90,11 @@ def _process_svs_pfile(pfile):
     psd = pfile.hdr.rhi_psdname.decode('utf-8').lower()
 
     if psd == 'probe-p':
-        data, fname_suffix = _process_probe_p(pfile)
+        data, meta, dwelltime, fname_suffix = _process_probe_p(pfile)
     elif psd == 'oslaser':
-        data, fname_suffix = _process_oslaser(pfile)
+        data, meta, dwelltime, fname_suffix = _process_oslaser(pfile)
     else:
         raise UnsupportedPulseSequenceError('Unrecognised sequence, psdname must be "prob-p" or "oslaser".')
-
-    dwelltime = 1 / pfile.hdr.rhr_spectral_width
-    meta = []
-
-    for dd in data:
-        mm = _populate_metadata(pfile)
-        meta.append(mm)
 
     orientation = NIFTIOrient(_calculate_affine(pfile))
 
@@ -125,13 +119,18 @@ def _process_probe_p(pfile):
     water = pfile.map.raw_unsuppressed                  # typically (1,1,1,navg,ncoil,npts)
     water = np.transpose(water, [0, 1, 2, 5, 4, 3])     # swap to (1,1,1,npts,ncoil,navg)
 
-    return [metab, water], ['', '_ref']
+    dwelltime = 1 / pfile.hdr.rhr_spectral_width
+
+    meta = _populate_metadata(pfile, water_suppressed=True)
+    meta_ref = _populate_metadata(pfile, water_suppressed=False)
+
+    return [metab, water], [meta, meta_ref], dwelltime, ['', '_ref']
 
 
 def _process_oslaser(pfile):
     '''Extract metabolite and reference data from a oslaser format pfile
 
-    I think this is the CMRR sLASER sequence with 2 ecc and 2 water scaling
+    I think this is like the CMRR sLASER sequence with 2 ecc and 2 water scaling
     scans at the start and end of each acquisition.
 
     :param Pfile pfile: Pfile object
@@ -145,17 +144,23 @@ def _process_oslaser(pfile):
     water = np.transpose(water, [0, 1, 2, 5, 4, 3])     # swap to (1,1,1,npts,ncoil,navg)
 
     data = []
+    meta = []
     fname_suffix = []
 
     data.append(water[:, :, :, :, :, [0, 1, 4, 5]])
+    meta.append(_populate_metadata(pfile, water_suppressed=False))
     fname_suffix.append('_quant')
     data.append(water[:, :, :, :, :, [2, 3, 6, 7]])
+    meta.append(_populate_metadata(pfile, water_suppressed=False))
     fname_suffix.append('_ecc')
 
     data.append(metab)
+    meta.append(_populate_metadata(pfile, water_suppressed=True))
     fname_suffix.append('')
 
-    return data, fname_suffix
+    dwelltime = 1 / pfile.hdr.rhr_spectral_width
+
+    return data, dwelltime, fname_suffix
 
 
 def _process_mrsi_pfile(pfile):
@@ -168,7 +173,7 @@ def _process_mrsi_pfile(pfile):
     psd = pfile.hdr.rhi_psdname.decode('utf-8').lower()
 
     if psd != 'probe-p':
-        raise UnsupportedPulseSequenceError('Unrecognised sequence, psdname must be "prob-p".')
+        raise UnsupportedPulseSequenceError('Unrecognised sequence, psdname must be "probe-p".')
 
     warn('The interpretation of pfile CSI data is poorly tested; rotations or transpositions of the'
          ' CSI grid could be present. Spec2nii currently lacks a complete set of CSI test data.'
@@ -234,7 +239,7 @@ def _calculate_affine(pfile):
     return affine
 
 
-def _populate_metadata(pfile):
+def _populate_metadata(pfile, water_suppressed=True):
     ''' Populate a nifti-mrs header extension with the requisite information'''
     hdr = pfile.hdr
     spec_frequency = float(pfile.hdr.rhr_rh_ps_mps_freq) / 1e7
@@ -253,26 +258,65 @@ def _populate_metadata(pfile):
     meta = nifti_mrs.hdr_ext(spec_frequency,
                              nucleus)
 
+    # Standard defined metadata
+    # # 5.1 MRS specific Tags
+    # 'EchoTime'
+    meta.set_standard_def('EchoTime', float(hdr.rhi_te))
+    # 'RepetitionTime'
+    meta.set_standard_def('RepetitionTime', float(hdr.rhi_tr))
+    # 'InversionTime'
+    meta.set_standard_def('InversionTime', float(hdr.rhi_ti))
+    # 'MixingTime'
+    # Not known
+    # 'ExcitationFlipAngle'
+    meta.set_standard_def('ExcitationFlipAngle', float(hdr.rhi_mr_flip))
+    # 'TxOffset'
+    # Not known
+    # 'VOI'
+    # Not known
+    # 'WaterSuppressed'
+    meta.set_standard_def('WaterSuppressed', water_suppressed)
+    # 'WaterSuppressionType'
+    # Not Known
+    # 'SequenceTriggered'
+    # Not Known
+
+    # # 5.2 Scanner information
+    # 'Manufacturer'
     meta.set_standard_def('Manufacturer', 'GE')
+    # 'ManufacturersModelName'
     meta.set_standard_def('ManufacturersModelName', hdr.rhe_ex_sysid.decode('utf-8'))
+    # 'DeviceSerialNumber'
     meta.set_standard_def('DeviceSerialNumber', hdr.rhe_uniq_sys_id.decode('utf-8'))
+    # 'SoftwareVersions'
     meta.set_standard_def('SoftwareVersions', hdr.rhe_ex_verscre.decode('utf-8'))
-
+    # 'InstitutionName'
     meta.set_standard_def('InstitutionName', hdr.rhe_hospname.decode('utf-8'))
-    # meta.set_standard_def('InstitutionAddress', )
-
+    # 'InstitutionAddress'
+    # Not known
+    # 'TxCoil'
+    # Not Known
+    # 'RxCoil'
     meta.set_user_def(key='ReceiveCoilName', value=hdr.rhi_cname.decode('utf-8'), doc='Rx coil name.')
 
-    # Some sequence information
+    # # 5.3 Sequence information
+    # 'SequenceName'
     meta.set_standard_def('SequenceName', hdr.rhi_psdname.decode('utf-8'))
+    # 'ProtocolName'
     meta.set_standard_def('ProtocolName', hdr.rhs_se_desc.decode('utf-8'))
 
-    # Some subject information
-    # meta.set_standard_def('PatientPosition',)
+    # # 5.4 Sequence information
+    # 'PatientPosition'
+    # Not known
+    # 'PatientName'
     meta.set_standard_def('PatientName', hdr.rhe_patname.decode('utf-8'))
-    # meta.set_standard_def('PatientWeight', )
+    # 'PatientID'
+    # Not known
+    # 'PatientWeight'
+    # Not known
+    # 'PatientDoB'
     meta.set_standard_def('PatientDoB', hdr.rhe_dateofbirth.decode('utf-8'))
-
+    # 'PatientSex'
     if hdr.rhe_patsex == 1:
         sex_str = 'M'
     elif hdr.rhe_patsex == 2:
@@ -280,17 +324,16 @@ def _populate_metadata(pfile):
     else:
         sex_str = 'O'
     meta.set_standard_def('PatientSex', sex_str)
-
-    # Timing and sequence parameters
-    meta.set_standard_def('InversionTime', float(hdr.rhi_ti))
-    meta.set_standard_def('ExcitationFlipAngle', float(hdr.rhi_mr_flip))
-    # meta.set_standard_def('TxOffset', )
-    meta.set_standard_def('EchoTime', float(hdr.rhi_te))
-    meta.set_standard_def('RepetitionTime', float(hdr.rhi_tr))
-
-    meta.set_standard_def('ConversionMethod', 'spec2nii')
+    # # 5.5 Provenance and conversion metadata
+    # 'ConversionMethod'
+    meta.set_standard_def('ConversionMethod', f'spec2nii v{spec2nii_ver}')
+    # 'ConversionTime'
     conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')
     meta.set_standard_def('ConversionTime', conversion_time)
+    # 'OriginalFile'
     meta.set_standard_def('OriginalFile', [basename(pfile.file_name)])
+    # # 5.6 Spatial information
+    # 'kSpace'
+    meta.set_standard_def('kSpace', [False, False, False])
 
     return meta

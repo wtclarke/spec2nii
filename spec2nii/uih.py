@@ -10,6 +10,7 @@ from spec2nii.nifti_orientation import NIFTIOrient
 from spec2nii import nifti_mrs
 from datetime import datetime
 from warnings import warn
+from spec2nii import __version__ as spec2nii_ver
 
 
 def svs_or_CSI(img):
@@ -194,48 +195,72 @@ def extractDicomMetadata(dcmdata):
     obj = nifti_mrs.hdr_ext(dcmdata.dcm_data.TransmitterFrequency,
                             dcmdata.dcm_data.ResonantNucleus)
 
-    # Some scanner information
-    obj.set_standard_def('Manufacturer', dcmdata.dcm_data.Manufacturer)
-    obj.set_standard_def('ManufacturersModelName', dcmdata.dcm_data.ManufacturerModelName)
-    obj.set_standard_def('DeviceSerialNumber', str(dcmdata.dcm_data.DeviceSerialNumber))
-    obj.set_standard_def('SoftwareVersions', dcmdata.dcm_data.SoftwareVersions)
-
-    obj.set_standard_def('InstitutionName', dcmdata.dcm_data.InstitutionName)
-    obj.set_standard_def('InstitutionAddress', dcmdata.dcm_data.InstitutionAddress)
-
-    # No apparent Rx Coil name in header.
-
-    # Some sequence information
-    obj.set_standard_def('SequenceName', dcmdata.dcm_data.SequenceName)
-    obj.set_standard_def('ProtocolName', dcmdata.dcm_data.ProtocolName)
-
-    # Some subject information
-    obj.set_standard_def('PatientPosition', dcmdata.dcm_data.PatientPosition)
-
     def set_if_present(tag, val):
         if val:
             obj.set_standard_def(tag, val)
-    set_if_present('PatientDoB', dcmdata.dcm_data.PatientBirthDate)
-    set_if_present('PatientSex', dcmdata.dcm_data.PatientSex)
-
-    if dcmdata.dcm_data.PatientName:
-        obj.set_standard_def('PatientName', dcmdata.dcm_data.PatientName.family_name)
-
-    if dcmdata.dcm_data.PatientWeight:
-        obj.set_standard_def('PatientWeight', float(dcmdata.dcm_data.PatientWeight))
-
-    # Timing and sequence parameters
+    # Standard defined
+    # # 5.1 MRS specific Tags
+    # 'EchoTime'
     obj.set_standard_def('EchoTime', float(dcmdata.dcm_data.EchoTime) * 1E-3)
+    # 'RepetitionTime'
+    obj.set_standard_def('RepetitionTime', float(dcmdata.dcm_data.RepetitionTime) / 1E3)
+    # 'InversionTime'
     if 'InversionTime' in dcmdata.dcm_data:
         obj.set_standard_def('InversionTime', float(dcmdata.dcm_data.InversionTime) * 1E-3)
+    # 'MixingTime'
+    # 'ExcitationFlipAngle'
     obj.set_standard_def('ExcitationFlipAngle', float(dcmdata.dcm_data.FlipAngle))
-    obj.set_standard_def('RepetitionTime', float(dcmdata.dcm_data.RepetitionTime) / 1E3)
-    # TO DO  - nibabel might need updating.
-    # obj.set_standard_def('TxOffset', )
-
-    # Conversion information
-    obj.set_standard_def('ConversionMethod', 'spec2nii')
+    # 'TxOffset'
+    # 'VOI'
+    # 'WaterSuppressed'
+    # TO DO
+    # 'WaterSuppressionType'
+    # 'SequenceTriggered'
+    # # 5.2 Scanner information
+    # 'Manufacturer'
+    obj.set_standard_def('Manufacturer', dcmdata.dcm_data.Manufacturer)
+    # 'ManufacturersModelName'
+    obj.set_standard_def('ManufacturersModelName', dcmdata.dcm_data.ManufacturerModelName)
+    # 'DeviceSerialNumber'
+    obj.set_standard_def('DeviceSerialNumber', str(dcmdata.dcm_data.DeviceSerialNumber))
+    # 'SoftwareVersions'
+    obj.set_standard_def('SoftwareVersions', dcmdata.dcm_data.SoftwareVersions)
+    # 'InstitutionName'
+    obj.set_standard_def('InstitutionName', dcmdata.dcm_data.InstitutionName)
+    # 'InstitutionAddress'
+    obj.set_standard_def('InstitutionAddress', dcmdata.dcm_data.InstitutionAddress)
+    # 'TxCoil'
+    # 'RxCoil'
+    # No apparent coil name in header.
+    # # 5.3 Sequence information
+    # 'SequenceName'
+    obj.set_standard_def('SequenceName', dcmdata.dcm_data.SequenceName)
+    # 'ProtocolName'
+    obj.set_standard_def('ProtocolName', dcmdata.dcm_data.ProtocolName)
+    # # 5.4 Sequence information
+    # 'PatientPosition'
+    obj.set_standard_def('PatientPosition', dcmdata.dcm_data.PatientPosition)
+    # 'PatientName'
+    if dcmdata.dcm_data.PatientName:
+        obj.set_standard_def('PatientName', dcmdata.dcm_data.PatientName.family_name)
+    # 'PatientID'
+    # 'PatientWeight'
+    if dcmdata.dcm_data.PatientWeight:
+        obj.set_standard_def('PatientWeight', float(dcmdata.dcm_data.PatientWeight))
+    # 'PatientDoB'
+    set_if_present('PatientDoB', dcmdata.dcm_data.PatientBirthDate)
+    # 'PatientSex'
+    set_if_present('PatientSex', dcmdata.dcm_data.PatientSex)
+    # # 5.5 Provenance and conversion metadata
+    # 'ConversionMethod'
+    obj.set_standard_def('ConversionMethod', f'spec2nii v{spec2nii_ver}')
+    # 'ConversionTime'
     conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')
     obj.set_standard_def('ConversionTime', conversion_time)
+    # 'OriginalFile'
+    # Set elsewhere
+    # # 5.6 Spatial information
+    # 'kSpace'
+    obj.set_standard_def('kSpace', [False, False, False])
 
     return obj

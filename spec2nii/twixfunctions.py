@@ -8,6 +8,8 @@ from spec2nii.dcm2niiOrientation.orientationFuncs import dcm_to_nifti_orientatio
 from spec2nii import nifti_mrs
 from datetime import datetime
 from os.path import basename
+from spec2nii import __version__ as spec2nii_ver
+
 
 # Define some default dimension information.
 # Default spatial x,y,z is Lin, Phs, Seg in VB but in VE it is Lin, Par, Seg
@@ -321,38 +323,66 @@ def extractTwixMetadata(mapVBVDHdr, orignal_file):
     obj = nifti_mrs.hdr_ext(mapVBVDHdr['Meas'][('Frequency')] / 1E6,
                             mapVBVDHdr['Meas'][('ResonantNucleus')])
 
-    # Some scanner information
+    # Standard defined metadata
+    # # 5.1 MRS specific Tags
+    # 'EchoTime'
+    obj.set_standard_def('EchoTime', mapVBVDHdr['Phoenix'][('alTE', '0')] * 1E-6)
+    # 'RepetitionTime'
+    if ('TR_Time') in mapVBVDHdr['Meas']:
+        tr = mapVBVDHdr['Meas'][('TR_Time')] / 1E6
+    else:
+        tr = mapVBVDHdr['Meas'][('TR')] / 1E6
+    obj.set_standard_def('RepetitionTime', float(tr))
+    # 'InversionTime'
+    if ('InversionTime') in mapVBVDHdr['Meas']:
+        obj.set_standard_def('InversionTime', float(mapVBVDHdr['Meas'][('TI_Time')]))
+    # 'MixingTime'
+    # 'ExcitationFlipAngle'
+    obj.set_standard_def('ExcitationFlipAngle', float(mapVBVDHdr['Meas'][('FlipAngle')]))
+    # 'TxOffset'
+    obj.set_standard_def('TxOffset', empty_str_to_0float(mapVBVDHdr['Meas'][('dDeltaFrequency')]))
+    # 'VOI'
+    # 'WaterSuppressed'
+    # TO DO
+    # 'WaterSuppressionType'
+    # 'SequenceTriggered'
+    # # 5.2 Scanner information
+    # 'Manufacturer'
     obj.set_standard_def('Manufacturer', mapVBVDHdr['Dicom'][('Manufacturer')])
+    # 'ManufacturersModelName'
     obj.set_standard_def('ManufacturersModelName', mapVBVDHdr['Dicom'][('ManufacturersModelName')])
+    # 'DeviceSerialNumber'
     obj.set_standard_def('DeviceSerialNumber', str(mapVBVDHdr['Dicom'][('DeviceSerialNumber')]))
+    # 'SoftwareVersions'
     obj.set_standard_def('SoftwareVersions', mapVBVDHdr['Dicom'][('SoftwareVersions')])
-
+    # 'InstitutionName'
     obj.set_standard_def('InstitutionName', mapVBVDHdr['Dicom'][('InstitutionName')])
+    # 'InstitutionAddress'
     obj.set_standard_def('InstitutionAddress', mapVBVDHdr['Dicom'][('InstitutionAddress')])
-
+    # 'TxCoil'
+    # 'RxCoil'
     rx_coil_1 = ('sCoilSelectMeas', 'aRxCoilSelectData', '0', 'asList', '0', 'sCoilElementID', 'tCoilID')
     rx_coil_2 = ('asCoilSelectMeas', '0', 'asList', '0', 'sCoilElementID', 'tCoilID')
     if rx_coil_1 in mapVBVDHdr['MeasYaps']:
-        obj.set_user_def(key='ReceiveCoilName', value=mapVBVDHdr['MeasYaps'][rx_coil_1], doc='Rx coil name.')
+        obj.set_standard_def('RxCoil', mapVBVDHdr['MeasYaps'][rx_coil_1])
     elif rx_coil_2 in mapVBVDHdr['MeasYaps']:
-        obj.set_user_def(key='ReceiveCoilName', value=mapVBVDHdr['MeasYaps'][rx_coil_2], doc='Rx coil name.')
-
-    # Some sequence information
+        obj.set_standard_def('RxCoil', mapVBVDHdr['MeasYaps'][rx_coil_2])
+    # # 5.3 Sequence information
+    # 'SequenceName'
     obj.set_standard_def('SequenceName', mapVBVDHdr['Meas'][('tSequenceString')])
+    # 'ProtocolName'
     obj.set_standard_def('ProtocolName', mapVBVDHdr['Dicom'][('tProtocolName')])
-
-    obj.set_user_def(key='PulseSequenceFile',
-                     value=mapVBVDHdr['Config'][('SequenceFileName')],
-                     doc='Sequence binary path.')
-    obj.set_user_def(key='IceProgramFile',
-                     value=mapVBVDHdr['Meas'][('tICEProgramName')],
-                     doc='Reconstruction binary path.')
-
-    # Some subject information
+    # # 5.4 Sequence information
+    # 'PatientPosition'
     obj.set_standard_def('PatientPosition', mapVBVDHdr['Meas'][('PatientPosition')])
+    # 'PatientName'
     obj.set_standard_def('PatientName', mapVBVDHdr['Meas'][('PatientName')])
+    # 'PatientID'
+    # 'PatientWeight'
     obj.set_standard_def('PatientWeight', mapVBVDHdr['Meas'][('flUsedPatientWeight')])
+    # 'PatientDoB'
     obj.set_standard_def('PatientDoB', str(mapVBVDHdr['Meas'][('PatientBirthDay')]))
+    # 'PatientSex'
     if mapVBVDHdr['Meas'][('PatientSex')] == 1:
         sex_str = 'M'
     elif mapVBVDHdr['Meas'][('PatientSex')] == 2:
@@ -360,24 +390,25 @@ def extractTwixMetadata(mapVBVDHdr, orignal_file):
     else:
         sex_str = 'O'
     obj.set_standard_def('PatientSex', sex_str)
-
-    # Timing and sequence parameters
-    obj.set_standard_def('EchoTime', mapVBVDHdr['Phoenix'][('alTE', '0')] * 1E-6)
-    if ('InversionTime') in mapVBVDHdr['Meas']:
-        obj.set_standard_def('InversionTime', float(mapVBVDHdr['Meas'][('TI_Time')]))
-    obj.set_standard_def('ExcitationFlipAngle', float(mapVBVDHdr['Meas'][('FlipAngle')]))
-    if ('TR_Time') in mapVBVDHdr['Meas']:
-        tr = mapVBVDHdr['Meas'][('TR_Time')] / 1E6
-    else:
-        tr = mapVBVDHdr['Meas'][('TR')] / 1E6
-    obj.set_standard_def('RepetitionTime', float(tr))
-    obj.set_standard_def('TxOffset', empty_str_to_0float(mapVBVDHdr['Meas'][('dDeltaFrequency')]))
-
-    # Conversion information
-    obj.set_standard_def('ConversionMethod', 'spec2nii')
+    # # 5.5 Provenance and conversion metadata
+    # 'ConversionMethod'
+    obj.set_standard_def('ConversionMethod', f'spec2nii v{spec2nii_ver}')
+    # 'ConversionTime'
     conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')
     obj.set_standard_def('ConversionTime', conversion_time)
+    # 'OriginalFile'
     obj.set_standard_def('OriginalFile', [orignal_file, ])
+    # # 5.6 Spatial information
+    # 'kSpace'
+    obj.set_standard_def('kSpace', [False, False, False])
+
+    # Some additional information
+    obj.set_user_def(key='PulseSequenceFile',
+                     value=mapVBVDHdr['Config'][('SequenceFileName')],
+                     doc='Sequence binary path.')
+    obj.set_user_def(key='IceProgramFile',
+                     value=mapVBVDHdr['Meas'][('tICEProgramName')],
+                     doc='Reconstruction binary path.')
 
     return obj
 

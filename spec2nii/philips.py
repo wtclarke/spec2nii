@@ -9,6 +9,7 @@ import numpy as np
 
 from spec2nii.nifti_orientation import NIFTIOrient, calc_affine
 from spec2nii import nifti_mrs
+from spec2nii import __version__ as spec2nii_ver
 
 
 def read_sdat_spar_pair(sdat_file, spar_file):
@@ -121,7 +122,6 @@ def spar_to_nmrs_hdrext(spar_dict):
     obj = nifti_mrs.hdr_ext(cf,
                             spar_dict["nucleus"])
 
-    # Some scanner information
     def set_standard_def(nifti_mrs_key, location, key, cast=None):
         try:
             if cast is not None:
@@ -130,47 +130,67 @@ def spar_to_nmrs_hdrext(spar_dict):
                 obj.set_standard_def(nifti_mrs_key, getattr(location, key))
         except AttributeError:
             pass
-
+    # # 5.1 MRS specific Tags
+    # 'EchoTime'
+    obj.set_standard_def('EchoTime', float(spar_dict['echo_time']) * 1E-3)
+    # 'RepetitionTime'
+    obj.set_standard_def('RepetitionTime', float(spar_dict['repetition_time'] / 1E3))
+    # 'InversionTime'
+    if spar_dict['spectrum_inversion_time'] > 0:
+        obj.set_standard_def('InversionTime', float(spar_dict['spectrum_inversion_time']))
+    # 'MixingTime'
+    # 'ExcitationFlipAngle'
+    # 'TxOffset'
+    obj.set_standard_def('TxOffset', float(spar_dict['offset_frequency'] / cf))
+    # 'VOI'
+    # 'WaterSuppressed'
+    # No apparent parameter stored in the SPAR info.
+    # 'WaterSuppressionType'
+    # 'SequenceTriggered'
+    # # 5.2 Scanner information
+    # 'Manufacturer'
     obj.set_standard_def('Manufacturer', 'Philips')
-    # set_standard_def('ManufacturersModelName',)
-    # set_standard_def('DeviceSerialNumber', )
+    # 'ManufacturersModelName'
+    # 'DeviceSerialNumber'
+    # 'SoftwareVersions'
     set_standard_def('SoftwareVersions', spar_dict, 'equipment_sw_verions')
-
-    # set_standard_def('InstitutionName', )
-    # set_standard_def('InstitutionAddress', )
-
-    # Some sequence information
-    # obj.set_standard_def('SequenceName', )
+    # 'InstitutionName'
+    # 'InstitutionAddress'
+    # 'TxCoil'
+    # 'RxCoil'
+    # # 5.3 Sequence information
+    # 'SequenceName'
+    # 'ProtocolName'
     set_standard_def('ProtocolName', spar_dict, 'scan_id')
-
-    # Some subject information
+    # # 5.4 Sequence information
+    # 'PatientPosition'
     try:
         obj.set_standard_def('PatientPosition', spar_dict['patient_position'] + ' ' + spar_dict['patient_orientation'])
     except AttributeError:
         pass
+    # 'PatientName'
     set_standard_def('PatientName', spar_dict, 'patient_name')
-    # set_standard_def('PatientWeight', , cast=float)
+    # 'PatientID'
+    # 'PatientWeight'
+    # 'PatientDoB'
     set_standard_def('PatientDoB', spar_dict, 'patient_birth_date')
-    # set_standard_def('PatientSex', )
-
-    # Timing and sequence parameters
-    obj.set_standard_def('EchoTime', float(spar_dict['echo_time']) * 1E-3)
-    if spar_dict['spectrum_inversion_time'] > 0:
-        obj.set_standard_def('InversionTime', float(spar_dict['spectrum_inversion_time']))
-    # obj.set_standard_def('ExcitationFlipAngle', spar_dict['spectrum_inversion_time'])
-    obj.set_standard_def('RepetitionTime', float(spar_dict['repetition_time'] / 1E3))
-    # TO DO  - nibabel might need updating.
-    obj.set_standard_def('TxOffset', float(spar_dict['offset_frequency'] / cf))
-
-    # Conversion information
-    obj.set_standard_def('ConversionMethod', 'spec2nii')
+    # 'PatientSex'
+    # # 5.5 Provenance and conversion metadata
+    # 'ConversionMethod'
+    obj.set_standard_def('ConversionMethod', f'spec2nii v{spec2nii_ver}')
+    # 'ConversionTime'
     conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')
     obj.set_standard_def('ConversionTime', conversion_time)
+    # 'OriginalFile'
+    # Set elsewhere
+    # # 5.6 Spatial information
+    # 'kSpace'
+    obj.set_standard_def('kSpace', [False, False, False])
 
     return obj
 
 
-# From VESPA - BSD license. Ask for licence text from Brian.
+# From VESPA - BSD license.
 def _vax_to_ieee_single_float(data):
     """Converts a float in Vax format to IEEE format.
 
