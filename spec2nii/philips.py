@@ -156,11 +156,11 @@ def spar_to_nmrs_hdrext(spar_dict):
     # Timing and sequence parameters
     obj.set_standard_def('EchoTime', float(spar_dict['echo_time']) * 1E-3)
     if spar_dict['spectrum_inversion_time'] > 0:
-        obj.set_standard_def('InversionTime', spar_dict['spectrum_inversion_time'])
+        obj.set_standard_def('InversionTime', float(spar_dict['spectrum_inversion_time']))
     # obj.set_standard_def('ExcitationFlipAngle', spar_dict['spectrum_inversion_time'])
-    obj.set_standard_def('RepetitionTime', spar_dict['repetition_time'] / 1E3)
+    obj.set_standard_def('RepetitionTime', float(spar_dict['repetition_time'] / 1E3))
     # TO DO  - nibabel might need updating.
-    obj.set_standard_def('TxOffset', spar_dict['offset_frequency'] / cf)
+    obj.set_standard_def('TxOffset', float(spar_dict['offset_frequency'] / cf))
 
     # Conversion information
     obj.set_standard_def('ConversionMethod', 'spec2nii')

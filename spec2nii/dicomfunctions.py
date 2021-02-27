@@ -184,7 +184,6 @@ def process_siemens_svs(img, verbose):
                                                     xyzMM,
                                                     (1, 1, 1),
                                                     verbose=verbose)
-
     dwelltime = img.csa_header['tags']['RealDwellTime']['items'][0] * 1E-9
     meta = extractDicomMetadata(img)
 
@@ -283,11 +282,11 @@ def extractDicomMetadata(dcmdata):
     set_standard_def('PatientSex', dcmdata.dcm_data, 'PatientSex')
 
     # Timing and sequence parameters
-    obj.set_standard_def('EchoTime', dcmdata.csa_header['tags']['EchoTime']['items'][0] * 1E-3)
+    obj.set_standard_def('EchoTime', float(dcmdata.csa_header['tags']['EchoTime']['items'][0] * 1E-3))
     if dcmdata.csa_header['tags']['InversionTime']['n_items'] > 0:
-        obj.set_standard_def('InversionTime', dcmdata.csa_header['tags']['InversionTime']['items'][0])
-    obj.set_standard_def('ExcitationFlipAngle', dcmdata.csa_header['tags']['FlipAngle']['items'][0])
-    obj.set_standard_def('RepetitionTime', dcmdata.csa_header['tags']['RepetitionTime']['items'][0] / 1E3)
+        obj.set_standard_def('InversionTime', float(dcmdata.csa_header['tags']['InversionTime']['items'][0]))
+    obj.set_standard_def('ExcitationFlipAngle', float(dcmdata.csa_header['tags']['FlipAngle']['items'][0]))
+    obj.set_standard_def('RepetitionTime', float(dcmdata.csa_header['tags']['RepetitionTime']['items'][0] / 1E3))
     # TO DO  - nibabel might need updating.
     # obj.set_standard_def('TxOffset', )
 

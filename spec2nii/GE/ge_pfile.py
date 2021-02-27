@@ -282,8 +282,8 @@ def _populate_metadata(pfile):
     meta.set_standard_def('PatientSex', sex_str)
 
     # Timing and sequence parameters
-    meta.set_standard_def('InversionTime', hdr.rhi_ti)
-    meta.set_standard_def('ExcitationFlipAngle', hdr.rhi_mr_flip)
+    meta.set_standard_def('InversionTime', float(hdr.rhi_ti))
+    meta.set_standard_def('ExcitationFlipAngle', float(hdr.rhi_mr_flip))
     # meta.set_standard_def('TxOffset', )
     meta.set_standard_def('EchoTime', float(hdr.rhi_te))
     meta.set_standard_def('RepetitionTime', float(hdr.rhi_tr))

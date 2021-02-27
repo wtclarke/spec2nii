@@ -83,7 +83,7 @@ def validate_hdr_ext(header_ex, data_dimensions):
     # 2. Check the two required bits of meta-data
     if "SpectrometerFrequency" in json_dict:
         if not isinstance(json_dict["SpectrometerFrequency"], (list, tuple))\
-                and not isinstance(json_dict["SpectrometerFrequency"][0], (float)):
+                and not isinstance(json_dict["SpectrometerFrequency"][0], float):
 
             raise headerExtensionError("SpectrometerFrequency must be list of floats.")
     else:
@@ -91,7 +91,7 @@ def validate_hdr_ext(header_ex, data_dimensions):
 
     if "ResonantNucleus" in json_dict:
         if not isinstance(json_dict["ResonantNucleus"], (list, tuple))\
-                and not isinstance(json_dict["ResonantNucleus"][0], (str)):
+                and not isinstance(json_dict["ResonantNucleus"][0], str):
 
             raise headerExtensionError("ResonantNucleus must be list of strings.")
     else:
@@ -119,20 +119,29 @@ def validate_hdr_ext(header_ex, data_dimensions):
     for key in json_dict:
         if key in standard_defined.keys():
             if not check_type(json_dict[key], standard_defined[key][0]):
-                raise headerExtensionError(f'{key} must be a {standard_defined[key][0]}')
+                raise headerExtensionError(f'{key} must be a {standard_defined[key][0]}. '
+                                           f'{key} is a {type(json_dict[key])}, with value {json_dict[key]}.')
 
     print('Header extension validated!')
 
 
 def check_type(value, json_type):
-
-    if json_type.lower() == 'number':
-        if isinstance(value, (float, int)):
-            return True
-    if json_type.lower() == 'string':
-        if isinstance(value, str):
-            return True
+    '''Checks that values is of type json_type
+       json_type may be a tuple to handle array types
+       e.g. (list, float) indicates a list of floats.
+    '''
+    if isinstance(json_type, tuple):
+        while len(json_type) > 1:
+            if not check_type(value, json_type[0]):
+                return False
+            try:
+                # TO DO: check more than the first element!
+                value = value[0]
+            except TypeError:
+                return False
+            json_type = json_type[1:]
+        return check_type(value, json_type[0])
     else:
-        return True
-
+        if isinstance(value, json_type):
+            return True
     return False

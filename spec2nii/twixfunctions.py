@@ -364,13 +364,13 @@ def extractTwixMetadata(mapVBVDHdr, orignal_file):
     # Timing and sequence parameters
     obj.set_standard_def('EchoTime', mapVBVDHdr['Phoenix'][('alTE', '0')] * 1E-6)
     if ('InversionTime') in mapVBVDHdr['Meas']:
-        obj.set_standard_def('InversionTime', mapVBVDHdr['Meas'][('TI_Time')])
-    obj.set_standard_def('ExcitationFlipAngle', mapVBVDHdr['Meas'][('FlipAngle')])
+        obj.set_standard_def('InversionTime', float(mapVBVDHdr['Meas'][('TI_Time')]))
+    obj.set_standard_def('ExcitationFlipAngle', float(mapVBVDHdr['Meas'][('FlipAngle')]))
     if ('TR_Time') in mapVBVDHdr['Meas']:
         tr = mapVBVDHdr['Meas'][('TR_Time')] / 1E6
     else:
         tr = mapVBVDHdr['Meas'][('TR')] / 1E6
-    obj.set_standard_def('RepetitionTime', tr)
+    obj.set_standard_def('RepetitionTime', float(tr))
     obj.set_standard_def('TxOffset', empty_str_to_0float(mapVBVDHdr['Meas'][('dDeltaFrequency')]))
 
     # Conversion information
