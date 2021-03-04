@@ -16,6 +16,7 @@ This table lists the currently supported formats. I have very limited experience
 | Siemens Twix  | .dat           | Yes | No  | Yes                   |
 | Siemens DICOM | .ima / .dcm    | Yes | Yes | Yes                   |
 | Philips       | .SPAR/.SDAT    | Yes | No  | Yes                   |
+| Philips       | .data/.list    | Yes | No  | Yes                   |
 | Philips DICOM | .dcm           | Yes | No  | Yes                   |
 | GE            | .7 (pfile)     | Yes | Yes | Yes                   |
 | UIH DICOM     | .dcm           | Yes | Yes | Yes                   |
@@ -54,8 +55,12 @@ NIfTI MRS dimension tags (e.g. `DIM_COIL`) can be specified using the `-t` comma
 ### GE
 `spec2nii ge FILE`
 
-### Philips
+### Philips (SPAR/SDAT)
 `spec2nii philips SDAT_FILE SPAR_FILE`
+
+### Philips (data/list)
+Must be provided along side a matching SPAR file.  
+`spec2nii philips DATA_FILE LIST_FILE SPAR_FILE`
 
 ### Philips DICOM
 `spec2nii philips_dcm DCM_FILE_or_DIR`
