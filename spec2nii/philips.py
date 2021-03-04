@@ -12,7 +12,7 @@ from spec2nii import nifti_mrs
 from spec2nii import __version__ as spec2nii_ver
 
 
-def read_sdat_spar_pair(sdat_file, spar_file):
+def read_sdat_spar_pair(sdat_file, spar_file, tag=None):
 
     spar_params = read_spar(spar_file)
     data = read_sdat(sdat_file,
@@ -32,7 +32,8 @@ def read_sdat_spar_pair(sdat_file, spar_file):
     meta = spar_to_nmrs_hdrext(spar_params)
     meta.set_standard_def('OriginalFile', [sdat_file.name])
 
-    # meta_used.set_dim_info(0, tag)
+    if tag is not None:
+        meta.set_dim_info(0, tag)
 
     # Orientation
     affine = _philips_orientation(spar_params)
