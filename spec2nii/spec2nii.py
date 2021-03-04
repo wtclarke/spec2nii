@@ -88,6 +88,17 @@ class spec2nii:
         parser_philips = add_common_parameters(parser_philips)
         parser_philips.set_defaults(func=self.philips)
 
+        # Handle philips data/list subcommand
+        parser_p_dl = subparsers.add_parser('philips_dl', help='Convert from Philips data/list format.')
+        parser_p_dl.add_argument('data', help='.data file', type=Path)
+        parser_p_dl.add_argument('list', help='.list file', type=Path)
+        parser_p_dl.add_argument('spar', help='.SPAR file', type=Path)
+        # for idx in range(5, 8):
+        #     parser_p_dl.add_argument(f"-d{idx}", f"--dim{idx}", type=str, help=f"Specify dim {idx} loop counter.")
+        #     parser_p_dl.add_argument(f"-t{idx}", f"--tag{idx}", type=str, help=f"Specify dim {idx} NIfTI MRS tag.")
+        parser_p_dl = add_common_parameters(parser_p_dl)
+        parser_p_dl.set_defaults(func=self.philips_dl)
+
         # Handle philips DICOM subcommand
         parser_philips_dicom = subparsers.add_parser('philips_dcm', help='Convert from Philips DICOM format.')
         parser_philips_dicom.add_argument('file', help='file or directory to convert', type=str)
@@ -274,6 +285,29 @@ class spec2nii:
             mainStr = args.sdat.stem
 
         self.fileoutNames.append(mainStr)
+
+    # Philips data/list (+SPAR) handler
+    def philips_dl(self, args):
+        # philips specific imports
+        from spec2nii.philips_data_list import read_data_list_pair
+
+        # TO DO
+        # overrides = {'dims': (args.dim5, args.dim6, args.dim7),
+        #              'tags': (args.tag5, args.tag6, args.tag7)}
+
+        # self.imageOut, file_names = read_data_list_pair(args.data, args.list, args.spar, overrides)
+        self.imageOut, file_names = read_data_list_pair(args.data, args.list, args.spar)
+
+        # name of output
+        if args.fileout:
+            mainStr = args.fileout
+        elif args.data.stem == args.list.stem:
+            mainStr = args.data.stem
+        else:
+            mainStr = args.data.stem
+
+        for fn in file_names:
+            self.fileoutNames.append(mainStr + '_' + fn)
 
     # Philips DICOM handler
     def philips_dicom(self, args):
