@@ -54,6 +54,11 @@ def yield_bruker(args):
     # get location of the spec2nii Bruker properties configuration file
     bruker_properties_path = pkg_resources.resource_filename('spec2nii', 'bruker_properties.json')
     
+    # get a list of queries to filter datasets
+    queries = _get_queries(args)
+
+    print(queries)
+
     # case of Bruker dataset
     if os.path.isfile(args.file):
         d = Dataset(args.file, property_files=[bruker_properties_path])
@@ -65,9 +70,6 @@ def yield_bruker(args):
 
     # case of folder containing Bruker datasets
     elif os.path.isdir(args.file):
-
-        # get a list of queries to filter datasets
-        queries = _get_queries(args)
 
         # process individual datasets
         for dataset in Folder(args.file, dataset_state={
@@ -86,7 +88,7 @@ def _get_queries(args):
     Returns a list of queries for filtering out only spectroscopic 2dseq datasets with a complex frame group
 
     """
-    queries = ["@type=='2dseq'", "@is_spectroscopy==True", "@is_complex==True"]
+    queries = ["@type=='2dseq'"]
     return queries + args.query
 
 def _proc_dataset(d):
