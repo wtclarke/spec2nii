@@ -149,6 +149,15 @@ class spec2nii:
         parser_raw = add_common_parameters(parser_raw)
         parser_raw.set_defaults(func=self.raw)
 
+        # Bruker format
+        parser_bruker = subparsers.add_parser('bruker', help='Convert from Bruker data format.')
+        parser_bruker.add_argument('file', help='2dseq file to convert', type=str)
+        parser_bruker.add_argument("-a", "--affine", type=str, help="NIfTI affine file", required=False, metavar='<file>')
+        parser_bruker.add_argument('-q', '--query', action='append', default=[])
+        parser_bruker.add_argument('-m', '--mode', type=str, default='2DSEQ', choices=['2DSEQ', 'FID'])
+        parser_bruker = add_common_parameters(parser_bruker)
+        parser_bruker.set_defaults(func=self.bruker)
+
         if len(sys.argv) == 1:
             parser.print_usage(sys.stderr)
             sys.exit(1)
@@ -351,6 +360,11 @@ class spec2nii:
     def raw(self, args):
         from spec2nii.other_formats import lcm_raw
         self.imageOut, self.fileoutNames = lcm_raw(args)
+
+    # Bruker 2dseq files with FG_COMPLEX
+    def bruker(self, args):
+        from spec2nii.bruker import read_bruker
+        self.imageOut, self.fileoutNames = read_bruker(args)
 
 
 def main(*args):

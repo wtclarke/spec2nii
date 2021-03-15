@@ -1,0 +1,91 @@
+{
+    "SpectrometerFrequency": [
+      {
+        "cmd": "[#VisuAcqImagingFrequency,]",
+        "conditions": ["@type=='2dseq'"]
+      },
+      {
+        "cmd": "[#BF1,]",
+        "conditions": ["@type=='fid'"]
+      }
+    ],
+    "ResonantNucleus": [
+      {
+        "cmd": "[#NUCLEUS[1:-1]]",
+        "conditions": ["@type=='fid'"]
+      },
+      {
+        "cmd": "[#VisuAcqImagedNucleus[1:-1]]",
+        "conditions": ["@type=='2dseq'"]
+      }
+    ],
+    "is_spectroscopy": [
+      {
+        "cmd": "'spectroscopic' in #VisuCoreDimDesc.list",
+        "conditions": ["@type=='2dseq'"]
+      },
+      {
+        "cmd": "'Spectroscopic' in #ACQ_dim_desc.list",
+        "conditions": ["@type=='fid'"]
+      }
+    ],
+    "is_complex": [
+      {
+        "cmd": "True",
+        "conditions": [
+          "#VisuCoreFrameType.list[0]=='REAL_IMAGE'"
+        ]
+      },
+      {
+        "cmd": "True",
+        "conditions": [
+          "@type=='fid'"
+        ]
+      },
+      {
+        "cmd": "False",
+        "conditions": [
+        ]
+      }
+    ],
+    "is_mrsi": [
+      {
+        "cmd": "True",
+        "conditions": [
+          "@type=='2dseq'",
+          "#VisuCoreDimDesc.list==['spectroscopic', 'spatial', 'spatial']"
+        ]
+      },
+      {
+        "cmd": "True",
+        "conditions": [
+          "@type=='fid'",
+          "#ACQ_dim_desc.list==['Spectroscopic', 'Spatial', 'Spatial']"
+        ]
+      },
+      {
+        "cmd": "False",
+        "conditions": []
+      }
+    ],
+    "is_svs": [
+      {
+        "cmd": "True",
+        "conditions": [
+          "@type=='2dseq'",
+          "#VisuCoreDimDesc.list==['spectroscopic',]"
+        ]
+      },
+      {
+        "cmd": "True",
+        "conditions": [
+          "@type=='fid'",
+          "#ACQ_dim_desc.list==['Spectroscopic',]"
+        ]
+      },
+      {
+        "cmd": "False",
+        "conditions": []
+      }
+    ]
+  }
