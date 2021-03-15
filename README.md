@@ -1,10 +1,11 @@
 # spec2nii
 ![PyPI](https://img.shields.io/pypi/v/spec2nii)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/spec2nii)  
-A program for multi-format conversion of in vivo MRS to the [NIfTI MRS format](https://github.com/wexeee/mrs_nifti_standard).  
+A program for multi-format conversion of in vivo MRS to the [NIfTI-MRS format](https://github.com/wexeee/mrs_nifti_standard).  
 
 This program was inspired by the imaging DICOM to NIfTI converter [dcm2niix](https://github.com/rordenlab/dcm2niix) developed by Chris Rorden. All MRS(I) orientations are tested with images converted using dcm2niix. I consider the combination of images converted using dcm2niix and displayed in [FSLeyes](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FSLeyes) the de facto standard.
 
+Visualisation of MRS converted by spec2nii can be carried out with a recent (>0.31.0) version of FSLeyes. A FSLeyes plugin for NIfTI-MRS is in development.
 ## Installation
 `conda install -c conda-forge spec2nii`  
 or  
