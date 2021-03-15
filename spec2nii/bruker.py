@@ -57,8 +57,6 @@ def yield_bruker(args):
     # get a list of queries to filter datasets
     queries = _get_queries(args)
 
-    print(queries)
-
     # case of Bruker dataset
     if os.path.isfile(args.file):
         d = Dataset(args.file, property_files=[bruker_properties_path])
@@ -88,7 +86,10 @@ def _get_queries(args):
     Returns a list of queries for filtering out only spectroscopic 2dseq datasets with a complex frame group
 
     """
-    queries = ["@type=='2dseq'"]
+    if args.mode == '2DSEQ':
+        queries = ["@type=='2dseq'", "@is_spectroscopy==True", "@is_complex==True"]
+    elif args.mode == 'FID':
+        queries = ["@type=='fid'", "@is_spectroscopy==True"]
     return queries + args.query
 
 def _proc_dataset(d):
@@ -96,23 +97,25 @@ def _proc_dataset(d):
     Yield data and properties of a single dataset
 
     """
+    # merge 2dseq complex frame group if present
+    if d.is_complex and d.type == '2dseq':
+        d = FrameGroupMerger().merge(d, 'FG_COMPLEX')
 
-    if d.num_slice_packages > 1:
-        for d_ in SlicePackageSplitter().split(d):
-            yield from _proc_dataset(d_)
+    # prepare the data array
+    if d.is_svs:
+        data = _prep_data_svs(d)
+    elif d.is_mrsi:
+        data = _prep_data_mrsi(d)
     else:
-        if '<FG_COMPLEX>' in d.dim_type:
-            d = FrameGroupMerger().merge(d, 'FG_COMPLEX')
-        # prepare data based on type of experiment
-        if 'spectroscopic' in d.dim_type[0]:
-            if 'spatial' in d.dim_type:
-                data = _prep_data_mrsi(d)
-            else:
-                data = _prep_data_svs(d)
-        else:
-            data = d.data
+        data = d.data
 
-        yield data, d.to_dict()
+    # get properties
+    properties = d.to_dict()
+
+    # some Bruker datasets do not have affine property
+    if d.type == 'fid': if not 'affine' in properties: properties.update({'affine':np.identity(4)})
+    
+    yield data, properties
 
 def _prep_data_svs(d):
     """
