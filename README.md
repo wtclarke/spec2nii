@@ -20,9 +20,11 @@ This table lists the currently supported formats. I have very limited experience
 | Siemens DICOM | .ima / .dcm    | Yes | Yes | Yes                   |
 | Philips       | .SPAR/.SDAT    | Yes | No  | Yes                   |
 | Philips       | .data/.list    | Yes | No  | Yes                   |
-| Philips DICOM | .dcm           | Yes | No  | Yes                   |
+| Philips DICOM | .dcm           | Yes | No  | Yes (WIP)             |
 | GE            | .7 (pfile)     | Yes | Yes | Yes                   |
 | UIH DICOM     | .dcm           | Yes | Yes | Yes                   |
+| Bruker        | 2dseq          | Yes | Yes | Yes                   |
+| Bruker        | fid            | Yes | Yes | Yes (WIP)             |
 | LCModel       | .RAW           | Yes | No  | No                    |
 | jMRUI         | .txt           | Yes | No  | No                    |
 | jMRUI         | .mrui          | Yes | No  | No                    |
@@ -63,7 +65,7 @@ NIfTI MRS dimension tags (e.g. `DIM_COIL`) can be specified using the `-t` comma
 
 ### Philips (data/list)
 Must be provided along side a matching SPAR file.  
-`spec2nii philips DATA_FILE LIST_FILE SPAR_FILE`
+`spec2nii philips_dl DATA_FILE LIST_FILE SPAR_FILE`
 
 ### Philips DICOM
 `spec2nii philips_dcm DCM_FILE_or_DIR`
@@ -71,6 +73,16 @@ Must be provided along side a matching SPAR file.
 NIfTI MRS dimension tags (e.g. `DIM_COIL`) can be specified using the `-t` command line argument.
 
 Generates separate reference file.
+
+### Bruker (2dseq/fid)
+`spec2nii bruker -m 2DSEQ 2DSEQ_FILE_or_DIR`  
+`spec2nii bruker -m FID FID_FILE_or_DIR`
+
+Ues the `-d` option to dump the header files (method and acqp for fid, visu_pars for 2dseq) into the header extension.
+
+Additional filters can be added by defining additional queries using the `-q` flag.
+
+Bruker conversion is powered by the [BrukerAPI package](https://github.com/isi-nmr/brukerapi-python) written by Tomas Psorn.
 
 ### Text/LCModel/jMRUI
 Conversion from processed formats.

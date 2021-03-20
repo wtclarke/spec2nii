@@ -98,18 +98,40 @@
       {
         "cmd": "#Method",
         "conditions": ["@type=='fid'"]
+      },
+      {
+        "cmd": "#VisuAcquisitionProtocol",
+        "conditions": ["@type=='2dseq'"]
       }
     ],
     "PV_version": [
       {
         "cmd": "#ACQ_sw_version",
-        "conditions": []
+        "conditions": ["@type=='fid'"]
+      },
+      {
+        "cmd": "#VisuAcqSoftwareVersion",
+        "conditions": ["@type=='2dseq'"]
       }
     ],
     "working_offset": [
       {
         "cmd": "#PVM_FrqWorkOffsetPpm",
-        "conditions": ["@type=='fid'"]
+        "conditions": []
+      }
+    ],
+    "method_TE": [
+      {
+        "cmd": "#PVM_EchoTime",
+        "conditions": ["@type=='2dseq'"],
+        "unit": "ms"
+      }
+    ],
+    "method_TR": [
+      {
+          "cmd": "#PVM_RepetitionTime",
+          "conditions": ["@type=='2dseq'"],
+          "unit": "ms"
       }
     ]
   }
