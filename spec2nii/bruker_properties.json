@@ -87,5 +87,29 @@
         "cmd": "False",
         "conditions": []
       }
+    ],
+    "points_prior_to_echo": [
+      {
+        "cmd": "#PVM_DigShift",
+        "conditions": ["@type=='fid'"]
+      }
+    ],
+    "method_desc": [
+      {
+        "cmd": "#Method",
+        "conditions": ["@type=='fid'"]
+      }
+    ],
+    "PV_version": [
+      {
+        "cmd": "#ACQ_sw_version",
+        "conditions": []
+      }
+    ],
+    "working_offset": [
+      {
+        "cmd": "#PVM_FrqWorkOffsetPpm",
+        "conditions": ["@type=='fid'"]
+      }
     ]
   }

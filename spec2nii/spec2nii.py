@@ -152,9 +152,11 @@ class spec2nii:
         # Bruker format
         parser_bruker = subparsers.add_parser('bruker', help='Convert from Bruker data format.')
         parser_bruker.add_argument('file', help='2dseq file to convert', type=str)
-        parser_bruker.add_argument("-a", "--affine", type=str, help="NIfTI affine file", required=False, metavar='<file>')
         parser_bruker.add_argument('-q', '--query', action='append', default=[])
         parser_bruker.add_argument('-m', '--mode', type=str, default='2DSEQ', choices=['2DSEQ', 'FID'])
+        parser_bruker.add_argument('-d', '--dump_headers',
+                                   help='Dump bruker header files into json header extension',
+                                   action='store_true')
         parser_bruker = add_common_parameters(parser_bruker)
         parser_bruker.set_defaults(func=self.bruker)
 
