@@ -45,6 +45,12 @@ class spec2nii:
             subparser.add_argument("-o", "--outdir", type=Path,
                                    help="Output location (default = .)", default='.')
             subparser.add_argument('--nifti1', action='store_true')
+            subparser.add_argument("--override_nucleus", type=str, nargs='+',
+                                   help="Override ResonantNucleus field with input(s). E.g. '2H'.")
+            subparser.add_argument("--override_frequency", type=float, nargs='+',
+                                   help="Override SpectrometerFrequency field with input(s). Input in MHz.")
+            subparser.add_argument("--override_dwelltime", type=float,
+                                   help="Override dwell time field with input. Input in seconds.")
             subparser.add_argument('--verbose', action='store_true')
             return subparser
 
@@ -182,10 +188,32 @@ class spec2nii:
         args.func(args)
 
         if self.imageOut:
+            self.implement_overrides(args)
             self.validate_output()
             self.write_output(args.json)
         elif hasattr(args, 'view') and not args.view:
             print('No files to write.')
+
+    def implement_overrides(self, args):
+        """Implement any command line overides for essential parameters."""
+        for nifti_mrs_img in self.imageOut:
+            if args.override_dwelltime:
+                nifti_mrs_img.set_dwell_time(args.override_dwelltime)
+
+            if args.override_nucleus or args.override_frequency:
+                from nibabel.nifti1 import Nifti1Extension
+                hdr_ext_codes = nifti_mrs_img.header.extensions.get_codes()
+                index = hdr_ext_codes.index(44)
+                original = json.loads(nifti_mrs_img.header.extensions[index].get_content())
+
+                if args.override_nucleus:
+                    original['ResonantNucleus'] = args.override_nucleus
+                if args.override_frequency:
+                    original['SpectrometerFrequency'] = args.override_frequency
+                json_s = json.dumps(original)
+                new_ext = Nifti1Extension(44, json_s.encode('UTF-8'))
+                nifti_mrs_img.header.extensions.clear()
+                nifti_mrs_img.header.extensions.append(new_ext)
 
     def validate_output(self):
         """Run NIfTI MRS validation on output."""

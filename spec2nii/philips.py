@@ -36,7 +36,11 @@ def read_sdat_spar_pair(sdat_file, spar_file, tag=None):
         meta.set_dim_info(0, tag)
 
     # Orientation
-    affine = _philips_orientation(spar_params)
+    if spar_params["volume_selection_enable"] == "yes":
+        affine = _philips_orientation(spar_params)
+    else:
+        # Use default affine
+        affine = np.diag(np.array([10000, 10000, 10000, 1]))
     orientation = NIFTIOrient(affine)
 
     return [nifti_mrs.NIfTI_MRS(data, orientation.Q44, dwelltime, meta), ]
