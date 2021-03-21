@@ -39,6 +39,8 @@ If -j is specified the NIfTI MRS header extension will also be generated as a JS
 
 By default, spec2nii generates NIfTI files using the NIfTI-2 header format. Use the `--nifti1` option to generate files using the NIfTI-1 format.
 
+Manual overrides can be provided for incorrectly interpreted required header fields, namely SpectrometerFrequency, ResonantNucleus and dwell-time, by using the `--override_frequency`, `--override_nucleus`, and `--override_dwelltime` command line options.
+
 ### Twix
 Call `spec2nii twix -v FILE` to view a list of contained MDH flags. -m can be used to specify which multi-raid file to convert if used on VE data.
 
