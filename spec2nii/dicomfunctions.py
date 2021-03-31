@@ -18,6 +18,10 @@ class inconsistentDataError(Exception):
     pass
 
 
+class missingTagError(Exception):
+    pass
+
+
 def svs_or_CSI(img):
     """Identify from the csa headers whether data is CSI or SVS."""
     rows = img.csa_header['tags']['Rows']['items'][0]
@@ -75,8 +79,13 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         if idx == 0:
             if fname_out:
                 mainStr = fname_out
-            else:
+            elif 'SeriesDescription' in img.dcm_data:
                 mainStr = img.dcm_data.SeriesDescription
+            elif 'SeriesInstanceUID' in img.dcm_data:
+                mainStr = img.dcm_data.SeriesInstanceUID
+            else:
+                raise missingTagError("Neither SeriesDescription or SeriesInstanceUID tags defined."
+                                      " Please specify an output filename using '-f'")
 
     # Sort by series and instance number
     data_list = np.asarray(data_list)
