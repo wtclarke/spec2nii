@@ -41,8 +41,14 @@ def process_twix(twixObj, base_name_out, name_in, dataKey, dim_overides, quiet=F
         n_voxels = twixObj.hdr.Meas.lFinalMatrixSizeSlice \
             * twixObj.hdr.Meas.lFinalMatrixSizePhase \
             * twixObj.hdr.Meas.lFinalMatrixSizeRead
-    else:
+    elif twixObj.hdr.Meas.lFinalMatrixSizeSlice:
         n_voxels = twixObj.hdr.Meas.lFinalMatrixSizeSlice
+    else:
+        # If lFinalMatrixSize{Slice,Phase,Read} are all empty
+        # Either unlocalised or unusually filled in headers.
+        # Assume 1 voxel for either SVS or unlocalised case.
+        # RM's SPECIAL sequence hits this. See https://github.com/wexeee/spec2nii/issues/6.
+        n_voxels = 1
 
     if n_voxels > 1:
         return process_mrsi(twixObj, base_name_out, name_in, dataKey, quiet=quiet, verbose=verbose)
