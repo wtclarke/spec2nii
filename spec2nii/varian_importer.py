@@ -93,7 +93,13 @@ def read_varian(args):
 
     # set tag dimensions
     meta.set_dim_info(0, "DIM_COIL")
-    meta.set_dim_info(1, "DIM_DYN")
+    meta.set_dim_info(1, args.tag6)
+
+    # Stuff full headers into user fields
+    if args.dump_headers:
+        meta.set_user_def(key='VarianProcpar',
+                          doc='Varian procpar metadata.',
+                          value=dic['procpar'])
 
     # File names
     if args.fileout:

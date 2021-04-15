@@ -90,6 +90,9 @@ Bruker conversion is powered by the [BrukerAPI package](https://github.com/isi-n
 ### Varian 
 `spec2nii varian /path/to/fid.fid`  
 where fid.fid is a Varian fid directory containing a fid and procpar file.  
+Use the `-d` option to dump the procpar header file contents into the header extension.  
+Use the `-t` option to set an alternative dimension tag for the 6th dimension (default = `DIM_DYN`).  
+
 (Bells and whistles pending -- this only really works with 1D spectra that may change over time and may be received on multiple coils)  
 Written by Jack J. Miller (jack.miller@physics.org) 
 

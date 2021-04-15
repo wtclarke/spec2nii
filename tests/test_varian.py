@@ -23,6 +23,8 @@ def test_svs(tmp_path):
                            '-f', 'svs',
                            '-o', tmp_path,
                            '-j',
+                           '-d',
+                           '-t', 'DIM_USER_0',
                            str(data_path)])
 
     img_t = read_nifti_mrs(tmp_path / 'svs.nii.gz')
@@ -37,4 +39,6 @@ def test_svs(tmp_path):
     assert hdr_ext['SpectrometerFrequency'][0] == 100.4451626
     assert hdr_ext['ResonantNucleus'][0] == "13C"
     assert hdr_ext['OriginalFile'][0] == data_path.name
-
+    assert 'VarianProcpar' in hdr_ext
+    assert hdr_ext['dim_5'] == 'DIM_COIL'
+    assert hdr_ext['dim_6'] == 'DIM_USER_0'
