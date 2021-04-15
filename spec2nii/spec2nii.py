@@ -168,11 +168,16 @@ class spec2nii:
 
         # Varian format
 
-        parser_varian = subparsers.add_parser('varian', help='Convert from the Varian/OpenVnmrJ data format');
-        parser_varian.add_argument('file',help = 'Path to the varian .fid directory, containing procpar and fid files', type=str);
+        parser_varian = subparsers.add_parser('varian', help='Convert from the Varian/OpenVnmrJ data format')
+        parser_varian.add_argument(
+            'file', help='Path to the varian .fid directory, containing procpar and fid files', type=str)
+        parser_varian.add_argument("-t", "--tag6", type=str, default='DIM_DYN',
+                                   help="Specify 6th dimension NIfTI MRS tag (default DIM_DYN).")
+        parser_varian.add_argument('-d', '--dump_headers',
+                                   help='Dump varian header information into json header extension',
+                                   action='store_true')
         parser_varian = add_common_parameters(parser_varian)
         parser_varian.set_defaults(func=self.varian)
-
 
         if len(sys.argv) == 1:
             parser.print_usage(sys.stderr)
@@ -404,7 +409,7 @@ class spec2nii:
         from spec2nii.bruker import read_bruker
         self.imageOut, self.fileoutNames = read_bruker(args)
 
-    # Varian parser
+    # Varian parser
     def varian(self, args):
         from spec2nii.varian_importer import read_varian
         self.imageOut, self.fileoutNames = read_varian(args)

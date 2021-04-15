@@ -59,7 +59,6 @@ from __future__ import division
 
 import os
 import string
-import sys
 import itertools
 from functools import reduce
 
@@ -435,18 +434,18 @@ def uc_from_freqscale(scale, obs, unit='ppm'):
 
         # The scale needs be corrected by extending each extremum by half the
         # bin width (to convert from centers to edges).
-        dx = abs(scale[1]-scale[0])
+        dx = abs(scale[1] - scale[0])
 
         if unit == 'ppm':
-            sw = ((max + dx/2.0) - (min - dx/2.0)) * obs
-            car = (min-dx/2.0 + (max-min)/2.0) * obs
+            sw = ((max + dx / 2.0) - (min - dx / 2.0)) * obs
+            car = (min - dx / 2.0 + (max - min) / 2.0) * obs
         elif unit == 'hz':
-            sw = ((max + dx/2.0) - (min - dx/2.0))
-            car = (min-dx/2.0 + (max-min)/2.0)
+            sw = ((max + dx / 2.0) - (min - dx / 2.0))
+            car = (min - dx / 2.0 + (max - min) / 2.0)
         else:
             # unit is 'kHz':
-            sw = ((max + dx/2.0) - (min - dx/2.0)) / 1.e3
-            car = (min-dx/2.0 + (max-min)/2.0) / 1.e3
+            sw = ((max + dx / 2.0) - (min - dx / 2.0)) / 1.e3
+            car = (min - dx / 2.0 + (max - min) / 2.0) / 1.e3
 
     else:
         mesg = '{} is not a supported unit.'.format(unit)
@@ -667,7 +666,7 @@ class data_nd(object):
         """
         create a copy
         """
-        return __fcopy(self, self.order)
+        return self.__fcopy__(self, self.order)
 
     def __getitem__(self, key):
         """
@@ -782,7 +781,7 @@ class data_nd(object):
 
         try:    # convert to integers
             axes = [int(i) for i in axes]
-        except:
+        except Exception:
             raise TypeError("an integer is required")
 
         if len(axes) != self.ndim:   # check for to few/many axes

@@ -81,17 +81,20 @@ Generates separate reference file.
 `spec2nii bruker -m 2DSEQ 2DSEQ_FILE_or_DIR`  
 `spec2nii bruker -m FID FID_FILE_or_DIR`
 
-Ues the `-d` option to dump the header files (method and acqp for fid, visu_pars for 2dseq) into the header extension.
+Use the `-d` option to dump the header files (method and acqp for fid, visu_pars for 2dseq) into the header extension.
 
 Additional filters can be added by defining additional queries using the `-q` flag.
 
 Bruker conversion is powered by the [BrukerAPI package](https://github.com/isi-nmr/brukerapi-python) written by Tomas Psorn.
 
 ### Varian 
+`spec2nii varian /path/to/fid.fid`  
+where fid.fid is a Varian fid directory containing a fid and procpar file.  
+Use the `-d` option to dump the procpar header file contents into the header extension.  
+Use the `-t` option to set an alternative dimension tag for the 6th dimension (default = `DIM_DYN`).  
 
-`spec2nii varian /path/to/fid.fid` where fid.fid is a Varian fid directory containing a fid and procpar file 
-(Bells and whistles pending -- this only really works with 1D spectra that may change over time and may be received on multiple coils) 
-(Written by Jack J. Miller, jack.miller@physics.org) 
+(Bells and whistles pending -- this only really works with 1D spectra that may change over time and may be received on multiple coils)  
+Written by Jack J. Miller (jack.miller@physics.org) 
 
 
 ### Text/LCModel/jMRUI

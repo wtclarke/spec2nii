@@ -770,7 +770,7 @@ def read_fid(filename, shape=None, torder='flat', as_2d=False,
     if len(shape) >= 3:
         try:
             return dic, reorder_data(data, shape, torder)
-        except:
+        except Exception:
             warn("data cannot be re-ordered, returning raw 2D data\n" +
                  "Provided shape: " + str(shape) + " torder: " + str(torder))
             return dic, data
@@ -1004,7 +1004,7 @@ def write_fid(filename, dic, data, torder='flat', repack=False, correct=True,
     return
 
 
-def write_fid_lowmem(filename, dic, data, torder='f', repack=False,
+def write_fid_lowmem(filename, dic, data, torder='f', repack=False, correct=True,
                      overwrite=False):
     """
     Write a Agilent/Varian binary (fid) file using mimimal amounts of memory.
@@ -1287,7 +1287,7 @@ def get_block_ntraces(f, ntraces, pts, nbheaders, dt, read_blockhead=False):
             for i in range(2, nbheaders):
                 skip_blockheader(f)
         # read the data
-        trace = get_trace(file, pts * ntraces, dt)
+        trace = get_trace(f, pts * ntraces, dt)
         return dic, trace.reshape(ntraces, pts)
 
 
@@ -1790,7 +1790,7 @@ def find_shape(pdic):
 
     try:
         shape = [int(pdic["np"]["values"][0]) // 2]
-    except:
+    except Exception:
         # when shape finding fails issue warning and return None
         warn("shape cannot be determined.")
         return None
@@ -2028,6 +2028,7 @@ def write_procpar(filename, dic, overwrite=False):
     f.close()
 
     return
+
 
 subtypes = ["undefined", "real", "string", "delay", "flag", "frequency",
             "pulse", "integer"]
