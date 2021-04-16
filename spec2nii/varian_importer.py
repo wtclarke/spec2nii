@@ -73,7 +73,7 @@ def read_varian(args):
 
     # Parse 3D localisation
     sequence_name = dic['procpar']['seqfil']['values'][0]
-    if (sequence_name.count('press') or sequence_name.count('steam')): #Probably SVS...
+    if (sequence_name.count('press') or sequence_name.count('steam')):
         affine = _varian_orientation_3d(dic)
     else:
         affine = np.diag(np.array([10000, 10000, 10000, 1]))  # 10 m slab for now....
@@ -97,7 +97,7 @@ def read_varian(args):
         meta.set_standard_def('TxCoil', dic['procpar']['rfcoil']['values'][0])
         meta.set_standard_def('RxCoil', dic['procpar']['rfcoil']['values'][0])
     except KeyError:
-        warnings.warn('Expected standard metadata keying failed');
+        warnings.warn('Expected standard metadata keying failed')
     try:
         meta.set_standard_def('InversionTime', dic['procpar']['ti']['values'][0])
     except KeyError:
@@ -132,7 +132,6 @@ def read_varian(args):
     return [nifti_mrs.NIfTI_MRS(data, orientation.Q44, dwelltime, meta), ], fname_out
 
 
-
 def _varian_orientation_1d(params):
     '''Calculate 1d slice orientation from parameters struct
      extract voxel positions if available
@@ -142,7 +141,7 @@ def _varian_orientation_1d(params):
                     - pos1, pos2, pos3           : define position of voxel
                     - vox1, vox2, vox3, thkunit  : define size of voxel (no thkunit is mm)
     '''
-    warnings.warn('Not yet implemented');
+    warnings.warn('Not yet implemented')
     return
 
 
@@ -157,11 +156,11 @@ def _varian_orientation_3d(params):
     dim_lr = params['procpar']['vox1']['values'][0]
     dim_ap = params['procpar']['vox2']['values'][0]
     dim_hf = params['procpar']['vox3']['values'][0]
-    dimensions = [dim_lr, dim_ap, dim_hf]*1e-2
+    dimensions = [dim_lr, dim_ap, dim_hf] * 1e-2
 
     shift_lr = params['procpar']['pos1']['values'][0]
     shift_ap = params['procpar']['pos2']['values'][0]
     shift_hf = params['procpar']['pos3']['values'][0]
-    shift = [-shift_lr, -shift_ap, shift_hf]*1e-2
+    shift = [-shift_lr, -shift_ap, shift_hf] * 1e-2
 
     return calc_affine(angles, dimensions, shift)
