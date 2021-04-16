@@ -27,12 +27,14 @@ import os.path as op
 from pathlib import Path
 import json
 from spec2nii import nifti_mrs
+from spec2nii import __version__ as spec2nii_ver
 # There are case specific imports below
 
 
 class spec2nii:
     def __init__(self):
         parser = argparse.ArgumentParser(description='Convert raw spectroscopy data to NIfTI format.')
+        parser.add_argument('-v', '--version', action='version', version=spec2nii_ver)
 
         subparsers = parser.add_subparsers(title='subcommands',
                                            description='File types supported')
