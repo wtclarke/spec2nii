@@ -93,8 +93,11 @@ where fid.fid is a Varian fid directory containing a fid and procpar file.
 Use the `-d` option to dump the procpar header file contents into the header extension.  
 Use the `-t` option to set an alternative dimension tag for the 6th dimension (default = `DIM_DYN`).  
 
-(Bells and whistles pending -- this only really works with 1D spectra that may change over time and may be received on multiple coils)  
-Written by Jack J. Miller (jack.miller@physics.org) 
+Note that the varian file format is very flexible -- the binary `fid` itself essentially is a long 2D list of (`complex_points * everything_else`), and the current code makes several significant assumptions about how that should be interpreted and reshaped. 
+In particular, if you are using a sequence derived from something different to either `spuls`, `s2pul`, `press`, or `steam`, it is quite likely that this will not work. Edit `varian_importer.py` and add cases based on your `seqfil` as appropriate. 
+It is assumed that the `comment` parameter should be the patient's name. 
+
+(Further bells and whistles pending; Written by Jack J. Miller <jack.miller@physics.org>)
 
 
 ### Text/LCModel/jMRUI
