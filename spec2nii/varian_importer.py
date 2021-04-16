@@ -13,6 +13,7 @@ from spec2nii import __version__ as spec2nii_ver
 
 import re
 import spec2nii.varian as v
+import warnings
 
 
 def read_varian(args):
@@ -70,12 +71,10 @@ def read_varian(args):
     except KeyError:
         pass
 
-
     # Parse 3D localisation
     sequence_name = dic['procpar']['seqfil']['values'][0]
-    if (sequence_name.count('press') or sequence_name.count('steam')):
-        #3D...
-        affine = _varian_orientation_3d(dic);
+    if (sequence_name.count('press') or sequence_name.count('steam')): #Probably SVS...
+        affine = _varian_orientation_3d(dic)
     else:
         affine = np.diag(np.array([10000, 10000, 10000, 1]))  # 10 m slab for now....
 
@@ -94,11 +93,11 @@ def read_varian(args):
 
     # stuff that is nice to have:
     try:
-        meta.set_standard_def('SoftwareVersions',dic['procpar']['parver']['values'][0])
-        meta.set_standard_def('TxCoil',dic['procpar']['rfcoil']['values'][0])
-        meta.set_standard_def('RxCoil',dic['procpar']['rfcoil']['values'][0])
+        meta.set_standard_def('SoftwareVersions', dic['procpar']['parver']['values'][0])
+        meta.set_standard_def('TxCoil', dic['procpar']['rfcoil']['values'][0])
+        meta.set_standard_def('RxCoil', dic['procpar']['rfcoil']['values'][0])
     except KeyError:
-        warning('Expected standard metadata keying failed');
+        warnings.warn('Expected standard metadata keying failed');
     try:
         meta.set_standard_def('InversionTime', dic['procpar']['ti']['values'][0])
     except KeyError:
@@ -132,19 +131,20 @@ def read_varian(args):
 
     return [nifti_mrs.NIfTI_MRS(data, orientation.Q44, dwelltime, meta), ], fname_out
 
-'''
- extract voxel positions if available
- NB:  0d spect -- thk etc not defined
-      1d slice -- thk, and then pss along the usual (theta, phi, psi) angles (and orient)
-      SVS voxel - vorient, vpsi, vphi, vtheta: define angle of voxel;
-                - pos1, pos2, pos3           : define position of voxel
-                - vox1, vox2, vox3, thkunit  : define size of voxel (no thkunit is mm)
-'''
+
 
 def _varian_orientation_1d(params):
-    '''Calculate 1d slice orientation from parameters struct'''
-    warning('Not yet implemented');
+    '''Calculate 1d slice orientation from parameters struct
+     extract voxel positions if available
+     NB:  0d spect -- thk etc not defined
+          1d slice -- thk, and then pss along the usual (theta, phi, psi) angles (and orient)
+          SVS voxel - vorient, vpsi, vphi, vtheta: define angle of voxel;
+                    - pos1, pos2, pos3           : define position of voxel
+                    - vox1, vox2, vox3, thkunit  : define size of voxel (no thkunit is mm)
+    '''
+    warnings.warn('Not yet implemented');
     return
+
 
 def _varian_orientation_3d(params):
     '''Calculate single voxel spectroscopy orientation from parameters struct'''
