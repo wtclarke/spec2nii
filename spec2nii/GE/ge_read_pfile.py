@@ -188,6 +188,9 @@ class Pfile(object):
         elif psd == 'epsi_3d_24':
             # bjs - added for soher check of MIDAS Browndyke data
             mapper = PfileMapper
+        elif psd == 'gaba':
+            # wtc - added for Nottingham MEGA-PRESS sequence.
+            mapper = PfileMapper
         else:
             raise UnknownPfile("No Pfile mapper for pulse sequence = %s" % psd)
         
