@@ -1,5 +1,8 @@
+import json
+
 import nibabel as nib
 from .validator import validate_nifti_mrs
+from spec2nii.nifti_mrs import hdr_ext
 
 
 def get_mrs_class(nifti=2):
@@ -19,7 +22,7 @@ def get_mrs_class(nifti=2):
                             ``obj.affine`` also returns None, and the affine as written to disk
                             will depend on the file format.
             :param float dwelltime: Spectroscopic time-domain dwelltime in seconds.
-            :param header_ext : nifti_mrs.hdr_ext object.
+            :param header_ext : nifti_mrs.hdr_ext object or dict.
             :param header: None or mapping or header instance, optional
                             metadata for this image format
             :param extra: None or mapping, optional
@@ -31,7 +34,13 @@ def get_mrs_class(nifti=2):
             super().__init__(dataobj, affine, header=header, extra=extra, file_map=file_map)
 
             # Add the header extensions
-            json_s = header_ext.get_json(dimensions=dataobj.ndim)
+            if isinstance(header_ext, hdr_ext):
+                json_s = header_ext.get_json(dimensions=dataobj.ndim)
+            elif isinstance(header_ext, dict):
+                json_s = json.dumps(header_ext)
+            else:
+                raise ValueError('header_ext must be a spec2nii.nifti_mrs.hdr_ext object or dict')
+
             extension = nib.nifti1.Nifti1Extension(44, json_s.encode('UTF-8'))
             self.header.extensions.append(extension)
 

@@ -36,8 +36,7 @@ class spec2nii:
         parser = argparse.ArgumentParser(description='Convert raw spectroscopy data to NIfTI format.')
         parser.add_argument('-v', '--version', action='version', version=spec2nii_ver)
 
-        subparsers = parser.add_subparsers(title='subcommands',
-                                           description='File types supported')
+        subparsers = parser.add_subparsers(title='spec2nii subcommands')
 
         def add_common_parameters(subparser):
             # Add options that are common to all subcommands
@@ -180,6 +179,21 @@ class spec2nii:
                                    action='store_true')
         parser_varian = add_common_parameters(parser_varian)
         parser_varian.set_defaults(func=self.varian)
+
+        # Additional functions - anonymise and dump
+        parser_anon = subparsers.add_parser('anon', help='Anonymise existing NIfTI-MRS file.')
+        parser_anon.add_argument('file', help='file to convert', type=Path)
+        parser_anon.add_argument("-f", "--fileout", type=str,
+                                 help="Output file base name (default = input file name)")
+        parser_anon.add_argument("-o", "--outdir", type=Path,
+                                 help="Output location (default = .)", default='.')
+        parser_anon.add_argument('-v', '--verbose', action='store_true')
+        parser_anon.set_defaults(func=self.anon,
+                                 json=False,
+                                 nifti1=False,
+                                 override_nucleus=None,
+                                 override_frequency=None,
+                                 override_dwelltime=None)
 
         if len(sys.argv) == 1:
             parser.print_usage(sys.stderr)
@@ -415,6 +429,11 @@ class spec2nii:
     def varian(self, args):
         from spec2nii.varian_importer import read_varian
         self.imageOut, self.fileoutNames = read_varian(args)
+
+    # Anonymise function
+    def anon(self, args):
+        from spec2nii.anonymise import anon_nifti_mrs
+        self.imageOut, self.fileoutNames = anon_nifti_mrs(args)
 
 
 def main(*args):
