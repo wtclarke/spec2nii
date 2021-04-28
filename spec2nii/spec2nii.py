@@ -182,7 +182,7 @@ class spec2nii:
 
         # Additional functions - anonymise and dump
         parser_anon = subparsers.add_parser('anon', help='Anonymise existing NIfTI-MRS file.')
-        parser_anon.add_argument('file', help='file to convert', type=Path)
+        parser_anon.add_argument('file', help='file to anonymise', type=Path)
         parser_anon.add_argument("-f", "--fileout", type=str,
                                  help="Output file base name (default = input file name)")
         parser_anon.add_argument("-o", "--outdir", type=Path,
@@ -194,6 +194,33 @@ class spec2nii:
                                  override_nucleus=None,
                                  override_frequency=None,
                                  override_dwelltime=None)
+
+        parser_dump = subparsers.add_parser('dump', help='Dump contents of headers from existing NIfTI-MRS file.')
+        parser_dump.add_argument('file', help='NIfTI-MRS file', type=Path)
+        parser_dump.set_defaults(func=self.dump,
+                                 outdir=None,
+                                 nifti1=False)
+
+        parser_extract = subparsers.add_parser('extract', help='Generate json sidecar from existing NIfTI-MRS file.')
+        parser_extract.add_argument('file', help='NIFTI-MRS file', type=Path)
+        parser_extract.add_argument("-o", "--outdir", type=Path,
+                                    help="Output location (default: directory of input file)", default=None)
+        parser_extract.set_defaults(func=self.extract,
+                                    nifti1=False)
+
+        parser_insert = subparsers.add_parser('insert', help='Insert json fomated file into existing NIfTI-MRS file.')
+        parser_insert.add_argument('file', help='NIFTI-MRS file', type=Path)
+        parser_insert.add_argument('json_file', help='JSON file to insert', type=Path)
+        parser_insert.add_argument("-f", "--fileout", type=str,
+                                   help="Output file base name (default = input file name)")
+        parser_insert.add_argument("-o", "--outdir", type=Path,
+                                   help="Output location (default = .)", default='.')
+        parser_insert.set_defaults(func=self.insert,
+                                   nifti1=False,
+                                   json=False,
+                                   override_nucleus=None,
+                                   override_frequency=None,
+                                   override_dwelltime=None)
 
         if len(sys.argv) == 1:
             parser.print_usage(sys.stderr)
@@ -434,6 +461,21 @@ class spec2nii:
     def anon(self, args):
         from spec2nii.anonymise import anon_nifti_mrs
         self.imageOut, self.fileoutNames = anon_nifti_mrs(args)
+
+    # Dump function
+    def dump(self, args):
+        from spec2nii.other import dump_headers
+        dump_headers(args)
+
+    # Extract function
+    def extract(self, args):
+        from spec2nii.other import extract_hdr_ext
+        extract_hdr_ext(args)
+
+    # Insert function
+    def insert(self, args):
+        from spec2nii.other import insert_hdr_ext
+        self.imageOut, self.fileoutNames = insert_hdr_ext(args)
 
 
 def main(*args):
