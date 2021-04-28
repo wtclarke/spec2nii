@@ -119,6 +119,16 @@ The text format requires additional information, namely imaging frequency in MHz
 `spec2nii jmrui -a AFFINE_FILE FILE`  
 `spec2nii text -a AFFINE_FILE -i imaging_freq -b bandwidth FILE`
 
+### Other functions
+Dump the NIfTI headers and header extension to Stdout.  
+`spec2nii dump FILE`  
+ 
+Produce a json file containing the header extension as a separate file from a NIfTI-MRS file.  
+`spec2nii extract FILE`  
+
+Overwrite the header extension in a NIfTI-MRS file using a separate json formatted file.  
+`spec2nii insert FILE JSON_FILE`
+
 ## Contributors & contributing
 This program was written by Will Clarke, University of Oxford. Contributions to add new file formats or improve existing ones are very welcome. Please fork the repository and request changes using a merge (pull) request. All I ask is that test data and tests are included with any submission.
 
