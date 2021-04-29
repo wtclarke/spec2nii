@@ -120,7 +120,7 @@ The text format requires additional information, namely imaging frequency in MHz
 `spec2nii text -a AFFINE_FILE -i imaging_freq -b bandwidth FILE`
 
 ### Other functions
-Anonymise the NIfTI-MRS file. All standard-defined keys marked as sensitive will be removed. User defined parameters marked as `private_` will also be removed. Use the `-v` flag to view the removed header keys.  
+Anonymise the NIfTI-MRS file. All standard-defined keys marked as sensitive will be removed. User defined parameters marked as `private_` will also be removed. Use the `-v` flag to view the removed header keys. The `-r` argument may be used (repeatedly) to remove additional keys from the header extension manually.
 `spec2nii anon FILE`  
  
 Dump the NIfTI headers and header extension to Stdout.  
