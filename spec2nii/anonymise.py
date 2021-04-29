@@ -39,8 +39,12 @@ def anon_nifti_mrs(args):
         out_dict = {}
         removed = {}
         for key, value in in_dict.items():
+            # Explicitly set on command line
+            if args.remove\
+                    and key in args.remove:
+                removed.update({key: value})
             # Standard defined
-            if key in standard_defined.keys():
+            elif key in standard_defined.keys():
                 if standard_defined[key][3]:
                     removed.update({key: value})
                 else:

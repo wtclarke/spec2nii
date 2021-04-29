@@ -183,6 +183,9 @@ class spec2nii:
         # Additional functions - anonymise and dump
         parser_anon = subparsers.add_parser('anon', help='Anonymise existing NIfTI-MRS file.')
         parser_anon.add_argument('file', help='file to anonymise', type=Path)
+        parser_anon.add_argument("-r", "--remove", type=str, metavar='KEY',
+                                 action='append',
+                                 help="Explicitly remove key. Argument may be repeated")
         parser_anon.add_argument("-f", "--fileout", type=str,
                                  help="Output file base name (default = input file name)")
         parser_anon.add_argument("-o", "--outdir", type=Path,

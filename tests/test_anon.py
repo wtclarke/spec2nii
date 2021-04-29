@@ -26,6 +26,8 @@ def test_anon(tmp_path):
     subprocess.check_call(['spec2nii', 'anon',
                            '-f', 'anon',
                            '-o', tmp_path,
+                           '-r', 'PatientSex',
+                           '-r', 'RepetitionTime',
                            '-v', str(tmp_path / 'original.nii.gz')])
 
     img_o = read_nifti_mrs(tmp_path / 'original.nii.gz')
@@ -48,3 +50,5 @@ def test_anon(tmp_path):
     assert 'OriginalFile' not in hdr_ext_a
     assert 'PatientName' in hdr_ext_o
     assert 'PatientName' not in hdr_ext_a
+    assert 'PatientSex' not in hdr_ext_a
+    assert 'RepetitionTime' not in hdr_ext_a
