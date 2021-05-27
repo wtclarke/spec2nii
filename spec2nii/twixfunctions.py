@@ -229,7 +229,7 @@ def twix2DCMOrientation(mapVBVDHdr, verbose=False):
     """
     # Only single-slices are supported -- throw an error otherwise
 
-    if  ('sGroupArray', 'asGroup', '0', 'nSize') in mapVBVDHdr['MeasYaps']:
+    if ('sGroupArray', 'asGroup', '0', 'nSize') in mapVBVDHdr['MeasYaps']:
         nSlices = mapVBVDHdr['MeasYaps'][('sGroupArray', 'asGroup', '0', 'nSize')]
         if nSlices != 1.0:
             raise ValueError('In slice-selective spectroscopy, only the first slice is supported')
