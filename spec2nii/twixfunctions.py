@@ -227,19 +227,33 @@ def twix2DCMOrientation(mapVBVDHdr, verbose=False):
         sliceThickness
 
     """
+    # Only single-slices are supported -- throw an error otherwise
+
+    if  ('sGroupArray', 'asGroup', '0', 'nSize') in mapVBVDHdr['MeasYaps']:
+        nSlices = mapVBVDHdr['MeasYaps'][('sGroupArray', 'asGroup', '0', 'nSize')]
+        if nSlices != 1.0:
+            raise ValueError('In slice-selective spectroscopy, only the first slice is supported')
+
     # Orientation information
     if ('sSpecPara', 'sVoI', 'sNormal', 'dSag') in mapVBVDHdr['MeasYaps']:
         NormaldSag = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'sNormal', 'dSag')]
+    elif ('sSliceArray', 'asSlice', '0', 'sNormal', 'dSag') in mapVBVDHdr['MeasYaps']:
+        # This is for slice-selective spectroscopy
+        NormaldSag = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'sNormal', 'dSag')]
     else:
         NormaldSag = 0.0
 
     if ('sSpecPara', 'sVoI', 'sNormal', 'dCor') in mapVBVDHdr['MeasYaps']:
         NormaldCor = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'sNormal', 'dCor')]
+    elif ('sSliceArray', 'asSlice', '0', 'sNormal', 'dCor') in mapVBVDHdr['MeasYaps']:
+        NormaldCor = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'sNormal', 'dCor')]
     else:
         NormaldCor = 0.0
 
     if ('sSpecPara', 'sVoI', 'sNormal', 'dTra') in mapVBVDHdr['MeasYaps']:
         NormaldTra = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'sNormal', 'dTra')]
+    elif ('sSliceArray', 'asSlice', '0', 'sNormal', 'dTra') in mapVBVDHdr['MeasYaps']:
+        NormaldTra = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'sNormal', 'dTra')]
     else:
         NormaldTra = 0.0
 
@@ -250,15 +264,22 @@ def twix2DCMOrientation(mapVBVDHdr, verbose=False):
 
     TwixSliceNormal = np.array([NormaldSag, NormaldCor, NormaldTra], dtype=float)
 
-    RoFoV = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'dReadoutFOV')]
-    PeFoV = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'dPhaseFOV')]
+    if ('sSliceArray', 'asSlice', '0', 'dReadoutFOV') in mapVBVDHdr['MeasYaps']:
+        RoFoV = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'dReadoutFOV')]
+        PeFoV = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'dPhaseFOV')]
+    else:
+        RoFoV = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'dReadoutFOV')]
+        PeFoV = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'dPhaseFOV')]
 
     dColVec_vector, dRowVec_vector = GSL.calc_prs(TwixSliceNormal, inplaneRotation, verbose)
 
     imageOrientationPatient = np.stack((dRowVec_vector, dColVec_vector), axis=0)
 
     pixelSpacing = np.array([PeFoV, RoFoV])  # [RoFoV PeFoV];
-    sliceThickness = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'dThickness')]
+    if ('sSliceArray', 'asSlice', '0', 'dThickness') in mapVBVDHdr['MeasYaps']:
+        sliceThickness = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'dThickness')]
+    if ('sSpecPara', 'sVoI', 'dThickness') in mapVBVDHdr['MeasYaps']:
+        sliceThickness = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'dThickness')]
 
     # Position info (including table position)
     if ('sSpecPara', 'sVoI', 'sPosition', 'dSag') in mapVBVDHdr['MeasYaps']:
