@@ -93,8 +93,10 @@ def _process_svs_pfile(pfile):
         data, meta, dwelltime, fname_suffix = _process_probe_p(pfile)
     elif psd == 'oslaser':
         data, meta, dwelltime, fname_suffix = _process_oslaser(pfile)
+    elif psd == 'gaba':
+        data, meta, dwelltime, fname_suffix = _process_gaba(pfile)
     else:
-        raise UnsupportedPulseSequenceError('Unrecognised sequence, psdname must be "prob-p" or "oslaser".')
+        raise UnsupportedPulseSequenceError(f'Unrecognised sequence {psd}.')
 
     orientation = NIFTIOrient(_calculate_affine(pfile))
 
@@ -161,6 +163,34 @@ def _process_oslaser(pfile):
     dwelltime = 1 / pfile.hdr.rhr_spectral_width
 
     return data, dwelltime, fname_suffix
+
+
+def _process_gaba(pfile):
+    '''Extract metabolite and reference data from a gaba (MPRESS) format pfile
+
+    :param Pfile pfile: Pfile object
+    :return: List numpy data arrays
+    :return: List of file name suffixes
+    '''
+
+    # Note that custom mapper sorts dimensions already
+    metab = pfile.map.raw_suppressed
+    water = pfile.map.raw_unsuppressed
+
+    dwelltime = 1 / pfile.hdr.rhr_spectral_width
+
+    meta = _populate_metadata(pfile, water_suppressed=True)
+    meta_ref = _populate_metadata(pfile, water_suppressed=False)
+
+    meta.set_dim_info(0, 'DIM_COIL')
+    meta.set_dim_info(1, 'DIM_DYN')
+    meta.set_dim_info(2, 'DIM_EDIT')
+
+    meta_ref.set_dim_info(0, 'DIM_COIL')
+    meta_ref.set_dim_info(1, 'DIM_DYN')
+    meta_ref.set_dim_info(2, 'DIM_EDIT')
+
+    return [metab, water], [meta, meta_ref], dwelltime, ['', '_ref']
 
 
 def _process_mrsi_pfile(pfile):
@@ -245,14 +275,23 @@ def _populate_metadata(pfile, water_suppressed=True):
     spec_frequency = float(pfile.hdr.rhr_rh_ps_mps_freq) / 1e7
 
     #  Use the mps freq and field strength to determine gamma and thus isotope
-    gamma = (hdr.rhr_rh_ps_mps_freq * 1e-7) / (hdr.rhe_magstrength / 10000.0)
-    if abs(gamma - 42.57) < 0.3:
-        nucleus = "1H"
-    elif abs(gamma - 10.7) < 0.3:
-        nucleus = "13C"
-    elif abs(gamma - 17.2) < 0.3:
-        nucleus = "31P"
-    else:
+    try:
+        gamma = (hdr.rhr_rh_ps_mps_freq * 1e-7) / (hdr.rhe_magstrength / 10000.0)
+        if abs(gamma - 42.57) < 0.3:
+            nucleus = "1H"
+        elif abs(gamma - 10.7) < 0.3:
+            nucleus = "13C"
+        elif abs(gamma - 17.2) < 0.3:
+            nucleus = "31P"
+        else:
+            print('Warning: Unrecognised nucleus, setting to 1H as default. '
+                  'Use the --override_nucleus option to specify a different nuclide.')
+            nucleus = "1H"
+    except ZeroDivisionError:
+        # Catch data (anonymised?) which has had rhe_magstrength set to 0
+        # E.g. the BIG GABA data.
+        print('Warning: Magnetic field value set to zero, setting nucleus to 1H as default. '
+              'Use the --override_nucleus option to specify a different nuclide.')
         nucleus = "1H"
 
     meta = nifti_mrs.hdr_ext(spec_frequency,

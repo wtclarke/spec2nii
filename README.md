@@ -11,6 +11,15 @@ Visualisation of MRS converted by spec2nii can be carried out with a recent (>0.
 or  
 `pip install spec2nii`
 
+### Installing Conda (for first option)
+Miniconda can be installed by following the instructions on the [Conda website](https://docs.conda.io/en/latest/miniconda.html). To create a suitable environment run the following three commands after installing Conda.
+
+```
+    conda create -c conda-forge -n spec2nii python=3.8
+    conda activate spec2nii
+    conda install -c conda-forge spec2nii
+```
+
 ## Currently supported formats
 This table lists the currently supported formats. I have very limited experience with Philips and GE formats. Please get in touch if you are willing to help add to this list and/or supply validation data.
 
@@ -110,3 +119,22 @@ The text format requires additional information, namely imaging frequency in MHz
 `spec2nii jmrui -a AFFINE_FILE FILE`  
 `spec2nii text -a AFFINE_FILE -i imaging_freq -b bandwidth FILE`
 
+### Other functions
+Anonymise the NIfTI-MRS file. All standard-defined keys marked as sensitive will be removed. User defined parameters marked as `private_` will also be removed. Use the `-v` flag to view the removed header keys. The `-r` argument may be used (repeatedly) to remove additional keys from the header extension manually.
+`spec2nii anon FILE`  
+ 
+Dump the NIfTI headers and header extension to Stdout.  
+`spec2nii dump FILE`  
+ 
+Produce a json file containing the header extension as a separate file from a NIfTI-MRS file.  
+`spec2nii extract FILE`  
+
+Overwrite the header extension in a NIfTI-MRS file using a separate json formatted file.  
+`spec2nii insert FILE JSON_FILE`
+
+## Contributors & contributing
+This program was written by Will Clarke, University of Oxford. Contributions to add new file formats or improve existing ones are very welcome. Please fork the repository and request changes using a merge (pull) request. All I ask is that test data and tests are included with any submission.
+
+Particular thanks go to Tomáš Pšorn for contributing the Bruker interface, and to Jack Miller for the Varian interface.
+
+Some GE test data comes from the [BIG GABA](https://www.nitrc.org/projects/biggaba/) dataset whichw as funded by NIH grant R01 EB016089. Please see Mikkelsen M et al. Big GABA: Edited MR spectroscopy at 24 research sites. NeuroImage 2017;159:32–45. doi: 10.1016/j.neuroimage.2017.07.021 for more information.

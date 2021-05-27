@@ -188,6 +188,9 @@ class Pfile(object):
         elif psd == 'epsi_3d_24':
             # bjs - added for soher check of MIDAS Browndyke data
             mapper = PfileMapper
+        elif psd == 'gaba':
+            # wtc - added for Nottingham MEGA-PRESS sequence.
+            mapper = PfileMapperGaba
         else:
             raise UnknownPfile("No Pfile mapper for pulse sequence = %s" % psd)
         
@@ -1097,3 +1100,143 @@ class PfileMapperSlaser(PfileMapper):
         """
         user4 = self.hdr.rhr_rh_user4
         return int(user4)
+
+
+class PfileMapperGaba(PfileMapper):
+
+    def __init__(self, file_name, hdr, version, endian):
+        """
+        MEGA-PRESS sequence.
+        WTC first saw data from Nottingham but it seems general and appears in
+        e.g. the Big GABA dataset.
+
+        Without some more knowledgeable input I can't currently square the logic
+        of BJS's mapper classes with the logic from Gannet/Osprey etc.
+        Therefore this is really a hack that uses the PfileMapper orientation logic
+        but otherwise uses the logic from Gannet/Osprey.
+
+        Thus most work is done in the overloaded read_data method and functions like
+        get_num_voxels_in_vol are currently meaningless. I would like to square both
+        methods in the future.
+        """
+        PfileMapper.__init__(self, file_name, hdr, version, endian)
+
+    def read_data(self):
+        """Function that contains all the data loading logic for the 'gaba'
+        sequence.
+
+        This is currently  a reimplementation of the Gannert/Osprey GELoad.m
+        function. Therefore the logic is unlike the other mappers.
+        The suppressed and unsuppressed data can be fetched from the raw_suppressed
+        and raw_unsuppressed property.
+        """
+
+        nechoes = self.hdr.rhr_rh_nechoes
+        nex = self.hdr.rhr_rh_navs
+        nframes = self.hdr.rhr_rh_nframes
+        npoints = self.hdr.rhr_rh_da_xres
+        nrows = self.hdr.rhr_rh_da_yres
+
+        dataframes = self.hdr.rhi_user4 / nex
+        refframes = self.hdr.rhi_user19
+
+        nreceivers = self.get_num_coils
+        dataWordSize    = self.hdr.rhr_rh_point_size
+
+        # Check if single voxel
+        numVoxels = self.get_num_voxels
+        self.is_svs = False
+        if (numVoxels[0] * numVoxels[1] * numVoxels[2] == 1):
+            self.is_svs = True
+
+        # Data loading
+        # Compute size (in bytes) of data
+        data_elements = npoints * 2
+        totalframes = nrows * nechoes
+        data_elements = data_elements * totalframes * nreceivers
+
+        readOffset = self.hdr.rhr_rdb_hdr_off_data
+        with open(self.file_name, 'rb') as filelike:
+            filelike.seek(0)
+            filelike.seek(readOffset)
+
+            if dataWordSize == 4:
+                tempData = np.fromfile(filelike, dtype='i4', count=int(data_elements))
+            elif dataWordSize == 2:
+                tempData = np.fromfile(filelike, dtype='i2', count=int(data_elements))
+
+        if self.endian != 'little':
+            tempData.byteswap(True)     # swap in-place
+
+        tempData = tempData.astype(np.float32)    
+        tempData = tempData.view(np.complex64)
+
+        if nechoes == 1:
+            tempData = tempData.reshape((1, 1, 1, nreceivers, totalframes, npoints))
+            self.raw_data = np.swapaxes(tempData, -1, -3)
+            
+            if (dataframes + refframes) != nframes:
+                mult = 1
+                dataframes *= nex
+                refframes = nframes - dataframes
+            else:
+                mult = 1.0 / nex
+            
+            self.raw_unsuppressed = self.raw_data[:, :, :, :, 1:(refframes + 1), :]
+            self.raw_suppressed   = self.raw_data[:, :, :, :, (refframes + 1):, :]
+
+        else:
+            if int(dataframes + refframes) != nframes:
+                mult = nex / 2
+                multw = nex
+                noadd = 1
+                dataframes *= nex
+                refframes = nframes - dataframes
+            else:
+                mult = nex / 2
+                multw = 1
+                noadd = 0
+            
+            if totalframes != (dataframes + refframes + 1) * nechoes:
+                raise ValueError('# of totalframes not same as (dataframes + refframes + 1) * nechoes')
+
+            tempData = tempData.reshape((1, 1, 1, nreceivers, totalframes, npoints))
+            self.raw_data = np.swapaxes(tempData, -1, -3)
+            
+            # Marked as MM (180404) in GELoad.m
+            X1, X2 = np.meshgrid(np.arange(refframes), np.arange(nechoes))
+            X1 = X1.T.ravel()
+            X2 = X2.T.ravel()
+            Y1 = (-1)**(noadd * X1)
+            Y1 = np.moveaxis(np.broadcast_to(Y1, (1, 1, 1, npoints, nreceivers, Y1.size)), -1, -2)
+            Y2 = (1 + (totalframes / nechoes) * X2 + X1).astype(int)
+
+            self.raw_unsuppressed = self.raw_data[:, :, :, :, Y2, :] * Y1 * multw
+            
+            X1, X2 = np.meshgrid(np.arange(dataframes), np.arange(nechoes))
+            X1 = X1.T.ravel()
+            X2 = X2.T.ravel()
+            Y1 = (-1)**(noadd * X1)
+            Y1 = np.moveaxis(np.broadcast_to(Y1, (1, 1, 1, npoints, nreceivers, Y1.size)), -1, -2)
+            Y2 = (1 + refframes + (totalframes / nechoes) * X2 + X1).astype(int)
+
+            self.raw_suppressed = self.raw_data[:, :, :, :, Y2, :] * Y1 * mult
+
+            # Up to this point we have simply replicated the logic of the GELoad function.
+            # Now reorganise dimensions to give a editing dimension.
+            # This means that this is done in a not particularly clear order, but it enables testing against
+            # the matlab code. 
+
+            reorg_suppressed = []
+            reorg_unsuppressed = []
+            for ne in range(nechoes):
+                reorg_suppressed.append(self.raw_suppressed[:, :, :, :, ne::nechoes, :])
+                reorg_unsuppressed.append(self.raw_unsuppressed[:, :, :, :, ne::nechoes, :])
+                
+            reorg_suppressed = np.stack(reorg_suppressed, axis=-1)
+            # Rearange axes to (x, y, z, t, coils, dynamics, edit)
+            self.raw_suppressed = np.moveaxis(reorg_suppressed, (4, 5), (5, 4))
+
+            reorg_unsuppressed = np.stack(reorg_unsuppressed, axis=-1)
+            # Rearange axes to (x, y, z, t, coils, dynamics, edit)
+            self.raw_unsuppressed = np.moveaxis(reorg_unsuppressed, (4, 5), (5, 4))
