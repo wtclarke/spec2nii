@@ -43,8 +43,8 @@ def read_varian(args):
 
     # number of slices
     sequence_name = dic['procpar']['seqfil']['values'][0]
-    if (sequence_name.count('SSel') or sequence_name.count('sliceshim')): # 1D localised slice
-        pass # to be created
+    if (sequence_name.count('SSel') or sequence_name.count('sliceshim')):  # 1D localised slice
+        pass  # to be created
 
     # reshape
     newshape = (1, 1, 1, number_of_spectral_points, number_of_coils, number_of_time_points)
