@@ -6,6 +6,7 @@ from datetime import datetime
 
 import numpy as np
 import nibabel.nicom.dicomwrappers
+import warnings
 from nibabel.nicom import csareader as csar
 
 from spec2nii.dcm2niiOrientation.orientationFuncs import dcm_to_nifti_orientation
@@ -155,7 +156,12 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
             meta_used.set_dim_info(0, tag)
 
         # Create NIFTI MRS object.
-        nifti_mrs_out.append(nifti_mrs.NIfTI_MRS(combined_data, or_used.Q44, dt_used, meta_used))
+        try:
+            nifti_mrs_out.append(nifti_mrs.NIfTI_MRS(combined_data, or_used.Q44, dt_used, meta_used))
+        except np.linalg.LinAlgError:
+            warnings.warn("""The quartenion passes to NIfTI_MRS was singular.
+                           Most likely your slice position is not well defined. I have set it to None.""")
+            nifti_mrs_out.append(nifti_mrs.NIfTI_MRS(combined_data, None, dt_used, meta_used))
 
     # If there are any identical names then append an index
     seen = np.unique(fnames_out)
