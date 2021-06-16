@@ -92,6 +92,15 @@
       {
         "cmd": "#PVM_DigShift",
         "conditions": ["@type=='fid'"]
+      },
+      {
+        "cmd": "int(np.round(#ACQ_RxFilterInfo[0][0]))",
+        "conditions": ["@type=='fid'",
+                      ["#ACQ_sw_version",["<PV-360.1.1>"]]]
+      },
+      {
+        "cmd": "0",
+        "conditions": []
       }
     ],
     "method_desc": [

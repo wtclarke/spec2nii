@@ -33,5 +33,6 @@ setup(name='spec2nii',
       python_requires='>=3.7',
       entry_points={"console_scripts": [
           "spec2nii = spec2nii.spec2nii:main"]},
-      package_data={'spec2nii': ['bruker_properties.json']}
+      package_data={'spec2nii': ['bruker_properties.json',
+                                 'bruker_fid_override.json']}
       )

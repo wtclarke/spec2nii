@@ -62,13 +62,17 @@ def yield_bruker(args):
     """
     # get location of the spec2nii Bruker properties configuration file
     bruker_properties_path = pkg_resources.resource_filename('spec2nii', 'bruker_properties.json')
+    bruker_fid_override_path = pkg_resources.resource_filename('spec2nii', 'bruker_fid_override.json')
 
     # get a list of queries to filter datasets
     queries = _get_queries(args)
 
     # case of Bruker dataset
     if os.path.isfile(args.file):
-        d = Dataset(args.file, property_files=[bruker_properties_path], parameter_files=['method'])
+        d = Dataset(
+            args.file,
+            property_files=[bruker_fid_override_path, bruker_properties_path],
+            parameter_files=['method'])
         try:
             d.query(queries)
         except FilterEvalFalse:
