@@ -197,17 +197,18 @@ def _prep_data_mrsi(d):
 
 def _fid_affine_from_params(d):
     """ First attempt to create 4x4 affine from fid headers"""
+    warnings.warn('The orientation of bruker fid data is mostly untested.')
+
     orientation = np.squeeze(d.parameters['method']['PVM_VoxArrGradOrient'].value)
     shift = np.squeeze(d.parameters['method']['PVM_VoxArrPosition'].value)
-    warnings.warn('The orientation of bruker fid data is mostly untested.')
-    # shift[0] *= -1
-    # shift[1] *= -1
-    # shift[2] *= -1
+    # csshift = np.squeeze(d.parameters['method']['PVM_VoxArrCSDisplacement'].value)
+    # shift += csshift
     size = np.squeeze(d.parameters['method']['PVM_VoxArrSize'].value)
     affine = np.zeros((4, 4))
     affine[3, 3] = 1
-    affine[:3, :3] = orientation * size[[0, 2, 1]]
-    affine[:3, 3] = shift[[0, 2, 1]]
+    reorder = [1, 2, 0]  # [0, 1, 2] *[0, 2, 1]* [1, 2, 0]
+    affine[:3, :3] = orientation[reorder, :].T * size[reorder]
+    affine[:3, 3] = shift[reorder]
 
     return affine
 
