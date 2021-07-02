@@ -116,6 +116,8 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overides, remove_o
 
     # Extract dwellTime
     dwellTime = twixObj['hdr']['MeasYaps'][('sRXSPEC', 'alDwellTime', '0')] / 1E9
+    if remove_os:
+        dwellTime *= 2
 
     # Extract metadata
     meta_obj = extractTwixMetadata(twixObj['hdr'], basename(twixObj[dataKey].filename))
