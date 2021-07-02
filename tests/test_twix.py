@@ -56,3 +56,24 @@ def test_VE(tmp_path):
 
     assert hdr_ext['dim_5'] == 'DIM_COIL'
     assert hdr_ext['dim_6'] == 'DIM_DYN'
+
+
+def test_os_remove(tmp_path):
+
+    subprocess.check_call(['spec2nii', 'twix',
+                           '-e', 'image',
+                           '-f', 've',
+                           '-o', tmp_path,
+                           '-j', str(ve_path),
+                           '--remove_os'])
+
+    img_t = read_nifti_mrs(tmp_path / 've.nii.gz')
+
+    hdr_ext_codes = img_t.header.extensions.get_codes()
+    hdr_ext = json.loads(img_t.header.extensions[hdr_ext_codes.index(44)].get_content())
+
+    assert img_t.shape == (1, 1, 1, 528, 32, 16)
+    assert np.iscomplexobj(img_t.dataobj)
+
+    assert hdr_ext['dim_5'] == 'DIM_COIL'
+    assert hdr_ext['dim_6'] == 'DIM_DYN'

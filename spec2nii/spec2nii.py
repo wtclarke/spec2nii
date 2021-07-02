@@ -69,6 +69,7 @@ class spec2nii:
         for idx in range(5, 8):
             parser_twix.add_argument(f"-d{idx}", f"--dim{idx}", type=str, help=f"Specify dim {idx} loop counter.")
             parser_twix.add_argument(f"-t{idx}", f"--tag{idx}", type=str, help=f"Specify dim {idx} NIfTI MRS tag.")
+        parser_twix.add_argument('--remove_os', action='store_true', help='Remove time-domain oversampling.')
         parser_twix = add_common_parameters(parser_twix)
         parser_twix.set_defaults(func=self.twix)
 
@@ -326,7 +327,8 @@ class spec2nii:
                                                             args.evalinfo,
                                                             overrides,
                                                             args.quiet,
-                                                            args.verbose)
+                                                            args.verbose,
+                                                            remove_os=args.remove_os)
 
     # (Siemens) DICOM (.ima) format
     def dicom(self, args):

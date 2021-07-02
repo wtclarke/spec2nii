@@ -33,7 +33,7 @@ defaults = {'vb': {'Col': 'time',
                    'Eco': 'DIM_EDIT'}}
 
 
-def process_twix(twixObj, base_name_out, name_in, dataKey, dim_overides, quiet=False, verbose=False):
+def process_twix(twixObj, base_name_out, name_in, dataKey, dim_overides, quiet=False, verbose=False, remove_os=False):
     """Process a twix file. Identify type of MRS and then pass to the relavent function."""
 
     if twixObj.hdr.Meas.lFinalMatrixSizePhase \
@@ -53,7 +53,15 @@ def process_twix(twixObj, base_name_out, name_in, dataKey, dim_overides, quiet=F
     if n_voxels > 1:
         return process_mrsi(twixObj, base_name_out, name_in, dataKey, quiet=quiet, verbose=verbose)
     else:
-        return process_svs(twixObj, base_name_out, name_in, dataKey, dim_overides, quiet=quiet, verbose=verbose)
+        return process_svs(
+            twixObj,
+            base_name_out,
+            name_in,
+            dataKey,
+            dim_overides,
+            remove_os,
+            quiet=quiet,
+            verbose=verbose)
 
 
 def process_mrsi(twixObj, base_name_out, name_in, dataKey, quiet=False, verbose=False):
@@ -61,18 +69,19 @@ def process_mrsi(twixObj, base_name_out, name_in, dataKey, quiet=False, verbose=
     raise NotImplementedError('MRSI pathway not yet implemented.')
 
 
-def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overides, quiet=False, verbose=False):
+def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overides, remove_os, quiet=False, verbose=False):
     """Process a twix file into a NIfTI MRS file.
     Inputs:
         twixObj: object from mapVBVD.
         base_name_out: Core string of output file.
         name_in: name of input file.
         dataKey: eval info flag name,
-        quire: True to suppress text output.
+        remove_os: Remove time-doain overrides
+        quiet: True to suppress text output.
     """
 
     # Set squeeze data
-    twixObj[dataKey].flagRemoveOS = False
+    twixObj[dataKey].flagRemoveOS = remove_os
     twixObj[dataKey].squeeze = True
     squeezedData = twixObj[dataKey]['']
 
