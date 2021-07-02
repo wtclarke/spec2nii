@@ -68,4 +68,10 @@ def get_mrs_class(nifti=2):
             """ Utility function """
             nib.save(self, filename)
 
+        @property
+        def hdr_ext(self):
+            '''Return MRS JSON header extension as python dict'''
+            hdr_ext_codes = self.header.extensions.get_codes()
+            return json.loads(self.header.extensions[hdr_ext_codes.index(44)].get_content())
+
     return NIfTI_MRS

@@ -6,7 +6,7 @@ Subject to the BSD 3-Clause License.
 
 import subprocess
 from pathlib import Path
-# import json
+import json
 
 import numpy as np
 
@@ -83,3 +83,26 @@ def test_VE_mrsi(tmp_path):
 
     assert img_t.shape == (16, 16, 16, 512)
     assert np.iscomplexobj(img_t.dataobj)
+
+
+mrsi_voi_path = siemens_path / 'voi_in_mrsi' /\
+    'F3T_2021_PH_016.MR.FMRIB_DEVELOPER_WILL.0004.0001.2021.07.01.16.43.12.374485.667204044.IMA'
+
+
+def test_voi_generation(tmp_path):
+
+    subprocess.check_call(['spec2nii', 'dicom',
+                           '-f', 'mrsi',
+                           '--voi',
+                           '-o', tmp_path,
+                           '-j', str(mrsi_voi_path)])
+
+    img_t = read_nifti_mrs(tmp_path / 'mrsi.nii.gz')
+
+    hdr_ext_codes = img_t.header.extensions.get_codes()
+    hdr_ext = json.loads(img_t.header.extensions[hdr_ext_codes.index(44)].get_content())
+
+    assert 'VOI' in hdr_ext
+    assert np.asarray(hdr_ext['VOI']).shape == (4, 4)
+
+    assert (tmp_path / 'mrsi_voi.nii.gz').exists()

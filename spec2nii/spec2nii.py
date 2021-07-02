@@ -26,6 +26,8 @@ import sys
 import os.path as op
 from pathlib import Path
 import json
+
+from nibabel.nifti2 import Nifti2Image
 from spec2nii import nifti_mrs
 from spec2nii import __version__ as spec2nii_ver
 # There are case specific imports below
@@ -75,6 +77,7 @@ class spec2nii:
         parser_dicom.add_argument('file', help='file or directory to convert', type=str)
         parser_dicom.add_argument("-t", "--tag", type=str, help="Specify NIfTI MRS tag used for 5th "
                                                                 "dimension if multiple files are passed.")
+        parser_dicom.add_argument('--voi', action='store_true', help='Output VOI as single voxel NIfTI mask.')
         parser_dicom = add_common_parameters(parser_dicom)
         parser_dicom.set_defaults(func=self.dicom)
 
@@ -346,6 +349,14 @@ class spec2nii:
             files_in = [path_in]
 
         self.imageOut, self.fileoutNames = multi_file_dicom(files_in, args.fileout, args.tag, args.verbose)
+
+        # VOI mask - TO DO extend to other formats
+        if args.voi:
+            import numpy as np
+            from nibabel import save
+            for img, f_out in zip(self.imageOut, self.fileoutNames):
+                out = self.outputDir / (f_out + '_voi.nii.gz')
+                save(Nifti2Image(np.ones((1, 1, 1), int), img.hdr_ext['VOI']), out)
 
     # (UIH) DICOM (.dcm) format
     def uih_dicom(self, args):

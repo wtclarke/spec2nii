@@ -230,7 +230,37 @@ def process_siemens_csi(img, verbose):
     dwelltime = img.csa_header['tags']['RealDwellTime']['items'][0] * 1E-9
     meta = extractDicomMetadata(img)
 
+    # Look for a VOI in the data
+    meta = _detect_and_fill_voi(img, meta)
+
     return specDataCmplx, currNiftiOrientation, dwelltime, meta
+
+
+def _detect_and_fill_voi(img, meta):
+    """Look for a VOI volume in the headers of a CSI scan. If present populate the VOI header field.
+
+    :param img: Nibable DICOM image object
+    :type img: SiemensWrapper
+    :param meta: Existing NIfTI-MRS meta object
+    :type meta: hdr_ext
+    :return: Modified meta hdr_ext object
+    :rtype: hdr_ext
+    """
+    imageOrientationPatient = np.array(img.csa_header['tags']['ImageOrientationPatient']['items']).reshape(2, 3)
+    # VoiPosition - this does not have the FOV shift that imagePositionPatient has
+    imagePositionPatient = img.csa_header['tags']['VoiPosition']['items']
+    xyzMM = np.array([img.csa_header['tags']['VoiPhaseFoV']['items'][0],
+                      img.csa_header['tags']['VoiReadoutFoV']['items'][0],
+                      img.csa_header['tags']['VoiThickness']['items'][0]])
+
+    voiNiftiOrientation = dcm_to_nifti_orientation(imageOrientationPatient,
+                                                   imagePositionPatient,
+                                                   xyzMM,
+                                                   (1, 1, 1))
+
+    meta.set_standard_def('VOI', voiNiftiOrientation.Q44.tolist())
+
+    return meta
 
 
 def extractDicomMetadata(dcmdata):
