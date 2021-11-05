@@ -396,7 +396,10 @@ def extractTwixMetadata(mapVBVDHdr, orignal_file):
     obj.set_standard_def('PatientName', mapVBVDHdr['Meas'][('PatientName')])
     # 'PatientID'
     # 'PatientWeight'
-    obj.set_standard_def('PatientWeight', mapVBVDHdr['Meas'][('flUsedPatientWeight')])
+    try:
+        obj.set_standard_def('PatientWeight', float(mapVBVDHdr['Meas'][('flUsedPatientWeight')]))
+    except ValueError:
+        pass
     # 'PatientDoB'
     obj.set_standard_def('PatientDoB', str(mapVBVDHdr['Meas'][('PatientBirthDay')]))
     # 'PatientSex'
