@@ -62,13 +62,17 @@ def yield_bruker(args):
     """
     # get location of the spec2nii Bruker properties configuration file
     bruker_properties_path = pkg_resources.resource_filename('spec2nii', 'bruker_properties.json')
+    bruker_fid_override_path = pkg_resources.resource_filename('spec2nii', 'bruker_fid_override.json')
 
     # get a list of queries to filter datasets
     queries = _get_queries(args)
 
     # case of Bruker dataset
     if os.path.isfile(args.file):
-        d = Dataset(args.file, property_files=[bruker_properties_path], parameter_files=['method'])
+        d = Dataset(
+            args.file,
+            property_files=[bruker_fid_override_path, bruker_properties_path],
+            parameter_files=['method'])
         try:
             d.query(queries)
         except FilterEvalFalse:
@@ -193,17 +197,18 @@ def _prep_data_mrsi(d):
 
 def _fid_affine_from_params(d):
     """ First attempt to create 4x4 affine from fid headers"""
+    warnings.warn('The orientation of bruker fid data is mostly untested.')
+
     orientation = np.squeeze(d.parameters['method']['PVM_VoxArrGradOrient'].value)
     shift = np.squeeze(d.parameters['method']['PVM_VoxArrPosition'].value)
-    warnings.warn('The orientation of bruker fid data is mostly untested.')
-    # shift[0] *= -1
-    # shift[1] *= -1
-    # shift[2] *= -1
+    # csshift = np.squeeze(d.parameters['method']['PVM_VoxArrCSDisplacement'].value)
+    # shift += csshift
     size = np.squeeze(d.parameters['method']['PVM_VoxArrSize'].value)
     affine = np.zeros((4, 4))
     affine[3, 3] = 1
-    affine[:3, :3] = orientation * size[[0, 2, 1]]
-    affine[:3, 3] = shift[[0, 2, 1]]
+    reorder = [1, 2, 0]  # [0, 1, 2] *[0, 2, 1]* [1, 2, 0]
+    affine[:3, :3] = orientation[reorder, :].T * size[reorder]
+    affine[:3, 3] = shift[reorder]
 
     return affine
 

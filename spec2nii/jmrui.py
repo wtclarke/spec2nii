@@ -280,8 +280,25 @@ def num(s):
             return s
 
 
+def check_transmitter_frequency_in_header(header):
+    """Check that the central frequency in the header is in MHz.
+    Correct if not.
+
+    :param header: Header dict containing 'TransmitterFrequency' key.
+    :type header: dict
+    :return: Checked and modified header
+    :rtype: dict
+    """
+    if header['TransmitterFrequency'] > 1E5:
+        header['TransmitterFrequency'] /= 1E6
+
+    return header
+
+
 def jmrui_hdr_to_obj(header):
     """Translate jMRUI txt header to NIfTI MRS"""
+
+    header = check_transmitter_frequency_in_header(header)
 
     if 'TypeOfNucleus' in header:
         nucleus = id_nucleus(header['TypeOfNucleus'],
