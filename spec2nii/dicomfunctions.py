@@ -3,6 +3,7 @@ Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
 Copyright (C) 2020 University of Oxford
 """
 from datetime import datetime
+import re
 
 import numpy as np
 import nibabel.nicom.dicomwrappers
@@ -22,11 +23,41 @@ class missingTagError(Exception):
     pass
 
 
+class IncompatibleSoftwareVersion(Exception):
+    pass
+
+
+def xa_or_vx(img):
+    """Determine siemens software type
+
+    :param img: DICOM image object
+    :type img: nibabel.nicom.dicomwrappers.SiemensWrapper
+    :raises IncompatibleSoftwareVersion: Raised if not a VX or XA dicom file
+    :return: String either 'xa' or 'vx'
+    :rtype: str
+    """
+    if re.search(r'syngo MR XA\d{2}', img.dcm_data.SoftwareVersions):
+        return 'xa'
+    elif re.search(r'syngo MR [A-Z]\d{2}', img.dcm_data.SoftwareVersions):
+        return 'vx'
+    else:
+        raise IncompatibleSoftwareVersion(
+            'spec2nii does not recognise this Siemens software version'
+            f' ({img.dcm_data.SoftwareVersions}).'
+            ' spec2nii is tested on VA-VE, and XA20 and XA30 DICOM files.')
+
+
 def svs_or_CSI(img):
     """Identify from the csa headers whether data is CSI or SVS."""
-    rows = img.csa_header['tags']['Rows']['items'][0]
-    cols = img.csa_header['tags']['Columns']['items'][0]
-    slices = img.csa_header['tags']['NumberOfFrames']['items'][0]
+    if xa_or_vx(img) == 'vx':
+        rows = img.csa_header['tags']['Rows']['items'][0]
+        cols = img.csa_header['tags']['Columns']['items'][0]
+        slices = img.csa_header['tags']['NumberOfFrames']['items'][0]
+    elif xa_or_vx(img) == 'xa':
+        spec_fov_geom = img.dcm_data.SharedFunctionalGroupsSequence[0].MRSpectroscopyFOVGeometrySequence[0]
+        rows = spec_fov_geom.SpectroscopyAcquisitionPhaseRows
+        cols = spec_fov_geom.SpectroscopyAcquisitionPhaseColumns
+        slices = spec_fov_geom.SpectroscopyAcquisitionOutOfPlanePhaseSteps
 
     if np.prod([rows, cols, slices]) > 1.0:
         return 'CSI'
@@ -176,7 +207,43 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
 
 
 def process_siemens_svs(img, verbose):
-    """Process Siemens DICOM SVS data"""
+    """Pass to appropriate function for software version."""
+    if xa_or_vx(img) == 'vx':
+        return process_siemens_svs_vx(img, verbose)
+    elif xa_or_vx(img) == 'xa':
+        return process_siemens_svs_xa(img, verbose)
+
+
+def process_siemens_svs_xa(img, verbose):
+    """Process Siemens DICOM SVS data acquired on a NumarisX system."""
+    specData = np.frombuffer(img.dcm_data[('5600', '0020')].value, dtype=np.single)
+    specDataCmplx = specData[0::2] + 1j * specData[1::2]
+
+    dcm_hdrs = img.dcm_data.PerFrameFunctionalGroupsSequence[0]
+    dcm_hdrs1 = img.dcm_data.SharedFunctionalGroupsSequence[0]
+    # 1) Extract dicom parameters
+    imageOrientationPatient = np.array(dcm_hdrs.PlaneOrientationSequence[0].ImageOrientationPatient).reshape(2, 3)
+    # VoiPosition - this does not have the FOV shift that imagePositionPatient has
+    imagePositionPatient = dcm_hdrs.PlanePositionSequence[0].ImagePositionPatient
+
+    # The first two elements could easily be the reverse of this.
+    xyzMM = np.array([float(dcm_hdrs1.PixelMeasuresSequence[0].PixelSpacing[0]),
+                      float(dcm_hdrs1.PixelMeasuresSequence[0].PixelSpacing[1]),
+                      float(dcm_hdrs1.PixelMeasuresSequence[0].SliceThickness)])
+
+    currNiftiOrientation = dcm_to_nifti_orientation(imageOrientationPatient,
+                                                    imagePositionPatient,
+                                                    xyzMM,
+                                                    (1, 1, 1),
+                                                    verbose=verbose)
+    dwelltime = 1 / img.dcm_data.SpectralWidth
+    meta = extractDicomMetadata_xa(img)
+
+    return specDataCmplx, currNiftiOrientation, dwelltime, meta
+
+
+def process_siemens_svs_vx(img, verbose):
+    """Process Siemens DICOM SVS data acquired on a Numaris4 Vx system."""
 
     specData = np.frombuffer(img.dcm_data[('7fe1', '1010')].value, dtype=np.single)
     specDataCmplx = specData[0::2] + 1j * specData[1::2]
@@ -195,12 +262,26 @@ def process_siemens_svs(img, verbose):
                                                     (1, 1, 1),
                                                     verbose=verbose)
     dwelltime = img.csa_header['tags']['RealDwellTime']['items'][0] * 1E-9
-    meta = extractDicomMetadata(img)
+    meta = extractDicomMetadata_vx(img)
 
     return specDataCmplx, currNiftiOrientation, dwelltime, meta
 
 
 def process_siemens_csi(img, verbose):
+    """Pass to appropriate CSI function for software version."""
+    if xa_or_vx(img) == 'vx':
+        return process_siemens_csi_vx(img, verbose)
+    elif xa_or_vx(img) == 'xa':
+        return process_siemens_csi_xa(img, verbose)
+
+
+def process_siemens_csi_xa(img, verbose):
+    """Process Siemens DICOM CSI data acquired on a NumarisX system."""
+    raise NotImplementedError('Method process_siemens_csi_xa not implemented, example data needed!')
+
+
+def process_siemens_csi_vx(img, verbose):
+    """Process Siemens DICOM CSI data acquired on a Numaris4 Vx system."""
     specData = np.frombuffer(img.dcm_data[('7fe1', '1010')].value, dtype=np.single)
     specDataCmplx = specData[0::2] + 1j * specData[1::2]
 
@@ -228,7 +309,7 @@ def process_siemens_csi(img, verbose):
                                                     verbose=verbose)
 
     dwelltime = img.csa_header['tags']['RealDwellTime']['items'][0] * 1E-9
-    meta = extractDicomMetadata(img)
+    meta = extractDicomMetadata_vx(img)
 
     # Look for a VOI in the data
     meta = _detect_and_fill_voi(img, meta)
@@ -263,7 +344,109 @@ def _detect_and_fill_voi(img, meta):
     return meta
 
 
-def extractDicomMetadata(dcmdata):
+def extractDicomMetadata_xa(dcmdata):
+    """ Extract information from the nibabel DICOM object to insert into the json header ext.
+    For Numarix X systems
+
+    Args:
+        dcmdata: nibabel.nicom image object
+    Returns:
+        obj (hdr_ext): NIfTI MRS hdr ext object.
+    """
+
+    dcm_hdrs1 = dcmdata.dcm_data.SharedFunctionalGroupsSequence[0]
+
+    # Extract required metadata and create hdr_ext object
+    obj = nifti_mrs.hdr_ext(dcmdata.dcm_data.TransmitterFrequency,
+                            dcmdata.dcm_data.ResonantNucleus)
+
+    # Standard defined metadata
+    def set_standard_def(nifti_mrs_key, location, key, cast=None):
+        try:
+            if cast is not None:
+                obj.set_standard_def(nifti_mrs_key, cast(getattr(location, key)))
+            else:
+                obj.set_standard_def(nifti_mrs_key, getattr(location, key))
+        except AttributeError:
+            pass
+
+    # # 5.1 MRS specific Tags
+    # 'EchoTime'
+    obj.set_standard_def('EchoTime', float(dcm_hdrs1.MREchoSequence[0].EffectiveEchoTime * 1E-3))
+    # 'RepetitionTime'
+    obj.set_standard_def(
+        'RepetitionTime',
+        float(dcm_hdrs1.MRTimingAndRelatedParametersSequence[0].RepetitionTime) / 1E3)
+    # 'InversionTime'
+    # 'MixingTime'
+    # 'ExcitationFlipAngle'
+    obj.set_standard_def(
+        'ExcitationFlipAngle',
+        float(dcm_hdrs1.MRTimingAndRelatedParametersSequence[0].FlipAngle))
+    # 'TxOffset'
+    # 'VOI'
+    # 'WaterSuppressed'
+    # 'WaterSuppressionType'
+    # 'SequenceTriggered'
+
+    # # 5.2 Scanner information
+    # 'Manufacturer'
+    set_standard_def('Manufacturer', dcmdata.dcm_data, 'Manufacturer')
+    # 'ManufacturersModelName'
+    set_standard_def('ManufacturersModelName', dcmdata.dcm_data, 'ManufacturerModelName')
+    # 'DeviceSerialNumber'
+    set_standard_def('DeviceSerialNumber', dcmdata.dcm_data, 'DeviceSerialNumber', cast=str)
+    # 'SoftwareVersions'
+    set_standard_def('SoftwareVersions', dcmdata.dcm_data, 'SoftwareVersions')
+    # 'InstitutionName'
+    set_standard_def('InstitutionName', dcmdata.dcm_data, 'InstitutionName')
+    # 'InstitutionAddress'
+    set_standard_def('InstitutionAddress', dcmdata.dcm_data, 'InstitutionAddress')
+    # 'TxCoil'
+    obj.set_standard_def(
+        'TxCoil',
+        dcm_hdrs1.MRTransmitCoilSequence[0].TransmitCoilName)
+    # 'RxCoil'
+    obj.set_standard_def(
+        'RxCoil',
+        dcm_hdrs1.MRReceiveCoilSequence[0].ReceiveCoilName)
+
+    # # 5.3 Sequence information
+    # 'SequenceName'
+    set_standard_def('SequenceName', dcmdata.dcm_data, 'PulseSequenceName')
+    # 'ProtocolName'
+    set_standard_def('ProtocolName', dcmdata.dcm_data, 'ProtocolName')
+    # # 5.4 Sequence information
+    # 'PatientPosition'
+    set_standard_def('PatientPosition', dcmdata.dcm_data, 'PatientPosition')
+    # 'PatientName'
+    set_standard_def('PatientName', dcmdata.dcm_data.PatientName, 'family_name')
+    # 'PatientID'
+    set_standard_def('PatientID', dcmdata.dcm_data, 'PatientID')
+    # 'PatientWeight'
+    set_standard_def('PatientWeight', dcmdata.dcm_data, 'PatientWeight', cast=float)
+    # 'PatientDoB'
+    set_standard_def('PatientDoB', dcmdata.dcm_data, 'PatientBirthDate')
+    # 'PatientSex'
+    set_standard_def('PatientSex', dcmdata.dcm_data, 'PatientSex')
+
+    # # 5.5 Provenance and conversion metadata
+    obj.set_standard_def('ConversionMethod', f'spec2nii v{spec2nii_ver}')
+    # 'ConversionTime'
+    conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')
+    obj.set_standard_def('ConversionTime', conversion_time)
+
+    # 'OriginalFile'
+    # Set elsewhere
+
+    # # 5.6 Spatial information
+    # 'kSpace'
+    obj.set_standard_def('kSpace', [False, False, False])
+
+    return obj
+
+
+def extractDicomMetadata_vx(dcmdata):
     """ Extract information from the nibabel DICOM object to insert into the json header ext.
 
     Args:
@@ -368,9 +551,12 @@ def identify_integrated_references(img, inst_num):
 
     :param img: nibable dicom image
 
-    :return: Ref scan index 0 = not refderence scan, higher integer splits into groups.
+    :return: Ref scan index 0 = not reference scan, higher integer splits into groups.
     :return: name suffix
     '''
+
+    if xa_or_vx(img) == 'xa':
+        return 0, ''
 
     fullcsa = csar.get_csa_header(img.dcm_data, csa_type='series')
     xprot = parse_buffer(fullcsa['tags']['MrPhoenixProtocol']['items'][0])
