@@ -430,6 +430,18 @@
       },
       {
         "cmd": [
+          "#PVM_SpecMatrix.tuple[0]",
+          "#NR"
+        ],
+        "conditions": [["#PULPROG[1:-1]",
+            [
+                "mt_MEGA_sLASER_V35.ppg"
+            ]],
+          "@scheme_id=='SPECTROSCOPY'"
+        ]
+      },
+      {
+        "cmd": [
           "#ACQ_size.tuple[0] * 2",
           "#NR"
         ],
@@ -612,6 +624,18 @@
         ],
         "conditions": [
           "@scheme_id=='EPI'"
+        ]
+      },
+      {
+        "cmd": [
+          "#PVM_SpecMatrix.tuple[0] * 1",
+          "#NR"
+        ],
+        "conditions": [["#PULPROG[1:-1]",
+            [
+                "mt_MEGA_sLASER_V35.ppg"
+            ]],
+          "@scheme_id=='SPECTROSCOPY'"
         ]
       },
       {
