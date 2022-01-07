@@ -2,12 +2,15 @@
 Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
 Copyright (C) 2020 University of Oxford
 """
-import spec2nii.GSL.gslfunctions as GSL
+import re
+from os.path import basename
+from datetime import datetime
+
 import numpy as np
+
+import spec2nii.GSL.gslfunctions as GSL
 from spec2nii.dcm2niiOrientation.orientationFuncs import dcm_to_nifti_orientation
 from spec2nii import nifti_mrs
-from datetime import datetime
-from os.path import basename
 from spec2nii import __version__ as spec2nii_ver
 
 
@@ -308,7 +311,7 @@ def twix2DCMOrientation(mapVBVDHdr, verbose=False):
 def examineTwix(twixObj, fileName, mraid):
     """ Print formated twix contents"""
 
-    print(f'Contents of file: {fileName}')
+    print(f'Contents of file {fileName}:')
 
     if isinstance(twixObj, list):
         print(f'Multiraid file, {len(twixObj)} files found.')
@@ -327,8 +330,152 @@ def examineTwix(twixObj, fileName, mraid):
         print(f'{ev: <15}:\t{tmpSqzDims: <20}\t{tmpSqzSize}')
 
 
+class IncompatibleSoftwareVersion(Exception):
+    pass
+
+
+def xa_or_vx(hdr):
+    """Determine siemens software type
+
+    :param hdr: mapVBVDHdr object
+    :type img: mapvbvd.read_twix_hdr.twix_hdr
+    :raises IncompatibleSoftwareVersion: Raised if not a VX or XA twix file
+    :return: String either 'xa' or 'vx'
+    :rtype: str
+    """
+    if re.search(r'syngo MR XA\d{2}', hdr['Dicom']['SoftwareVersions']):
+        return 'xa'
+    elif re.search(r'syngo MR [A-Z]\d{2}', hdr['Dicom']['SoftwareVersions']):
+        return 'vx'
+    else:
+        raise IncompatibleSoftwareVersion(
+            'spec2nii does not recognise this Siemens software version'
+            f' ({hdr["Dicom"]["SoftwareVersions"]}).'
+            ' spec2nii is tested on VA-VE, and XA20 and XA30 DICOM files.')
+
+
 def extractTwixMetadata(mapVBVDHdr, orignal_file):
+    """Pass to appropriate extractTwixMetadata function for software version."""
+    if xa_or_vx(mapVBVDHdr) == 'vx':
+        return extractTwixMetadata_vx(mapVBVDHdr, orignal_file)
+    elif xa_or_vx(mapVBVDHdr) == 'xa':
+        return extractTwixMetadata_xa(mapVBVDHdr, orignal_file)
+
+
+def extractTwixMetadata_xa(mapVBVDHdr, orignal_file):
     """ Extract information from the pymapVBVD header to insert into the json sidecar.
+
+    Args:
+        dcmdata (dict): Twix headers
+    Returns:
+        obj (hdr_ext): NIfTI MRS hdr ext object.
+    """
+
+    # Extract required metadata and create hdr_ext object
+    obj = nifti_mrs.hdr_ext(mapVBVDHdr['Dicom'][('lFrequency')] / 1E6,
+                            mapVBVDHdr['MeasYaps'][('sTXSPEC', 'asNucleusInfo', '0', 'tNucleus')])
+
+    # Standard defined metadata
+    # # 5.1 MRS specific Tags
+    # 'EchoTime'
+    obj.set_standard_def('EchoTime', mapVBVDHdr['Phoenix'][('alTE', '0')] * 1E-6)
+    # 'RepetitionTime'
+    tr = mapVBVDHdr['MeasYaps'][('alTR', '0')] / 1E6
+    obj.set_standard_def('RepetitionTime', float(tr))
+    # 'InversionTime'
+    if ('alTI', '0') in mapVBVDHdr['MeasYaps']:
+        obj.set_standard_def('InversionTime', float(mapVBVDHdr['MeasYaps'][('alTI', '0')]))
+    # 'MixingTime'
+    # 'ExcitationFlipAngle'
+    obj.set_standard_def('ExcitationFlipAngle', float(mapVBVDHdr['MeasYaps'][('adFlipAngleDegree', '0')]))
+    # 'TxOffset'
+    obj.set_standard_def('TxOffset', empty_str_to_0float(mapVBVDHdr['MeasYaps'][('sSpecPara', 'dDeltaFrequency')]))
+    # 'VOI'
+    # 'WaterSuppressed'
+    # TO DO
+    # 'WaterSuppressionType'
+    # 'SequenceTriggered'
+    # # 5.2 Scanner information
+    # 'Manufacturer'
+    obj.set_standard_def('Manufacturer', mapVBVDHdr['Dicom'][('Manufacturer')])
+    # 'ManufacturersModelName'
+    obj.set_standard_def('ManufacturersModelName', mapVBVDHdr['Dicom'][('ManufacturersModelName')])
+    # 'DeviceSerialNumber'
+    obj.set_standard_def('DeviceSerialNumber', str(mapVBVDHdr['Dicom'][('DeviceSerialNumber')]))
+    # 'SoftwareVersions'
+    obj.set_standard_def('SoftwareVersions', mapVBVDHdr['Dicom'][('SoftwareVersions')])
+    # 'InstitutionName'
+    obj.set_standard_def('InstitutionName', mapVBVDHdr['Dicom'][('InstitutionName')])
+    # 'InstitutionAddress'
+    obj.set_standard_def('InstitutionAddress', mapVBVDHdr['Dicom'][('InstitutionAddress')])
+    # 'TxCoil'
+    tx_coil_tuple = ('sCoilSelectMeas', 'aTxCoilSelectData', '0', 'asList', '0', 'sCoilElementID', 'tCoilID')
+    obj.set_standard_def('TxCoil', mapVBVDHdr['MeasYaps'][tx_coil_tuple])
+    # 'RxCoil'
+    rx_coil_1 = ('sCoilSelectMeas', 'aRxCoilSelectData', '0', 'asList', '0', 'sCoilElementID', 'tCoilID')
+    rx_coil_2 = ('asCoilSelectMeas', '0', 'asList', '0', 'sCoilElementID', 'tCoilID')
+    if rx_coil_1 in mapVBVDHdr['MeasYaps']:
+        obj.set_standard_def('RxCoil', mapVBVDHdr['MeasYaps'][rx_coil_1])
+    elif rx_coil_2 in mapVBVDHdr['MeasYaps']:
+        obj.set_standard_def('RxCoil', mapVBVDHdr['MeasYaps'][rx_coil_2])
+
+    # # 5.3 Sequence information
+    # 'SequenceName'
+    obj.set_standard_def('SequenceName', mapVBVDHdr['Meas'][('tSequenceString')])
+    # 'ProtocolName'
+    obj.set_standard_def('ProtocolName', mapVBVDHdr['Dicom'][('tProtocolName')])
+    # # 5.4 Sequence information
+    # 'PatientPosition'
+    obj.set_standard_def('PatientPosition', mapVBVDHdr['Meas'][('tPatientPosition')])
+    # 'PatientName'
+    obj.set_standard_def('PatientName', mapVBVDHdr['Meas'][('tPatientName')])
+    # 'PatientID'
+    # 'PatientWeight'
+    try:
+        obj.set_standard_def('PatientWeight', float(mapVBVDHdr['Meas'][('flUsedPatientWeight')]))
+    except ValueError:
+        pass
+    # 'PatientDoB'
+    obj.set_standard_def('PatientDoB', str(mapVBVDHdr['Meas'][('PatientBirthDay')]))
+    # 'PatientSex'
+    if mapVBVDHdr['Meas'][('PatientSex')] == 0.0:
+        sex_str = 'M'
+    elif mapVBVDHdr['Meas'][('PatientSex')] == 1.0:
+        sex_str = 'F'
+    elif mapVBVDHdr['Meas'][('PatientSex')] == 2.0:
+        sex_str = 'O'
+    else:
+        raise ValueError('Meas, PatientSex, should be 0, 1, or 2.')
+
+    obj.set_standard_def('PatientSex', sex_str)
+
+    # # 5.5 Provenance and conversion metadata
+    # 'ConversionMethod'
+    obj.set_standard_def('ConversionMethod', f'spec2nii v{spec2nii_ver}')
+    # 'ConversionTime'
+    conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')
+    obj.set_standard_def('ConversionTime', conversion_time)
+    # 'OriginalFile'
+    obj.set_standard_def('OriginalFile', [orignal_file, ])
+    # # 5.6 Spatial information
+    # 'kSpace'
+    obj.set_standard_def('kSpace', [False, False, False])
+
+    # Some additional information
+    obj.set_user_def(key='PulseSequenceFile',
+                     value=mapVBVDHdr['Config'][('SequenceFileName')],
+                     doc='Sequence binary path.')
+    obj.set_user_def(key='IceProgramFile',
+                     value=mapVBVDHdr['Meas'][('tICEProgramName')],
+                     doc='Reconstruction binary path.')
+
+    return obj
+
+
+def extractTwixMetadata_vx(mapVBVDHdr, orignal_file):
+    """ Extract information from the pymapVBVD header to insert into the json sidecar.
+
+    Function Twix files from Numaris4 Vx software scanners.
 
     Args:
         dcmdata (dict): Twix headers
