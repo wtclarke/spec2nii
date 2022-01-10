@@ -85,7 +85,7 @@ def nifti_dicom2mat(orient, patientPosition, xyzMM, verbose=False):
         Q[:, 2] = Q[:, 2] * -1
 
     # next scale matrix
-    # I think dcm2niix reversees the pixel spacing
+    # I think dcm2niix reverses the pixel spacing
     # https://github.com/rordenlab/dcm2niix/blob/485c387c93bbca3b29b93403dfde211c4bc39af6/console/nii_dicom.cpp#L5403
     xyzMM[1], xyzMM[0] = xyzMM[0], xyzMM[1]
     diagVox = np.diag(xyzMM)

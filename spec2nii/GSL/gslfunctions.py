@@ -119,7 +119,7 @@ def calc_prs(gs, phi, debug):
         print(f'GR = {gr[0]:10.7f} {gr[1]:10.7f} {gr[2]:10.7f}')
         print(f'GS = {gs[0]:10.7f} {gs[1]:10.7f} {gs[2]:10.7f}')
 
-    # otation
+    # rotation
     if phi != 0.0:
         # Rotate by phi around the S axis
         if debug:
