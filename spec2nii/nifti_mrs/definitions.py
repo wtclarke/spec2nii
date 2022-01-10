@@ -158,7 +158,7 @@ standard_defined = {
     'RxCoil':
         (str,
          None,
-         "Name or description of recieve RF coil.",
+         "Name or description of receive RF coil.",
          False),
     # 5.3 Sequence information
     'SequenceName':

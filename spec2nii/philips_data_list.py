@@ -17,7 +17,7 @@ index_headers = ['typ', 'mix', 'dyn', 'card', 'echo', 'loca',
                  'chan', 'extr1', 'extr2', 'kx', 'ky', 'kz',
                  'aver', 'sign', 'rf', 'grad', 'enc', 'rtop',
                  'rr', 'size', 'offset']
-indicies = ['chan', 'aver', 'dyn', 'card', 'echo', 'loca', 'extr1', 'extr2']
+indices = ['chan', 'aver', 'dyn', 'card', 'echo', 'loca', 'extr1', 'extr2']
 
 defaults = {'chan': 'DIM_COIL',
             'aver': 'DIM_DYN',
@@ -57,7 +57,7 @@ def read_data_list_pair(data_file, list_file, spar_file):
                                spar_file.name])
 
         kept_ind = []
-        for ii, sha in zip(indicies, data.shape[1:]):
+        for ii, sha in zip(indices, data.shape[1:]):
             if sha > 1:
                 kept_ind.append(ii)
 
@@ -113,7 +113,7 @@ def _read_data(data_file, df):
                 curr_mix_df = curr_df.loc[curr_df.mix == mix, :]
                 shape = []
                 shape.append(int(curr_mix_df['size'].max() / 8))
-                for ind in indicies:
+                for ind in indices:
                     shape.append(curr_mix_df[ind].max() + 1)
                 output_dict[f'{tt}_{mix}'] = np.zeros(shape, dtype=np.complex)
 
@@ -127,7 +127,7 @@ def _read_data(data_file, df):
             output_dict[tt][:, cdf.chan, cdf.loca] = raw[offset:(offset + dsize)]
         else:
             mix = cdf.mix
-            ind = [cdf[ii] for ii in indicies]
+            ind = [cdf[ii] for ii in indices]
             ind = tuple([slice(None), ] + ind)
             output_dict[f'{tt}_{mix}'][ind] = raw[offset:(offset + dsize)]
         offset += dsize

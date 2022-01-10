@@ -137,4 +137,4 @@ This program was written by Will Clarke, University of Oxford. Contributions to 
 
 Particular thanks go to Tomáš Pšorn for contributing the Bruker interface, and to Jack Miller for the Varian interface.
 
-Some GE test data comes from the [BIG GABA](https://www.nitrc.org/projects/biggaba/) dataset whichw as funded by NIH grant R01 EB016089. Please see Mikkelsen M et al. Big GABA: Edited MR spectroscopy at 24 research sites. NeuroImage 2017;159:32–45. doi: 10.1016/j.neuroimage.2017.07.021 for more information.
+Some GE test data comes from the [BIG GABA](https://www.nitrc.org/projects/biggaba/) dataset which was funded by NIH grant R01 EB016089. Please see Mikkelsen M et al. Big GABA: Edited MR spectroscopy at 24 research sites. NeuroImage 2017;159:32–45. doi: 10.1016/j.neuroimage.2017.07.021 for more information.

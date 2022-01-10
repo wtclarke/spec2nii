@@ -136,7 +136,7 @@ class spec2nii:
         parser_txt.add_argument("-i", "--imagingfreq", type=float,
                                 help="Imaging (central) frequency in MHz", required=True)
         parser_txt.add_argument("-b", "--bandwidth", type=float,
-                                help="Reciever bandwidth (sweepwidth) in Hz.", required=True)
+                                help="Receiver bandwidth (sweepwidth) in Hz.", required=True)
         parser_txt.add_argument("-n", "--nucleus", type=str,
                                 help="Nucleus string. e.g. 1H or 31P.", required=True)
         parser_txt.add_argument("-a", "--affine", type=str, help="NIfTI affine file", required=False, metavar='<file>')
@@ -215,7 +215,7 @@ class spec2nii:
         parser_extract.set_defaults(func=self.extract,
                                     nifti1=False)
 
-        parser_insert = subparsers.add_parser('insert', help='Insert json fomated file into existing NIfTI-MRS file.')
+        parser_insert = subparsers.add_parser('insert', help='Insert json formatted file into existing NIfTI-MRS file.')
         parser_insert.add_argument('file', help='NIFTI-MRS file', type=Path)
         parser_insert.add_argument('json_file', help='JSON file to insert', type=Path)
         parser_insert.add_argument("-f", "--fileout", type=str,
@@ -258,7 +258,7 @@ class spec2nii:
             print('No files to write.')
 
     def implement_overrides(self, args):
-        """Implement any command line overides for essential parameters."""
+        """Implement any command line overrides for essential parameters."""
         for nifti_mrs_img in self.imageOut:
             if args.override_dwelltime:
                 nifti_mrs_img.set_dwell_time(args.override_dwelltime)

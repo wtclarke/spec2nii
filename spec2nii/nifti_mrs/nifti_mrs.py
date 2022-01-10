@@ -14,10 +14,10 @@ def get_mrs_class(nifti=2):
         """Class to contain a NIfTI MRS dataset. Derived from nibabel's Nifti2Image."""
 
         def __init__(self, dataobj, affine, dwelltime, header_ext, header=None, extra=None, file_map=None):
-            """Initilise a NIfTI MRS object which can be saved to disk.
+            """Initialise a NIfTI MRS object which can be saved to disk.
             :param dataobj: Four to seven dimensional complex numpy array.
             :param affine: None or (4,4) array-like
-                            homogenous affine giving relationship between voxel coordinates and
+                            homogeneous affine giving relationship between voxel coordinates and
                             world coordinates.  Affine can also be None.  In this case,
                             ``obj.affine`` also returns None, and the affine as written to disk
                             will depend on the file format.
