@@ -35,6 +35,46 @@ defaults = {'vb': {'Col': 'time',
                    'Rep': 'DIM_DYN',
                    'Eco': 'DIM_EDIT'}}
 
+xa_product_seq = ['svs_se', 'svs_st', 'svs_slaser']
+
+
+class IncompatibleSoftwareVersion(Exception):
+    pass
+
+
+def xa_or_vx(hdr):
+    """Determine siemens software type
+
+    :param hdr: mapVBVDHdr object
+    :type img: mapvbvd.read_twix_hdr.twix_hdr
+    :raises IncompatibleSoftwareVersion: Raised if not a VX or XA twix file
+    :return: String either 'xa' or 'vx'
+    :rtype: str
+    """
+    if re.search(r'syngo MR XA\d{2}', hdr['Dicom']['SoftwareVersions']):
+        return 'xa'
+    elif re.search(r'syngo MR [A-Z]\d{2}', hdr['Dicom']['SoftwareVersions']):
+        return 'vx'
+    else:
+        raise IncompatibleSoftwareVersion(
+            'spec2nii does not recognise this Siemens software version'
+            f' ({hdr["Dicom"]["SoftwareVersions"]}).'
+            ' spec2nii is tested on VA-VE, and XA20 and XA30 DICOM files.')
+
+
+def is_xa_product(hdr):
+    """If the basline is xa and the sequence is a svs prodcut sequence return True."""
+    def is_product():
+        seq_name = hdr['Meas'][('tSequenceString')]
+        if any([seq_name == seq for seq in xa_product_seq]):
+            return True
+
+    if xa_or_vx(hdr) == 'xa'\
+            and is_product():
+        return True
+    else:
+        return False
+
 
 def process_twix(twixObj, base_name_out, name_in, dataKey, dim_overides, quiet=False, verbose=False, remove_os=False):
     """Process a twix file. Identify type of MRS and then pass to the relavent function."""
@@ -140,8 +180,34 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overides, remove_o
         raise ValueError('Col is expected to be the first dimension in the Twix file, it is not.')
 
     curr_defaults = defaults[twixObj[dataKey].softwareVersion]
-
     dim_order = twixObj[dataKey].sqzDims[1:]
+
+    # SPECIAL CASE FOR XA 20/30 product sequences.
+    # A single? reference scan is encoded in the first element of the phs loop
+    # If so strip out the scan and add it as a separate output file.
+    if is_xa_product(twixObj['hdr'])\
+            and 'Phs' in dim_order:
+
+        phs_dim = dim_order.index('Phs') + 1
+        ref_index = [slice(None), ] * squeezedData.ndim
+        ref_index[phs_dim] = slice(1)
+        xa_ref_scans = squeezedData[tuple(ref_index)]
+        ref_index[phs_dim] = slice(1, None, 1)
+        squeezedData_noref = squeezedData[tuple(ref_index)]
+
+        if squeezedData_noref.shape[phs_dim] == 1:
+            dim_order.remove('Phs')
+            squeezedData = squeezedData_noref.squeeze()
+
+        # To do, handle any other dimensions properly
+        xa_ref_scans = xa_ref_scans.squeeze()
+        xa_zero_index = xa_ref_scans[0, :, :] == 0.0
+        xa_ref_scans = xa_ref_scans[:, ~xa_zero_index]\
+            .reshape(xa_ref_scans.shape[0], xa_ref_scans.shape[1], -1)
+    else:
+        xa_ref_scans = None
+
+    # Make list of tags (both default and user specified)
     dim_tags = []
     unknown_counter = 0
     for do in dim_order:
@@ -213,6 +279,27 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overides, remove_o
                 out_name += f'_{indexStr}{ii :03d}'
 
             filename_out.append(out_name)
+
+    if xa_ref_scans is not None:
+        # Pad with three singleton dimensions (x,y,z)
+        newshape = (1, 1, 1) + xa_ref_scans.shape
+        if xa_ref_scans.ndim > 2:
+            ref_tags = ['DIM_COIL', 'DIM_DYN', None]
+        else:
+            ref_tags = ['DIM_COIL', None, None]
+
+        meta_obj_ref = extractTwixMetadata(twixObj['hdr'], basename(twixObj[dataKey].filename))
+        meta_obj_ref.set_standard_def('WaterSuppressed', True)
+
+        nifit_mrs_out.append(
+            assemble_nifti_mrs(
+                xa_ref_scans.reshape(newshape),
+                dwellTime,
+                orientation,
+                meta_obj_ref,
+                ref_tags))
+
+        filename_out.append(mainStr + '_ref')
 
     return nifit_mrs_out, filename_out
 
@@ -330,30 +417,6 @@ def examineTwix(twixObj, fileName, mraid):
         print(f'{ev: <15}:\t{tmpSqzDims: <20}\t{tmpSqzSize}')
 
 
-class IncompatibleSoftwareVersion(Exception):
-    pass
-
-
-def xa_or_vx(hdr):
-    """Determine siemens software type
-
-    :param hdr: mapVBVDHdr object
-    :type img: mapvbvd.read_twix_hdr.twix_hdr
-    :raises IncompatibleSoftwareVersion: Raised if not a VX or XA twix file
-    :return: String either 'xa' or 'vx'
-    :rtype: str
-    """
-    if re.search(r'syngo MR XA\d{2}', hdr['Dicom']['SoftwareVersions']):
-        return 'xa'
-    elif re.search(r'syngo MR [A-Z]\d{2}', hdr['Dicom']['SoftwareVersions']):
-        return 'vx'
-    else:
-        raise IncompatibleSoftwareVersion(
-            'spec2nii does not recognise this Siemens software version'
-            f' ({hdr["Dicom"]["SoftwareVersions"]}).'
-            ' spec2nii is tested on VA-VE, and XA20 and XA30 DICOM files.')
-
-
 def extractTwixMetadata(mapVBVDHdr, orignal_file):
     """Pass to appropriate extractTwixMetadata function for software version."""
     if xa_or_vx(mapVBVDHdr) == 'vx':
@@ -373,7 +436,7 @@ def extractTwixMetadata_xa(mapVBVDHdr, orignal_file):
 
     # Extract required metadata and create hdr_ext object
     obj = nifti_mrs.hdr_ext(mapVBVDHdr['Dicom'][('lFrequency')] / 1E6,
-                            mapVBVDHdr['MeasYaps'][('sTXSPEC', 'asNucleusInfo', '0', 'tNucleus')])
+                            mapVBVDHdr['MeasYaps'][('sTXSPEC', 'asNucleusInfo', '0', 'tNucleus')].strip('"'))
 
     # Standard defined metadata
     # # 5.1 MRS specific Tags
