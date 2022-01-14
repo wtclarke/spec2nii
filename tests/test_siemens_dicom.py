@@ -20,6 +20,9 @@ vb_mrsi_path = siemens_path / 'VBData' / 'DICOM/csi_se_3D_C>S23.5>T20.3_10_8_1/'
 ve_svs_path = siemens_path / 'VEData' / 'DICOM/svs_se_s>c10>t5_R10_11_1/'
 ve_mrsi_path = siemens_path / 'VEData' / 'DICOM/csi_se_3D_t>c23.5>s20.3_R10_7_1/'
 
+xa20_svs_path = siemens_path / 'XAData' / 'XA20/DICOM/26516628.dcm'
+xa30_svs_path = siemens_path / 'XAData' / 'XA30/meas_MID00479_FID106847_svs_se_135sws.dcm'
+
 
 def test_VB_svs(tmp_path):
 
@@ -50,6 +53,32 @@ def test_VE_svs(tmp_path):
     # hdr_ext = json.loads(img_t.header.extensions[hdr_ext_codes.index(44)].get_content())
 
     assert img_t.shape == (1, 1, 1, 512)
+    assert np.iscomplexobj(img_t.dataobj)
+
+
+def test_XA20_svs(tmp_path):
+
+    subprocess.check_call(['spec2nii', 'dicom',
+                           '-f', 'xa20_svs',
+                           '-o', tmp_path,
+                           '-j', str(xa20_svs_path)])
+
+    img_t = read_nifti_mrs(tmp_path / 'xa20_svs.nii.gz')
+
+    assert img_t.shape == (1, 1, 1, 1024)
+    assert np.iscomplexobj(img_t.dataobj)
+
+
+def test_XA30_svs(tmp_path):
+
+    subprocess.check_call(['spec2nii', 'dicom',
+                           '-f', 'xa30_svs',
+                           '-o', tmp_path,
+                           '-j', str(xa30_svs_path)])
+
+    img_t = read_nifti_mrs(tmp_path / 'xa30_svs.nii.gz')
+
+    assert img_t.shape == (1, 1, 1, 2048)
     assert np.iscomplexobj(img_t.dataobj)
 
 
