@@ -100,8 +100,11 @@ class spec2nii:
         parser_philips = subparsers.add_parser('philips', help='Convert from Philips spar/sdat format.')
         parser_philips.add_argument('sdat', help='SDAT file', type=Path)
         parser_philips.add_argument('spar', help='SPAR file', type=Path)
-        parser_philips.add_argument("-t", "--tag", type=str, help="Specify NIfTI MRS tag used for 5th "
-                                                                  "dimension if multiple transients are present.")
+        parser_philips.add_argument(
+            "-t", "--tag",
+            type=str,
+            default="DIM_DYN",
+            help="Specify NIfTI MRS tag used for 5th dimension if multiple transients are present.")
         parser_philips = add_common_parameters(parser_philips)
         parser_philips.set_defaults(func=self.philips)
 
