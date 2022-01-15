@@ -5,7 +5,11 @@ A program for multi-format conversion of in vivo MRS to the [NIfTI-MRS format](h
 
 This program was inspired by the imaging DICOM to NIfTI converter [dcm2niix](https://github.com/rordenlab/dcm2niix) developed by Chris Rorden. All MRS(I) orientations are tested with images converted using dcm2niix. I consider the combination of images converted using dcm2niix and displayed in [FSLeyes](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FSLeyes) the de facto standard.
 
-Visualisation of MRS converted by spec2nii can be carried out with a recent (>0.31.0) version of FSLeyes. A FSLeyes plugin for NIfTI-MRS is in development.
+Visualisation of MRS converted by spec2nii can be carried out with a recent (>0.31.0) version of FSLeyes. A FSLeyes plugin for NIfTI-MRS is now available:
+- [Gitlab](https://git.fmrib.ox.ac.uk/wclarke/fsleyes-plugin-mrs),
+- `conda install -c conda-forge fsleyes-plugin-mrs`,
+- `pip install fsleyes-plugin-mrs`.
+
 ## Installation
 `conda install -c conda-forge spec2nii`  
 or  
@@ -27,6 +31,7 @@ This table lists the currently supported formats. I have very limited experience
 |---------------|----------------|-----|-----|-----------------------|
 | Siemens Twix  | .dat           | Yes | No  | Yes                   |
 | Siemens DICOM | .ima / .dcm    | Yes | Yes | Yes                   |
+| Siemens RDA   | .rda           | Yes | No  | Yes (WIP)             |
 | Philips       | .SPAR/.SDAT    | Yes | No  | Yes                   |
 | Philips       | .data/.list    | Yes | No  | Yes                   |
 | Philips DICOM | .dcm           | Yes | No  | Yes (WIP)             |
@@ -63,6 +68,12 @@ Twix format loop variables (e.g. `Ave` or `ida`) can be assigned to specific NIf
 `spec2nii dicom DCM_FILE_or_DIR`
 
 NIfTI MRS dimension tags (e.g. `DIM_COIL`) can be specified using the `-t` command line argument.
+
+### Siemens RDA
+`spec2nii rda RDA_FILE`
+
+Only supports SVS currently. Please contact the developers with examples for MRSI capability.
+Orientation calculation is a WIP, test data for different voxel orientations would be greatly appreciated!
 
 ### UIH DICOM
 `spec2nii uih DCM_FILE_or_DIR`
@@ -137,4 +148,4 @@ This program was written by Will Clarke, University of Oxford. Contributions to 
 
 Particular thanks go to Tomáš Pšorn for contributing the Bruker interface, and to Jack Miller for the Varian interface.
 
-Some GE test data comes from the [BIG GABA](https://www.nitrc.org/projects/biggaba/) dataset whichw as funded by NIH grant R01 EB016089. Please see Mikkelsen M et al. Big GABA: Edited MR spectroscopy at 24 research sites. NeuroImage 2017;159:32–45. doi: 10.1016/j.neuroimage.2017.07.021 for more information.
+Some GE test data comes from the [BIG GABA](https://www.nitrc.org/projects/biggaba/) dataset which was funded by NIH grant R01 EB016089. Please see Mikkelsen M et al. Big GABA: Edited MR spectroscopy at 24 research sites. NeuroImage 2017;159:32–45. doi: 10.1016/j.neuroimage.2017.07.021 for more information.

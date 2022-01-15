@@ -4,6 +4,7 @@ Copyright (C) 2022 University of Oxford
 """
 import re
 from datetime import datetime
+import warnings
 
 import numpy as np
 
@@ -51,6 +52,10 @@ def convert_rda(rda_path, fname_out, verbose):
     data_cmplx = data_cmplx.reshape((1, 1, 1) + data_cmplx.shape)
 
     dwelltime = float(hdr['DwellTime']) / 1E6
+
+    warnings.warn(
+        'The orientation calculations for rda data is mostly untested.'
+        ' Please contribute test data if you can!')
 
     imagePositionPatient = np.asarray([
         float(hdr['PositionVector[0]']),
