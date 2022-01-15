@@ -82,6 +82,12 @@ class spec2nii:
         parser_dicom = add_common_parameters(parser_dicom)
         parser_dicom.set_defaults(func=self.dicom)
 
+        # Handle rda subcommand
+        parser_dicom = subparsers.add_parser('rda', help='Convert from Siemens spectroscopy .rda format.')
+        parser_dicom.add_argument('file', help='file to convert', type=Path)
+        parser_dicom = add_common_parameters(parser_dicom)
+        parser_dicom.set_defaults(func=self.rda)
+
         # Handle UIH DICOM subcommand
         parser_uih_dicom = subparsers.add_parser('uih', help='Convert from UIH DICOM format.')
         parser_uih_dicom.add_argument('file', help='file or directory to convert', type=str)
@@ -359,6 +365,12 @@ class spec2nii:
             for img, f_out in zip(self.imageOut, self.fileoutNames):
                 out = self.outputDir / (f_out + '_voi.nii.gz')
                 save(Nifti2Image(np.ones((1, 1, 1), int), img.hdr_ext['VOI']), out)
+
+    # Siemens RDA (.rda) format
+    def rda(self, args):
+        """Siemens RDA format handler."""
+        from spec2nii.rda import convert_rda
+        self.imageOut, self.fileoutNames = convert_rda(args.file, args.fileout, args.verbose)
 
     # (UIH) DICOM (.dcm) format
     def uih_dicom(self, args):
