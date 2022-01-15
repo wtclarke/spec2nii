@@ -23,7 +23,7 @@ jobs:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
           activate-environment: test
-          environment-file: requirements.txt
+          environment-file: requirements.yml
           auto-activate-base: false
           channels: conda-forge
       - shell: bash -l {0}

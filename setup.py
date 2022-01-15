@@ -2,9 +2,13 @@
 
 from setuptools import setup
 import versioneer
+import yaml
 
-with open('requirements.txt', 'rt') as f:
-    install_requires = [line.strip() for line in f.readlines()]
+with open("requirements.yml", "r") as stream:
+    try:
+        install_requires = yaml.safe_load(stream)
+    except yaml.YAMLError as exc:
+        print(exc)
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
