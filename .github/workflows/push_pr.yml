@@ -7,7 +7,7 @@ on:
 
 jobs:
   miniconda:
-    name: Miniconda ${{ matrix.os }}
+    name: Miniconda (${{ matrix.python-version }}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
         matrix:
@@ -20,11 +20,12 @@ jobs:
           lfs: true
       - uses: conda-incubator/setup-miniconda@v2
         with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
           activate-environment: test
           environment-file: requirements.txt
           auto-activate-base: false
           channels: conda-forge
-          python-version: ${{ matrix.python-version }}
       - shell: bash -l {0}
         run: |
           conda info
