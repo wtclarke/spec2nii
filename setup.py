@@ -6,7 +6,8 @@ import yaml
 
 with open("requirements.yml", "r") as stream:
     try:
-        install_requires = yaml.safe_load(stream)
+        requirements = yaml.safe_load(stream)
+        install_requires = requirements['dependencies']
     except yaml.YAMLError as exc:
         print(exc)
 
