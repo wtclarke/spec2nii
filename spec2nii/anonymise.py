@@ -31,7 +31,7 @@ def anon_nifti_mrs(args):
     hdr_ext = json.loads(nifti_mrs_img.header.extensions[hdr_ext_codes.index(44)].get_content())
 
     # Loop through fields. Remove those which are marked for anonymisation
-    # Either those fileds which are standard-defined and are marked for anonymisation,
+    # Either those fields which are standard-defined and are marked for anonymisation,
     # or user-defined which are marked 'private'.
     pvt_re = re.compile(r'private_')
 

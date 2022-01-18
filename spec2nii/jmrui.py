@@ -107,7 +107,7 @@ def read_mrui(file_path):
 
     :return: Data in numpy format (npoints x nframes)
     :return: header dict
-    :return: Additional information sotred as strings in file
+    :return: Additional information sorted as strings in file
     '''
     with open(file_path, 'br') as fp:
         # Header and data is stored as big endian double

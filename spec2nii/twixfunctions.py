@@ -77,7 +77,7 @@ def is_xa_product(hdr):
 
 
 def process_twix(twixObj, base_name_out, name_in, dataKey, dim_overides, quiet=False, verbose=False, remove_os=False):
-    """Process a twix file. Identify type of MRS and then pass to the relavent function."""
+    """Process a twix file. Identify type of MRS and then pass to the relevant function."""
 
     if twixObj.hdr.Meas.lFinalMatrixSizePhase \
             and twixObj.hdr.Meas.lFinalMatrixSizeRead:
@@ -165,7 +165,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overides, remove_o
     # Extract metadata
     meta_obj = extractTwixMetadata(twixObj['hdr'], basename(twixObj[dataKey].filename))
 
-    # Identify what those indicies are
+    # Identify what those indices are
     # If cha is one: loop over 3rd and higher dims and make 2D images
     # If cha isn't present one: loop over 2nd and higher dims and make 1D images
     # Don't write here, just fill up class property lists for later writing
@@ -238,9 +238,9 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overides, remove_o
             dim_tags[idx] = tag
 
     # Permute the order of dimension in the data
-    orignal = list(range(1, squeezedData.ndim))
+    original = list(range(1, squeezedData.ndim))
     new = [twixObj[dataKey].sqzDims.index(dd) for dd in dim_order]
-    reord_data = np.moveaxis(squeezedData, orignal, new)
+    reord_data = np.moveaxis(squeezedData, original, new)
 
     # Now assemble data
     nifit_mrs_out = []
@@ -396,7 +396,7 @@ def twix2DCMOrientation(mapVBVDHdr, verbose=False):
 
 
 def examineTwix(twixObj, fileName, mraid):
-    """ Print formated twix contents"""
+    """ Print formatted twix contents"""
 
     print(f'Contents of file {fileName}:')
 

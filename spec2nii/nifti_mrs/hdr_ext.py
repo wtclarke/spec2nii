@@ -4,13 +4,13 @@ import json
 
 class hdr_ext:
     """Class to hold meta data stored in a NIfTI MRS header extension.
-    Required fields must be passed to initilise,
-    Default dimension information atomatically gnerated, but may be modifed by set_dim_info method.
-    Standard defined meta-data and user-defined data can be added uisng set_standard_def and
+    Required fields must be passed to initialise,
+    Default dimension information automatically gnerated, but may be modified by set_dim_info method.
+    Standard defined meta-data and user-defined data can be added using set_standard_def and
     set_user_def respectively.
     """
     def __init__(self, spec_frequency, resonant_nucleus):
-        """Initilise class object with the two required bits of meta-data
+        """Initialise class object with the two required bits of meta-data
         Set default dimension information.
         Inputs:
             spec_frequency: Spectrometer frequency in MHz,
@@ -45,7 +45,7 @@ class hdr_ext:
             dim: May be (0,1,2) or ("5th","6th","7th")
             tag: Must be one of the defined dimension tag strings.
             info: Optional, free-form use string.
-            hdr: Dict containing relavent header value names and values.
+            hdr: Dict containing relevant header value names and values.
         """
         if tag not in dimension_tags.keys():
             raise ValueError("tag must be one of the defined dimension tag.")

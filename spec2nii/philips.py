@@ -95,7 +95,7 @@ def read_sdat(filename, samples, rows):
 
 
 def _philips_orientation(params):
-    '''Calculate the orientation affine from the spar parmaeters.'''
+    '''Calculate the orientation affine from the spar parameters.'''
 
     angle_lr = params['lr_angulation']
     angle_ap = params['ap_angulation']
