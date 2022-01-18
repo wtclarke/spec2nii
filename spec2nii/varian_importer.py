@@ -41,6 +41,11 @@ def read_varian(args):
     # spectral number of points
     number_of_spectral_points = int(int(dic['np']) / 2)
 
+    # number of slices
+    sequence_name = dic['procpar']['seqfil']['values'][0]
+    if (sequence_name.count('SSel') or sequence_name.count('sliceshim')):  # 1D localised slice
+        pass  # to be created
+
     # reshape
     newshape = (1, 1, 1, number_of_spectral_points, number_of_coils, number_of_time_points)
     data = data.transpose()
@@ -72,7 +77,6 @@ def read_varian(args):
         pass
 
     # Parse 3D localisation
-    sequence_name = dic['procpar']['seqfil']['values'][0]
     if (sequence_name.count('press') or sequence_name.count('steam')):
         affine = _varian_orientation_3d(dic)
     else:
@@ -99,11 +103,11 @@ def read_varian(args):
     except KeyError:
         warnings.warn('Expected standard metadata keying failed')
     try:
-        meta.set_standard_def('InversionTime', dic['procpar']['ti']['values'][0])
+        meta.set_standard_def('InversionTime', float(dic['procpar']['ti']['values'][0]))
     except KeyError:
         pass
     try:
-        meta.set_standard_def('ExcitationFlipAngle', dic['procpar']['flip1']['values'][0])
+        meta.set_standard_def('ExcitationFlipAngle', float(dic['procpar']['flip1']['values'][0]))
     except KeyError:
         pass
     conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')
