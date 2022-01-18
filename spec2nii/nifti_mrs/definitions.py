@@ -6,6 +6,10 @@ or a tuple indicating an array type and element type : (list, float) or (list, s
 Copyright Will Clarke, University of Oxford, 2021
 '''
 
+# Define nifti-mrs version number here.
+# First element is major version, secod is minor
+nifti_mrs_version = [0, 5]
+
 # Possible dimension tags and descriptions
 dimension_tags = {"DIM_COIL": "For storage of data from each individual receiver coil element.",
                   "DIM_DYN": "For storage of each individual acquisition transient. E.g. for post-acquisition B0 drift correction.",
@@ -17,7 +21,8 @@ dimension_tags = {"DIM_COIL": "For storage of data from each individual receiver
                   "DIM_MEAS": "Used to indicate multiple repeats of the full sequence contained within the same original data file.",
                   "DIM_USER_0": "User defined dimension.",
                   "DIM_USER_1": "User defined dimension.",
-                  "DIM_USER_2": "User defined dimension."}
+                  "DIM_USER_2": "User defined dimension.",
+                  "DIM_ISIS": "Dimension for storing image-selected in vivo spectroscopy (ISIS) acquisitions."}
 
 # Required metadata fields
 required = {'SpectrometerFrequency':
@@ -33,6 +38,7 @@ required = {'SpectrometerFrequency':
 # 'RepetitionTime'
 # 'InversionTime'
 # 'MixingTime'
+# 'AcqusitionStartTime'
 # 'ExcitationFlipAngle'
 # 'TxOffset'
 # 'VOI'
@@ -88,6 +94,11 @@ standard_defined = {
         (float,
          's',
          'Mixing time in e.g. STEAM sequence. Units: Seconds',
+         False),
+    'AcqusitionStartTime':
+        (float,
+         's',
+         'Time, relative to EchoTime, that the acquisition starts. Positive values indicate a time after the EchoTime, negative indicate before the EchoTime, a value of zero indicates no offset. Units: Seconds',
          False),
     'ExcitationFlipAngle':
         (float,

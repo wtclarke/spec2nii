@@ -3,6 +3,7 @@ import json
 import nibabel as nib
 from .validator import validate_nifti_mrs
 from spec2nii.nifti_mrs import hdr_ext
+from spec2nii.nifti_mrs.definitions import nifti_mrs_version
 
 
 def get_mrs_class(nifti=2):
@@ -45,7 +46,9 @@ def get_mrs_class(nifti=2):
             self.header.extensions.append(extension)
 
             # Set intent_name
-            self.set_version_info(0, 2)
+            self.set_version_info(
+                nifti_mrs_version[0],
+                nifti_mrs_version[1])
 
             # Set the dwell time of the time dimension
             self.set_dwell_time(dwelltime)
