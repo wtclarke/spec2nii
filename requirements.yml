@@ -2,7 +2,7 @@ dependencies:
  - numpy
  - nibabel
  - pydicom
- - pyMapVBVD>=0.4.0
+ - pyMapVBVD>=0.4.5
  - scipy
  - brukerapi>=0.1.4.0
  - pandas
