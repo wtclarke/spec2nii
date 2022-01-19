@@ -459,7 +459,7 @@ def open_towrite(filename, overwrite=False, mode='wb'):
     Open filename for writing and return file object
 
     Function checks if file exists (and raises IOError if overwrite=False) and
-    creates necessary directiories as needed.
+    creates necessary directories as needed.
     """
     # check if file exists and overwrite if False
     if os.path.exists(filename) and (overwrite is False):
@@ -526,7 +526,7 @@ def trace2index_flat(shape, ntrace):
     """
     Calculate the index of a trace assuming a flat structure
     """
-    # algorithm is to take quotient/remainers of sizes in reverse
+    # algorithm is to take quotient/remainders of sizes in reverse
     q = ntrace  # seed quotient with remained
     index = []
     for s in shape[:0:-1]:  # loop from last size to 2nd size
@@ -545,7 +545,7 @@ def index2trace_opp(shape, index):
     # deal with the phase component
     phases = [v % 2 for v in index]
     nphase = index2trace_flat([2] * n, phases[::-1])
-    # deal with the remainer
+    # deal with the remainder
     pindex = [v // 2 for v in index]
     pshape = [i // 2 for i in shape]
     nbase = index2trace_flat(pshape, pindex)
@@ -575,7 +575,7 @@ def index2trace_reg(shape, index):
     # deal with the phase component
     phases = [v % 2 for v in index]
     nphase = index2trace_flat([2] * n, phases)
-    # deal with the remainer
+    # deal with the remainder
     pindex = [v // 2 for v in index]
     pshape = [i // 2 for i in shape]
     nbase = index2trace_flat(pshape, pindex)

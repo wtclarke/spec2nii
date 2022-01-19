@@ -59,7 +59,7 @@ def read_varian(args):
     nucleus = nucleus[1:] + nucleus[0]
 
     try:
-        repitition_time = float(dic['procpar']['tr']['values'][0])
+        repetition_time = float(dic['procpar']['tr']['values'][0])
     except KeyError:
         pass
 
@@ -90,7 +90,7 @@ def read_varian(args):
     meta = nifti_mrs.hdr_ext(imagingfreq, nucleus)
     meta.set_standard_def('ConversionMethod', f'spec2nii v{spec2nii_ver}')
     meta.set_standard_def('EchoTime', echotime)
-    meta.set_standard_def('RepetitionTime', repitition_time)
+    meta.set_standard_def('RepetitionTime', repetition_time)
     meta.set_standard_def('Manufacturer', 'Varian')
     meta.set_standard_def('ProtocolName', dic['procpar']['seqfil']['values'][0])
     meta.set_standard_def('PatientName', dic['procpar']['comment']['values'][0])
