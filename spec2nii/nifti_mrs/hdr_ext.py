@@ -5,7 +5,7 @@ import json
 class hdr_ext:
     """Class to hold meta data stored in a NIfTI MRS header extension.
     Required fields must be passed to initialise,
-    Default dimension information automatically gnerated, but may be modified by set_dim_info method.
+    Default dimension information automatically generated, but may be modified by set_dim_info method.
     Standard defined meta-data and user-defined data can be added using set_standard_def and
     set_user_def respectively.
     """
@@ -74,7 +74,7 @@ class hdr_ext:
         self.standard_data[key] = value
 
     def set_user_def(self, all_keys=None, key=None, value=None, doc=None):
-        """Add user defined meda data keys to the header extension.
+        """Add user defined meta data keys to the header extension.
         Pass dict as kwarg all_keys to set all key/value pairs, or
         add keys and values one at a time using key, value and doc.
         """

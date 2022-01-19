@@ -7,7 +7,7 @@ Copyright Will Clarke, University of Oxford, 2021
 '''
 
 # Define nifti-mrs version number here.
-# First element is major version, secod is minor
+# First element is major version, second is minor
 nifti_mrs_version = [0, 5]
 
 # Possible dimension tags and descriptions

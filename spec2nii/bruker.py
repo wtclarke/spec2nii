@@ -54,7 +54,7 @@ def read_bruker(args):
 def yield_bruker(args):
     """
 
-    If the path spectified by args.file is:
+    If the path specified by args.file is:
 
     1/ Bruker dataset file (2dseq) - function yields its data and properties of the dataset
     2/ Directory - function yields data and properties and data of all datasets compliant to the queries

@@ -306,7 +306,7 @@ def process_siemens_csi_vx(img, verbose):
                       img.csa_header['tags']['PixelSpacing']['items'][1],
                       img.csa_header['tags']['SliceThickness']['items'][0]])
 
-    # Note that half_shift = True. For an explination see spec2nii/notes/siemens.md
+    # Note that half_shift = True. For an explanation see spec2nii/notes/siemens.md
     currNiftiOrientation = dcm_to_nifti_orientation(imageOrientationPatient,
                                                     imagePositionPatient,
                                                     xyzMM,

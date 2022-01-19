@@ -67,7 +67,7 @@ import ctypes as ct
 
 def get_pfile_hdr_fields(version):
     """
-    This function returs a list of fields for mapping a GE P-file header
+    This function returns a list of fields for mapping a GE P-file header
     to a ctypes class structure. We define different paddings and variable
     names depending on the software version that created the P-file.
 

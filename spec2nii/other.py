@@ -14,7 +14,7 @@ from spec2nii import nifti_mrs
 def dump_headers(args):
     """Print the nifti headers and header extensions
 
-    :param args: Command line argumentss
+    :param args: Command line arguments
     """
     # Load file
     nifti_mrs_img = nib.load(args.file)
@@ -34,7 +34,7 @@ def dump_headers(args):
 def extract_hdr_ext(args):
     """Generate a json sidecar file for input file
 
-    :param args: Command line argumentss
+    :param args: Command line arguments
     """
     nifti_mrs_img = nib.load(args.file)
 

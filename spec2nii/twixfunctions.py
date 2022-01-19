@@ -438,15 +438,15 @@ def examineTwix(twixObj, fileName, mraid):
         print(f'{ev: <15}:\t{tmpSqzDims: <20}\t{tmpSqzSize}')
 
 
-def extractTwixMetadata(mapVBVDHdr, orignal_file):
+def extractTwixMetadata(mapVBVDHdr, original_file):
     """Pass to appropriate extractTwixMetadata function for software version."""
     if xa_or_vx(mapVBVDHdr) == 'vx':
-        return extractTwixMetadata_vx(mapVBVDHdr, orignal_file)
+        return extractTwixMetadata_vx(mapVBVDHdr, original_file)
     elif xa_or_vx(mapVBVDHdr) == 'xa':
-        return extractTwixMetadata_xa(mapVBVDHdr, orignal_file)
+        return extractTwixMetadata_xa(mapVBVDHdr, original_file)
 
 
-def extractTwixMetadata_xa(mapVBVDHdr, orignal_file):
+def extractTwixMetadata_xa(mapVBVDHdr, original_file):
     """ Extract information from the pymapVBVD header to insert into the json sidecar.
 
     Args:
@@ -540,7 +540,7 @@ def extractTwixMetadata_xa(mapVBVDHdr, orignal_file):
     conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')
     obj.set_standard_def('ConversionTime', conversion_time)
     # 'OriginalFile'
-    obj.set_standard_def('OriginalFile', [orignal_file, ])
+    obj.set_standard_def('OriginalFile', [original_file, ])
     # # 5.6 Spatial information
     # 'kSpace'
     obj.set_standard_def('kSpace', [False, False, False])
@@ -556,7 +556,7 @@ def extractTwixMetadata_xa(mapVBVDHdr, orignal_file):
     return obj
 
 
-def extractTwixMetadata_vx(mapVBVDHdr, orignal_file):
+def extractTwixMetadata_vx(mapVBVDHdr, original_file):
     """ Extract information from the pymapVBVD header to insert into the json sidecar.
 
     Function Twix files from Numaris4 Vx software scanners.
@@ -648,7 +648,7 @@ def extractTwixMetadata_vx(mapVBVDHdr, orignal_file):
     conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')
     obj.set_standard_def('ConversionTime', conversion_time)
     # 'OriginalFile'
-    obj.set_standard_def('OriginalFile', [orignal_file, ])
+    obj.set_standard_def('OriginalFile', [original_file, ])
     # # 5.6 Spatial information
     # 'kSpace'
     obj.set_standard_def('kSpace', [False, False, False])
