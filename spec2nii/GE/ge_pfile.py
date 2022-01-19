@@ -202,7 +202,8 @@ def _process_mrsi_pfile(pfile):
     '''
     psd = pfile.hdr.rhi_psdname.decode('utf-8').lower()
 
-    if psd != 'probe-p':
+    if psd != 'probe-p' \
+            and psd != 'probe-sl':
         raise UnsupportedPulseSequenceError('Unrecognised sequence, psdname must be "probe-p".')
 
     warn('The interpretation of pfile CSI data is poorly tested; rotations or transpositions of the'

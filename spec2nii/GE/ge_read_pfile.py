@@ -191,6 +191,9 @@ class Pfile(object):
         elif psd == 'gaba':
             # wtc - added for Nottingham MEGA-PRESS sequence.
             mapper = PfileMapperGaba
+        elif psd == 'probe-sl':
+            # wtc - added for CSI sequence from Manchester.
+            mapper = PfileMapperProbeSL
         else:
             raise UnknownPfile("No Pfile mapper for pulse sequence = %s" % psd)
         
@@ -1058,7 +1061,35 @@ class PfileMapper(object):
             self.phase_of_first_point_deg = None
             
         return
+
+
+class PfileMapperProbeSL(PfileMapper):
+
+    def __init__(self, file_name, hdr, version, endian):
+        """
+        Quick attempt to make sense of the probe-sl CSI data
+        
+        """
+        PfileMapper.__init__(self, file_name, hdr, version, endian)
+
+    @property
+    def get_voxel_spacing(self):  
+        """
+        Get the voxel spacing in 3D. Note that the slice spacing may include
+        a skip.
+        Swaps the FOV if necessary based on freq_dir setting.
+
+        """
+        voxspace = np.array([0.0, 0.0, 0.0])
+
+        fov  = self.get_fov
+        nvox = self.get_num_voxels
+        voxspace[0] = fov[0] / nvox[0]
+        voxspace[1] = fov[1] / nvox[1]
+        voxspace[2] = fov[2] / nvox[2]       
     
+        return voxspace
+
 
 class PfileMapperSlaser(PfileMapper):
 
