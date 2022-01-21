@@ -44,7 +44,7 @@ def anon_nifti_mrs(args):
                     and key in args.remove:
                 removed.update({key: value})
             # Standard defined
-            elif key in standard_defined.keys():
+            elif key in standard_defined:
                 if standard_defined[key][3]:
                     removed.update({key: value})
                 else:

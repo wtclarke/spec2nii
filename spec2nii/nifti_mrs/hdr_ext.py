@@ -47,7 +47,7 @@ class hdr_ext:
             info: Optional, free-form use string.
             hdr: Dict containing relevant header value names and values.
         """
-        if tag not in dimension_tags.keys():
+        if tag not in dimension_tags:
             raise ValueError("tag must be one of the defined dimension tag.")
 
         new_info = {"tag": tag,
@@ -68,7 +68,7 @@ class hdr_ext:
 
     def set_standard_def(self, key, value):
         """Add a single standard-defined bit of meta-data to the object."""
-        if key not in standard_defined.keys():
+        if key not in standard_defined:
             raise ValueError("key must be one of the standard-defined keys.")
 
         self.standard_data[key] = value
