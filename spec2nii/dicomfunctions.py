@@ -578,8 +578,7 @@ def identify_integrated_references(img, inst_num):
         if inst_num <= num_ref:
             # First ecc calibration references
             return 1, '_ecc'
-        elif inst_num > num_ref\
-                and inst_num <= (num_ref * 2):
+        elif inst_num <= (num_ref * 2):
             # First quantitation calibration references
             return 2, '_quant'
         elif inst_num <= (total_dyn - num_ref)\
