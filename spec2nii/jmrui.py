@@ -130,20 +130,21 @@ def read_mrui(file_path):
         file_str = fp.read().decode("utf-8")
 
     # Sort header information
-    header = dict()
-    header['type_of_sig'] = hdr[0]
-    header['number_of_points'] = int(hdr[1])
-    header['sampling_interval'] = hdr[2]
-    header['begin_time '] = hdr[3]
-    header['zero_order_phs'] = hdr[4]
-    header['transmitter_frequency'] = hdr[5]
-    header['magnetic_field'] = hdr[6]
-    header['type_of_nucleus'] = hdr[7]
-    header['reference_frequency_hz'] = hdr[8]
-    header['reference_frequency_ppm'] = hdr[9]
-    header['fid_or_echo'] = hdr[10]
-    header['apodizing'] = hdr[11]
-    header['num_zeros_view'] = hdr[12]
+    header = {
+        'type_of_sig': hdr[0],
+        'number_of_points': int(hdr[1]),
+        'sampling_interval': hdr[2],
+        'begin_time ': hdr[3],
+        'zero_order_phs': hdr[4],
+        'transmitter_frequency': hdr[5],
+        'magnetic_field': hdr[6],
+        'type_of_nucleus': hdr[7],
+        'reference_frequency_hz': hdr[8],
+        'reference_frequency_ppm': hdr[9],
+        'fid_or_echo': hdr[10],
+        'apodizing': hdr[11],
+        'num_zeros_view': hdr[12],
+    }
 
     data = data[0::2] + 1j * data[1::2]
 
