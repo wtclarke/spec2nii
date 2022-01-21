@@ -146,7 +146,6 @@ def _varian_orientation_1d(params):
                     - vox1, vox2, vox3, thkunit  : define size of voxel (no thkunit is mm)
     '''
     warnings.warn('Not yet implemented')
-    return
 
 
 def _varian_orientation_3d(params):
