@@ -405,8 +405,6 @@ class spec2nii:
         # name of output
         if args.fileout:
             mainStr = args.fileout
-        elif args.sdat.stem == args.spar.stem:
-            mainStr = args.sdat.stem
         else:
             mainStr = args.sdat.stem
 
@@ -427,8 +425,6 @@ class spec2nii:
         # name of output
         if args.fileout:
             mainStr = args.fileout
-        elif args.data.stem == args.list.stem:
-            mainStr = args.data.stem
         else:
             mainStr = args.data.stem
 
