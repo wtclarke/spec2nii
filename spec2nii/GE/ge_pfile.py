@@ -162,7 +162,7 @@ def _process_oslaser(pfile):
 
     dwelltime = 1 / pfile.hdr.rhr_spectral_width
 
-    return data, dwelltime, fname_suffix
+    return data, meta, dwelltime, fname_suffix
 
 
 def _process_gaba(pfile):
