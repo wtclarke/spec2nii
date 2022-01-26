@@ -581,12 +581,10 @@ def identify_integrated_references(img, inst_num):
         elif inst_num <= (num_ref * 2):
             # First quantitation calibration references
             return 2, '_quant'
-        elif inst_num <= (total_dyn - num_ref)\
-                and inst_num > (total_dyn - (2 * num_ref)):
+        elif (total_dyn - (2 * num_ref)) < inst_num <= (total_dyn - num_ref):
             # Second ecc calibration references
             return 1, '_ecc'
-        elif inst_num <= total_dyn\
-                and inst_num > (total_dyn - num_ref):
+        elif (total_dyn - num_ref) < inst_num <= total_dyn:
             # Second quantitation calibration references
             return 2, '_quant'
         else:

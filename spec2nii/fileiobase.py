@@ -69,34 +69,28 @@ def create_blank_udic(ndim):
     """
     Create a blank universal dictionary for a spectrum of dimension ndim.
     """
-    udic = dict()
-    udic["ndim"] = ndim
+    udic = {
+        "ndim": ndim,
+    }
 
     for i in range(ndim):
-        d = dict()
-        d["sw"] = 999.99        # spectral width in Hz
-        d["complex"] = True     # Quadrature, True when dimension is complex
-        d["obs"] = 999.99       # Observation frequency in MHz
-        d["car"] = 999.99       # Carrier frequency in Hz
-        # Number of points in dimension based on the shape of the data array.
-        # As such the direct dimension (-1) size is R|I, all indirect
-        # dimensions are R+I
-        d["size"] = 1
-
-        d["label"] = ["X", "Y", "Z", "A"][i]    # name of dimension
-
-        # encoding of dimension, ie states, tppi, etc.  The direct dimension
-        # should be listed as direct.
-        if i == ndim - 1:
-            d["encoding"] = "direct"
-        else:
-            d["encoding"] = "states"
-
-        # time and freq flags for domain of dimension
-        d["time"] = True
-        d["freq"] = False
-
-        udic[i] = d
+        udic[i] = {
+            "sw": 999.99,       # spectral width in Hz
+            "complex": True,    # Quadrature, True when dimension is complex
+            "obs": 999.99,      # Observation frequency in MHz
+            "car": 999.99,      # Carrier frequency in Hz
+            # Number of points in dimension based on the shape of the data array.
+            # As such the direct dimension (-1) size is R|I, all indirect
+            # dimensions are R+I
+            "size": 1,
+            "label": ["X", "Y", "Z", "A"][i],   # name of dimension
+            # encoding of dimension, ie states, tppi, etc.  The direct dimension
+            # should be listed as direct.
+            "encoding": "direct" if i == ndim - 1 else "states",
+            # time and freq flags for domain of dimension
+            "time": True,
+            "freq": False,
+        }
 
     return udic
 

@@ -69,11 +69,7 @@ def is_xa_product(hdr):
         if any([seq_name == seq for seq in xa_product_seq]):
             return True
 
-    if xa_or_vx(hdr) == 'xa'\
-            and is_product():
-        return True
-    else:
-        return False
+    return xa_or_vx(hdr) == 'xa' and is_product()
 
 
 def process_twix(twixObj, base_name_out, name_in, dataKey, dim_overides, quiet=False, verbose=False, remove_os=False):
