@@ -12,22 +12,6 @@
     ], 
     "access_right": "open",
     "grants": [
-        {
-          "code": "203139", 
-          "links": {
-            "self": "https://zenodo.org/api/grants/10.13039/100004440::203139"
-          }, 
-          "title": "Wellcome Centre for Integrative Neuroimaging", 
-          "acronym": "", 
-          "program": "Cognitive Neuroscience and Mental Health", 
-          "funder": {
-            "doi": "10.13039/100004440", 
-            "acronyms": [], 
-            "name": "Wellcome Trust", 
-            "links": {
-              "self": "https://zenodo.org/api/funders/10.13039/100004440"
-            }
-          }
-        }
+        { "id": "10.13039/100004440::203139"}
     ]
 }
