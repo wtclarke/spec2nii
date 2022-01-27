@@ -1,0 +1,33 @@
+{
+    "description": "<p>Spec2nii is a&nbsp;program for multi-format conversion of in vivo MRS to the&nbsp;<a href=\"https://github.com/wexeee/mrs_nifti_standard\">NIfTI-MRS format</a>.</p>\n\n<p>Spec2nii is developed at the Wellcome Centre for Integrative Neuroimaging (FMRIB), at the University of Oxford. It is hosted at&nbsp;<a href=\"https://github.com/wtclarke/spec2nii\">github.com/wtclarke/spec2nii</a>.</p>", 
+    "license": "BSD-3-Clause", 
+    "title": "spec2nii", 
+    "keywords": [ "MRS" ],
+    "creators": [
+        {
+            "orcid": "0000-0001-7159-7025", 
+            "affiliation": "University of Oxford", 
+            "name": "William T Clarke"
+        }
+    ], 
+    "access_right": "open",
+    "grants": [
+        {
+          "code": "203139", 
+          "links": {
+            "self": "https://zenodo.org/api/grants/10.13039/100004440::203139"
+          }, 
+          "title": "Wellcome Centre for Integrative Neuroimaging", 
+          "acronym": "", 
+          "program": "Cognitive Neuroscience and Mental Health", 
+          "funder": {
+            "doi": "10.13039/100004440", 
+            "acronyms": [], 
+            "name": "Wellcome Trust", 
+            "links": {
+              "self": "https://zenodo.org/api/funders/10.13039/100004440"
+            }
+          }
+        }
+    ]
+}
