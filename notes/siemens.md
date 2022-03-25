@@ -71,7 +71,7 @@ _FID_
 All set to 0.
 
 _All_  
-At some subsequent point the first two elements in the imagePositionPatient vector is updated to include include the half FOV shift.
+At some subsequent point the first two elements in the imagePositionPatient vector is updated to include the half FOV shift.
 
 ### VE
 
@@ -80,9 +80,9 @@ At some subsequent point the first two elements in the imagePositionPatient vect
 
 where `m_dVoI_Position_{Sag/Cor/Tra}` is read from `MEAS.sSpecPara.sVoI.sPosition.d{Sag/Cor/Tra}`. This is used for all types as long as there is a valid VoI.
 
-At some subsequent point the first two elements in the imagePositionPatient vector is updated to include include a half FOV shift.
+At some subsequent point the first two elements in the imagePositionPatient vector is updated to include a half FOV shift.
 
 ### Summary
 A one half voxel shift appears to be added in the sequence code. But a similar shift is not apparent in the reconstruction code. The value of the first two elements imagePositionPatient is exactly one half a FOV from the centre of the UI element. I.e. this takes you to a voxel edge (as displayed on the scanner) not a voxel centre (as required by DICOM and NIfTI).
 
-This means that the sequence an reconstruction match: for a sequence with an even number of voxels there will be a voxel edge at the centre of the UI element. But this is inconsistent with the use of imagePositionPatient as the shift to a centre of a voxel.
+This means that the sequence and reconstruction match: for a sequence with an even number of voxels there will be a voxel edge at the centre of the UI element. But this is inconsistent with the use of imagePositionPatient as the shift to a centre of a voxel.

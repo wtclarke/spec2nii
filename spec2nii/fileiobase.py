@@ -651,7 +651,7 @@ class data_nd(object):
         pass
 
     def __setdimandshape__(self):
-        """ Set the the ndim and shape attributes from fshape """
+        """ Set the ndim and shape attributes from fshape """
         # set ndim and shape
         self.ndim = len(self.fshape)
         self.shape = tuple([self.fshape[i] for i in self.order])
