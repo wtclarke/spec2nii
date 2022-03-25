@@ -146,17 +146,18 @@ class Pfile(object):
             # ARC 20220209: coverage here is likey to be incomplete. This check
             # may well be redundant anyway, since revision number has
             # previously been validated in _version
-            if offset in [
-                61464,   # bjs from matlap script for ver = 9
-                66072,
-                145908,
-                149788,
-                150336,
-                157276,  # v24 empirical
-                213684,  # 26.002
-                219828,  # 27.000
-                228020   # 28.003
-                ]:
+            if offset in \
+                    [
+                        61464,   # bjs from matlap script for ver = 9
+                        66072,
+                        145908,
+                        149788,
+                        150336,
+                        157276,  # v24 empirical
+                        213684,  # 26.002
+                        219828,  # 27.000
+                        228020   # 28.003
+                    ]:
                 return True
             else:
                 return False
@@ -298,16 +299,18 @@ class Pfile(object):
         rev_little = rev_little.revision
         rev_big    = rev_big.revision
 
-        known_revisions = [
-            7,      8,      9,      10,     11,
-            14.0,   14.1,   14.2,
-            15.000, 15.001, 16.000,
-            20.001, 20.002, 20.003, 20.004, 20.005, 20.006, 20.007,
-            24.000,
-            25.001, 25.002, 25.003, 25.004,
-            26.000, 26.001, 26.002,
-            27.000, 27.001,
-            28.000, 28.002, 28.003 ];
+        known_revisions = \
+            [
+                7, 8, 9, 10, 11,
+                14.0, 14.1, 14.2,
+                15.000, 15.001, 16.000,
+                20.001, 20.002, 20.003, 20.004, 20.005, 20.006, 20.007,
+                24.000,
+                25.001, 25.002, 25.003, 25.004,
+                26.000, 26.001, 26.002,
+                27.000, 27.001,
+                28.000, 28.002, 28.003 
+            ]
 
         # Note that caution is needed for float comparisons, given the
         # possibility of rounding errors. Although python usually handles this
@@ -317,14 +320,14 @@ class Pfile(object):
         # recent implementations), then re-check against big-endian for older
         # configurations
 
-        if any(np.isclose(rev_little,known_revisions)):
+        if any(np.isclose(rev_little, known_revisions)):
             # little-endian: most reasonably recent implementations
             self.endian = 'little'
-            version = rev_little;
-        elif any(np.isclose(rev_big,known_revisions)) and rev_big < 11:
+            version = rev_little
+        elif any(np.isclose(rev_big, known_revisions)) and rev_big < 11:
             # certain earlier revisions on SGI, big-endian
             self.endian = 'big'
-            version = rev_big;
+            version = rev_big
         else:
             raise UnknownPfile("Unknown header structure for revision %s" % rev_little)
 
@@ -337,9 +340,9 @@ class Pfile(object):
 
         """
 
-        version = self._version(filelike);
+        version = self._version(filelike)
 
-        return int(np.trunc(version));
+        return int(np.trunc(version))
 
     def dump_header_strarr(self):
 
