@@ -95,6 +95,8 @@ def _process_svs_pfile(pfile):
         data, meta, dwelltime, fname_suffix = _process_oslaser(pfile)
     elif psd == 'gaba':
         data, meta, dwelltime, fname_suffix = _process_gaba(pfile)
+    elif 'jpress_ac' in psd: # Bergen patch
+        data, meta, dwelltime, fname_suffix = _process_gaba(pfile)
     else:
         raise UnsupportedPulseSequenceError(f'Unrecognised sequence {psd}.')
 

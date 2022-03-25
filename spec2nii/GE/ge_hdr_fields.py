@@ -63,7 +63,10 @@ and as such we have included their BSD statement in this file.
 '''
 
 import ctypes as ct
+import numpy as np
 
+class UnknownPfileHdr(RuntimeError):
+    pass
 
 def get_pfile_hdr_fields(version):
     """
@@ -74,7 +77,10 @@ def get_pfile_hdr_fields(version):
     """
     plist = []
 
-    if version == 9:
+    version_major=int(np.trunc(version));
+
+    # ARC 20220209 : consistent with previous _version_major mapping
+    if version_major in [7, 8]:
         plist.append(('rhr_rh_rdbm_rev',          ct.c_float))
         plist.append(('pad_xx',                   ct.c_char * 12))
         plist.append(('rhr_rh_scan_date',         ct.c_char * 10))
@@ -291,7 +297,7 @@ def get_pfile_hdr_fields(version):
         plist.append(('rhi_user47',               ct.c_float))
         plist.append(('rhi_user48',               ct.c_float))
 
-    elif version == 11:
+    elif version_major == 9:
         plist.append(('rhr_rh_rdbm_rev',          ct.c_float))
         plist.append(('pad_xx',                   ct.c_char * 12))
         plist.append(('rhr_rh_scan_date',         ct.c_char * 10))
@@ -509,7 +515,7 @@ def get_pfile_hdr_fields(version):
         plist.append(('rhi_user47',               ct.c_float))
         plist.append(('rhi_user48',               ct.c_float))
 
-    elif version == 12:
+    elif version_major in [11,12]:
         plist.append(('rhr_rh_rdbm_rev',          ct.c_float))
         plist.append(('pad_xx',                   ct.c_char * 12))
         plist.append(('rhr_rh_scan_date',         ct.c_char * 10))
@@ -733,7 +739,7 @@ def get_pfile_hdr_fields(version):
         plist.append(('pad_xx',                   ct.c_char * 51))
         plist.append(('rhi_image_uid',            ct.c_char * 32))
 
-    elif version == 14:
+    elif version_major == 14:
         plist.append(('rhr_rh_rdbm_rev',          ct.c_float))
         plist.append(('pad_xx',                   ct.c_char * 12))
         plist.append(('rhr_rh_scan_date',         ct.c_char * 10))
@@ -957,7 +963,7 @@ def get_pfile_hdr_fields(version):
         plist.append(('pad_xx',                   ct.c_char * 51))
         plist.append(('rhi_image_uid',            ct.c_char * 32))
 
-    elif version == 15:
+    elif version_major == 15:
         plist.append(('rhr_rh_rdbm_rev',          ct.c_float))
         plist.append(('pad_xx',                   ct.c_char * 12))
         plist.append(('rhr_rh_scan_date',         ct.c_char * 10))
@@ -1181,7 +1187,7 @@ def get_pfile_hdr_fields(version):
         plist.append(('pad_xx',                   ct.c_char * 51))
         plist.append(('rhi_image_uid',            ct.c_char * 32))
 
-    elif version == 16:
+    elif version_major == 16:
         plist.append(('rhr_rh_rdbm_rev',          ct.c_float))
         plist.append(('pad_xx',                   ct.c_char * 12))
         plist.append(('rhr_rh_scan_date',         ct.c_char * 10))
@@ -1405,7 +1411,7 @@ def get_pfile_hdr_fields(version):
         plist.append(('pad_xx',                   ct.c_char * 51))
         plist.append(('rhi_image_uid',            ct.c_char * 32))
 
-    elif version == 20:
+    elif version_major == 20:
         plist.append(('rhr_rh_rdbm_rev',          ct.c_float))
         plist.append(('pad_xx',                   ct.c_char * 12))
         plist.append(('rhr_rh_scan_date',         ct.c_char * 10))
@@ -1626,7 +1632,7 @@ def get_pfile_hdr_fields(version):
         plist.append(('pad_xx',                   ct.c_char * 51))
         plist.append(('rhi_image_uid',            ct.c_char * 32))
 
-    elif version == 21:
+    elif version_major < 23: # 21-23
         plist.append(('rhr_rh_rdbm_rev',          ct.c_float))
         plist.append(('pad_xx',                   ct.c_char * 12))
         plist.append(('rhr_rh_scan_date',         ct.c_char * 10))
@@ -1847,7 +1853,7 @@ def get_pfile_hdr_fields(version):
         plist.append(('pad_xx',                   ct.c_char * 51))
         plist.append(('rhi_image_uid',            ct.c_char * 32))
 
-    elif version == 23:
+    elif version_major == 23:
         plist.append(('rhr_rh_rdbm_rev',          ct.c_float))
         plist.append(('pad_xx',                   ct.c_char * 12))
         plist.append(('rhr_rh_scan_date',         ct.c_char * 10))
@@ -2068,7 +2074,7 @@ def get_pfile_hdr_fields(version):
         plist.append(('pad_xx',                   ct.c_char * 51))
         plist.append(('rhi_image_uid',            ct.c_char * 32))
 
-    elif version == 24:  # 25 and 25.1 same pfile
+    elif version_major in [24, 25]:
         plist.append(('rhr_rh_rdbm_rev',          ct.c_float))
         plist.append(('pad_xx',                   ct.c_char * 12))
         plist.append(('rhr_rh_scan_date',         ct.c_char * 10))
@@ -2295,7 +2301,7 @@ def get_pfile_hdr_fields(version):
         plist.append(('pad_xx',                   ct.c_char * 51))
         plist.append(('rhi_image_uid',            ct.c_char * 32))
 
-    elif version == 26:
+    elif version_major in [26,27,28]:
         plist.append(('rhr_rh_rdbm_rev',           ct.c_float))
         plist.append(('rhr_rdb_hdr_off_data',      ct.c_int))
         plist.append(('pad_xx',                    ct.c_char * 84))
@@ -2308,7 +2314,12 @@ def get_pfile_hdr_fields(version):
         plist.append(('pad_xx',                    ct.c_char * 6))
         plist.append(('rhr_rh_npasses',            ct.c_short))
         plist.append(('pad_xx',                    ct.c_char * 2))
-        plist.append(('rhr_rh_nslices',            ct.c_short))
+
+        if version < 28.002:
+            plist.append(('rhr_rh_nslices',        ct.c_short)) # uint16
+        else:
+            plist.append(('rhr_rh_nslices_deprecated', ct.c_short))
+
         plist.append(('rhr_rh_nechoes',            ct.c_short))
         plist.append(('rhr_rh_navs',               ct.c_short))
         plist.append(('rhr_rh_nframes',            ct.c_short))
@@ -2392,7 +2403,17 @@ def get_pfile_hdr_fields(version):
         plist.append(('rhr_rh_user48',             ct.c_float))
         plist.append(('pad_xx',                    ct.c_char * 488))
         plist.append(('rhr_rh_raw_pass_size',      ct.c_longlong))
-        plist.append(('pad_xx',                    ct.c_char * 192684))
+
+        if version < 28.002:
+            plist.append(('pad_xx',                    ct.c_char * 192684))
+        else:
+            plist.append(('pad_xx',                    ct.c_char * 1652))
+            plist.append(('rhr_rh_nslices',            ct.c_int)) # uint32
+            plist.append(('pad_xx',                    ct.c_char * ( 192684 - 1652 - 4)));
+
+        if version > 27.0: # 27.001 +
+          plist.append(('pad_xx',                    ct.c_char * 8192))
+
         plist.append(('rhe_magstrength',           ct.c_int))
         plist.append(('pad_xx',                    ct.c_char * 4))
         plist.append(('rhe_ex_datetime',           ct.c_int))
@@ -2522,5 +2543,8 @@ def get_pfile_hdr_fields(version):
         plist.append(('rhi_cname',                 ct.c_char * 17))
         plist.append(('pad_xx',                    ct.c_char * 51))
         plist.append(('rhi_image_uid',             ct.c_char * 32))
+
+    else:
+        raise UnknownPfileHdr("Unfamiliar header revision: %0.3f" % (version,));
 
     return plist

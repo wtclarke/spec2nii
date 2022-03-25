@@ -143,13 +143,20 @@ class Pfile(object):
                 return False
         else:
             offset = self.hdr.rhr_rdb_hdr_off_data
-            if (offset == 61464 or        # bjs from matlap script for ver = 9 
-                    offset == 66072 or 
-                    offset == 145908 or 
-                    offset == 149788 or
-                    offset == 150336 or
-                    offset == 157276 or        # v24 empirical
-                    offset == 213684):        # v26 empirical
+            # ARC 20220209: coverage here is likey to be incomplete. This check
+            # may well be redundant anyway, since revision number has
+            # previously been validated in _version
+            if offset in [
+                61464,   # bjs from matlap script for ver = 9
+                66072,
+                145908,
+                149788,
+                150336,
+                157276,  # v24 empirical
+                213684,  # 26.002
+                219828,  # 27.000
+                228020   # 28.003
+                ]:
                 return True
             else:
                 return False
@@ -194,6 +201,9 @@ class Pfile(object):
         elif psd == 'probe-sl':
             # wtc - added for CSI sequence from Manchester.
             mapper = PfileMapperProbeSL
+        elif 'jpress_ac' in psd:
+            # ARC : Added for Bergen jpress patch
+            mapper = PfileMapperGaba
         else:
             raise UnknownPfile("No Pfile mapper for pulse sequence = %s" % psd)
         
@@ -204,7 +214,7 @@ class Pfile(object):
         filelike = open(self.file_name, 'rb')
 
         # determine version number of this header from revision of rdbm.h
-        version = self._major_version(filelike)
+        version = self._version(filelike)
         if version == 0:
             raise UnknownPfile("Pfile not supported for version %s" % version)    
   
@@ -222,7 +232,7 @@ class Pfile(object):
         # created once dynamically, but afterwards would stick around and
         # could not then be changed. 
         
-        if version < 11:  # data taken on SGI - big endian
+        if self.endian == 'big':
             class PfileHeaderBig(ct.BigEndianStructure):
                 """
                 Contains the ctypes Structure for a GE P-file rdb header.
@@ -232,7 +242,6 @@ class Pfile(object):
                 _fields_ = get_pfile_hdr_fields(version)
                 # _fields_ = utilge.get_pfile_hdr_fields(version)
             hdr = PfileHeaderBig()
-            self.endian = 'big'
         else:
             class PfileHeaderLittle(ct.LittleEndianStructure):
                 """
@@ -243,7 +252,6 @@ class Pfile(object):
                 _fields_ = get_pfile_hdr_fields(version)
                 # _fields_ = utilge.get_pfile_hdr_fields(version)
             hdr = PfileHeaderLittle()
-            self.endian = 'little'
   
         try:
             # read  header information from start of file
@@ -267,50 +275,71 @@ class Pfile(object):
         self.map = mapper(self.file_name, self.hdr, self.version, self.endian)
         self.map.read_data()
 
-    def _major_version(self, filelike):
+    def _version(self, filelike):
         """
-        Get the rdbm.h revision number from first 4 bytes. Then map the rdbm 
-        revision to a platform number (e.g. 11.x, 12.x, etc.)
-        
+        Get the rdbm.h revision number from first 4 bytes.
+
+        Check against known revisions to confirm validity, and to infer
+        endian-ness of the source data.
+
+        Previously, this was performed in _major_version, which also maps to
+        major platform number -- but this overlooks relevant differences across
+        certain minor revisions
+
         """
+
         rev_little = RevisionNumLittle()
         rev_big    = RevisionNumBig()
         filelike.seek(0)
         filelike.readinto(rev_little)
         filelike.seek(0)
         filelike.readinto(rev_big)
-        
-        rev_little = rev_little.major
-        rev_big    = rev_big.major
-        
-        version = 0
 
-        if (rev_little > 6.95 and rev_little < 8.0) or (rev_big > 6.95 and rev_big < 8.0):
-            version = 9.0
-        elif (rev_little == 9.0 or rev_big == 9.0): 
-            version = 11.0
-        elif (rev_little == 11.0 or rev_big == 11.0): 
-            version = 12.0
-        elif (rev_little == 14 or rev_big == 14): 
-            version = 14.0
-        elif (rev_little == 15 or rev_big == 15): 
-            version = 15.0
-        elif (rev_little == 16 or rev_big == 16): 
-            version = 16.0
-        elif (rev_little == 20 or rev_big == 20): 
-            version = 20.0
-        elif (rev_little == 21 or rev_big == 21): 
-            version = 21.0
-        elif (rev_little == 23 or rev_big == 23): 
-            version = 21.0
-        elif (rev_little == 24 or rev_big == 24): 
-            version = 24.0
-        elif (rev_little == 26 or rev_big == 26): 
-            version = 26.0
+        rev_little = rev_little.revision
+        rev_big    = rev_big.revision
+
+        known_revisions = [
+            7,      8,      9,      10,     11,
+            14.0,   14.1,   14.2,
+            15.000, 15.001, 16.000,
+            20.001, 20.002, 20.003, 20.004, 20.005, 20.006, 20.007,
+            24.000,
+            25.001, 25.002, 25.003, 25.004,
+            26.000, 26.001, 26.002,
+            27.000, 27.001,
+            28.000, 28.002, 28.003 ];
+
+        # Note that caution is needed for float comparisons, given the
+        # possibility of rounding errors. Although python usually handles this
+        # reasonably, we use np.isclose here to be on the safe side.
+
+        # Check first against little-endian interpretation (most likely for
+        # recent implementations), then re-check against big-endian for older
+        # configurations
+
+        if any(np.isclose(rev_little,known_revisions)):
+            # little-endian: most reasonably recent implementations
+            self.endian = 'little'
+            version = rev_little;
+        elif any(np.isclose(rev_big,known_revisions)) and rev_big < 11:
+            # certain earlier revisions on SGI, big-endian
+            self.endian = 'big'
+            version = rev_big;
         else:
             raise UnknownPfile("Unknown header structure for revision %s" % rev_little)
 
         return version
+
+    def _major_version(self, filelike):
+        """
+        Get the rdbm.h revision number from first 4 bytes. Then map the rdbm
+        revision to a platform number (e.g. 11.x, 12.x, etc.)
+
+        """
+
+        version = self._version(filelike);
+
+        return int(np.trunc(version));
 
     def dump_header_strarr(self):
 
