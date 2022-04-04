@@ -132,7 +132,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overides, remove_o
 
     # Perform Orientation calculations
     # 1) Calculate dicom like imageOrientationPatient,imagePositionPatient,pixelSpacing and slicethickness
-    orient = twix2DCMOrientation(twixObj['hdr'], verbose=verbose)
+    orient = twix2DCMOrientation(twixObj['hdr'], force_svs=True, verbose=verbose)
     imageOrientationPatient, imagePositionPatient, pixelSpacing, slicethickness = orient
 
     # 2) In the style of dcm2niix calculate the affine matrix
@@ -308,7 +308,7 @@ def assemble_nifti_mrs(data, dwellTime, orientation, meta_obj, dim_tags):
     return nifti_mrs.NIfTI_MRS(data, orientation.Q44, dwellTime, meta_obj)
 
 
-def twix2DCMOrientation(mapVBVDHdr, verbose=False):
+def twix2DCMOrientation(mapVBVDHdr, force_svs=False, verbose=False):
     """ Convert twix orientation information to DICOM equivalent.
 
     Convert orientation to DICOM imageOrientationPatient, imagePositionPatient,
@@ -316,6 +316,7 @@ def twix2DCMOrientation(mapVBVDHdr, verbose=False):
 
     Args:
         mapVBVDHdr (dict): Header info interpreted by pymapVBVD
+        force_svs (bool,optionl): Forces svs orientation information (size) to be read
         verbose (bool,optionl)
     Returns:
         imageOrientationPatient
@@ -332,9 +333,12 @@ def twix2DCMOrientation(mapVBVDHdr, verbose=False):
             raise ValueError('In slice-selective spectroscopy, only the first slice is supported')
 
     # Orientation information
+    # Added the force_svs because in some sequences there are slice objects initilised
+    # and recorded but this seems sporadic behaviour.
     if ('sSpecPara', 'sVoI', 'sNormal', 'dSag') in mapVBVDHdr['MeasYaps']:
         NormaldSag = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'sNormal', 'dSag')]
-    elif ('sSliceArray', 'asSlice', '0', 'sNormal', 'dSag') in mapVBVDHdr['MeasYaps']:
+    elif ('sSliceArray', 'asSlice', '0', 'sNormal', 'dSag') in mapVBVDHdr['MeasYaps']\
+            and not force_svs:
         # This is for slice-selective spectroscopy
         NormaldSag = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'sNormal', 'dSag')]
     else:
@@ -342,14 +346,16 @@ def twix2DCMOrientation(mapVBVDHdr, verbose=False):
 
     if ('sSpecPara', 'sVoI', 'sNormal', 'dCor') in mapVBVDHdr['MeasYaps']:
         NormaldCor = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'sNormal', 'dCor')]
-    elif ('sSliceArray', 'asSlice', '0', 'sNormal', 'dCor') in mapVBVDHdr['MeasYaps']:
+    elif ('sSliceArray', 'asSlice', '0', 'sNormal', 'dCor') in mapVBVDHdr['MeasYaps']\
+            and not force_svs:
         NormaldCor = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'sNormal', 'dCor')]
     else:
         NormaldCor = 0.0
 
     if ('sSpecPara', 'sVoI', 'sNormal', 'dTra') in mapVBVDHdr['MeasYaps']:
         NormaldTra = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'sNormal', 'dTra')]
-    elif ('sSliceArray', 'asSlice', '0', 'sNormal', 'dTra') in mapVBVDHdr['MeasYaps']:
+    elif ('sSliceArray', 'asSlice', '0', 'sNormal', 'dTra') in mapVBVDHdr['MeasYaps']\
+            and not force_svs:
         NormaldTra = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'sNormal', 'dTra')]
     else:
         NormaldTra = 0.0
@@ -361,7 +367,8 @@ def twix2DCMOrientation(mapVBVDHdr, verbose=False):
 
     TwixSliceNormal = np.array([NormaldSag, NormaldCor, NormaldTra], dtype=float)
 
-    if ('sSliceArray', 'asSlice', '0', 'dReadoutFOV') in mapVBVDHdr['MeasYaps']:
+    if ('sSliceArray', 'asSlice', '0', 'dReadoutFOV') in mapVBVDHdr['MeasYaps']\
+            and not force_svs:
         RoFoV = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'dReadoutFOV')]
         PeFoV = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'dPhaseFOV')]
     else:
@@ -373,10 +380,13 @@ def twix2DCMOrientation(mapVBVDHdr, verbose=False):
     imageOrientationPatient = np.stack((dRowVec_vector, dColVec_vector), axis=0)
 
     pixelSpacing = np.array([PeFoV, RoFoV])  # [RoFoV PeFoV];
-    if ('sSliceArray', 'asSlice', '0', 'dThickness') in mapVBVDHdr['MeasYaps']:
+    if ('sSliceArray', 'asSlice', '0', 'dThickness') in mapVBVDHdr['MeasYaps']\
+            and not force_svs:
         sliceThickness = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'dThickness')]
-    if ('sSpecPara', 'sVoI', 'dThickness') in mapVBVDHdr['MeasYaps']:
+    elif ('sSpecPara', 'sVoI', 'dThickness') in mapVBVDHdr['MeasYaps']:
         sliceThickness = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'dThickness')]
+    else:
+        sliceThickness = 0.0
 
     # Position info (including table position)
     if ('sSpecPara', 'sVoI', 'sPosition', 'dSag') in mapVBVDHdr['MeasYaps']:
