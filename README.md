@@ -97,7 +97,9 @@ Must be provided along side a matching SPAR file.
 
 NIfTI MRS dimension tags (e.g. `DIM_COIL`) can be specified using the `-t` command line argument.
 
-Generates separate reference file.
+Generates separate reference file if present.
+
+**NOTE** Only enhanced DICOM is currently handled. Older 'classic' DICOM may work but is likely to need more testing with appropriate example data first.
 
 ### Bruker (2dseq/fid)
 `spec2nii bruker -m 2DSEQ 2DSEQ_FILE_or_DIR`  
