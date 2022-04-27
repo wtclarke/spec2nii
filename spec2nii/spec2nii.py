@@ -122,8 +122,13 @@ class spec2nii:
         # Handle philips DICOM subcommand
         parser_philips_dicom = subparsers.add_parser('philips_dcm', help='Convert from Philips DICOM format.')
         parser_philips_dicom.add_argument('file', help='file or directory to convert', type=str)
-        parser_philips_dicom.add_argument("-t", "--tag", type=str, help="Specify NIfTI MRS tag used for 5th "
-                                                                        "dimension if multiple files are passed.")
+        parser_philips_dicom.add_argument(
+            "-t",
+            "--tag",
+            type=str,
+            default='DIM_DYN',
+            help="Specify NIfTI MRS tag used for 5th dimension if multiple files are passed. "
+                 "Defaults to DIM_DYN.")
         parser_philips_dicom = add_common_parameters(parser_philips_dicom)
         parser_philips_dicom.set_defaults(func=self.philips_dicom)
 
