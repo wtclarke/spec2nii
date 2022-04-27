@@ -101,10 +101,17 @@ class spec2nii:
         parser_philips.add_argument('sdat', help='SDAT file', type=Path)
         parser_philips.add_argument('spar', help='SPAR file', type=Path)
         parser_philips.add_argument(
-            "-t", "--tag",
+            "-t", "--tags",
             type=str,
-            default="DIM_DYN",
-            help="Specify NIfTI MRS tag used for 5th dimension if multiple transients are present.")
+            nargs='+',
+            default=["DIM_DYN", None, None],
+            help="Specify NIfTI MRS tags used for higher (5th-7th) dimensions.")
+        parser_philips.add_argument(
+            "-s", "--shape",
+            type=int,
+            nargs='+',
+            default=None,
+            help="Specify the shape of higher (5th-7th) dimensions. Applies numpy style reshaping.")
         parser_philips = add_common_parameters(parser_philips)
         parser_philips.set_defaults(func=self.philips)
 
@@ -405,7 +412,7 @@ class spec2nii:
         # philips specific imports
         from spec2nii.philips import read_sdat_spar_pair
 
-        self.imageOut = read_sdat_spar_pair(args.sdat, args.spar, args.tag)
+        self.imageOut = read_sdat_spar_pair(args.sdat, args.spar, args.shape, args.tags)
 
         # name of output
         if args.fileout:

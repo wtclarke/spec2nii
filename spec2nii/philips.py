@@ -12,8 +12,22 @@ from spec2nii import nifti_mrs
 from spec2nii import __version__ as spec2nii_ver
 
 
-def read_sdat_spar_pair(sdat_file, spar_file, tag=None):
+def read_sdat_spar_pair(sdat_file, spar_file, shape=None, tags=None):
+    """_summary_
 
+    _extended_summary_
+
+    :param sdat_file: _description_
+    :type sdat_file: _type_
+    :param spar_file: _description_
+    :type spar_file: _type_
+    :param shape: _description_, defaults to None
+    :type shape: _type_, optional
+    :param tags: _description_, defaults to None
+    :type tags: _type_, optional
+    :return: _description_
+    :rtype: _type_
+    """
     spar_params = read_spar(spar_file)
     data = read_sdat(sdat_file,
                      spar_params['samples'],
@@ -21,6 +35,10 @@ def read_sdat_spar_pair(sdat_file, spar_file, tag=None):
 
     if data.ndim < 4:
         data = data.reshape((1, 1, 1) + data.shape)
+
+    if shape is not None:
+        it_shape = data.shape[:4]
+        data = data.reshape(it_shape + tuple(shape), order='F')
 
     # Move to right handed frame
     data = data.conj()
@@ -32,8 +50,9 @@ def read_sdat_spar_pair(sdat_file, spar_file, tag=None):
     meta = spar_to_nmrs_hdrext(spar_params)
     meta.set_standard_def('OriginalFile', [sdat_file.name])
 
-    if tag is not None:
-        meta.set_dim_info(0, tag)
+    if tags is not None:
+        for idx, tag in enumerate(tags):
+            meta.set_dim_info(idx, tag)
 
     # Orientation
     if spar_params["volume_selection_enable"] == "yes":
