@@ -50,8 +50,8 @@ def read_sdat_spar_pair(sdat_file, spar_file, shape=None, tags=None):
     meta = spar_to_nmrs_hdrext(spar_params)
     meta.set_standard_def('OriginalFile', [sdat_file.name])
 
-    if tags is not None:
-        for idx, tag in enumerate(tags):
+    for idx, tag in enumerate(tags):
+        if tag is not None:
             meta.set_dim_info(idx, tag)
 
     # Orientation

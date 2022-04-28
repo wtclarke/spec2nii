@@ -88,6 +88,10 @@ NIfTI MRS dimension tags (e.g. `DIM_COIL`) can be specified using the `-t` comma
 ### Philips (SPAR/SDAT)
 `spec2nii philips SDAT_FILE SPAR_FILE`
 
+Two optional arguments are available for the SPAR/SDAT pathway:  
+- `-t/--tags` allows the user to specify the dimension tags for each of the higher dimensions (up to three).
+- `-s/--shape` allows the user to perform numpy style reshaping of multiple transients. By default (without specifying a shape) all transients will be listed in a single 5th dimension.
+
 ### Philips (data/list)
 Must be provided along side a matching SPAR file.  
 `spec2nii philips_dl DATA_FILE LIST_FILE SPAR_FILE`
