@@ -17,8 +17,8 @@ philips_path = Path(__file__).parent / 'spec2nii_test_data' / 'philips'
 svs_path_sdat = philips_path / 'P1' / 'SV_PRESS_sh_6_2_raw_act.SDAT'
 svs_path_spar = philips_path / 'P1' / 'SV_PRESS_sh_6_2_raw_act.SPAR'
 
-svs_edit_path_sdat = philips_path / 'HERCULES_spar_sdat' / 'HERCULES_Example_noID.SDAT'
-svs_edit_path_spar = philips_path / 'HERCULES_spar_sdat' / 'HERCULES_Example_noID.SPAR'
+svs_edit_path_sdat = philips_path / 'HERCULES_spar_sdat' / 'HERCULES_Example_noID.sdat'
+svs_edit_path_spar = philips_path / 'HERCULES_spar_sdat' / 'HERCULES_Example_noID.spar'
 
 
 def test_svs(tmp_path):
