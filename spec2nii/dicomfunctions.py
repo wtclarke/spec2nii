@@ -223,7 +223,8 @@ def process_siemens_svs(img, verbose):
 def process_siemens_svs_xa(img, verbose):
     """Process Siemens DICOM SVS data acquired on a NumarisX system."""
     specData = np.frombuffer(img.dcm_data[('5600', '0020')].value, dtype=np.single)
-    specDataCmplx = specData[0::2] + 1j * specData[1::2]
+    # It appears the phase convention is reversed in the NumarisX systems.
+    specDataCmplx = specData[0::2] - 1j * specData[1::2]
 
     dcm_hdrs = img.dcm_data.PerFrameFunctionalGroupsSequence[0]
     dcm_hdrs1 = img.dcm_data.SharedFunctionalGroupsSequence[0]
@@ -283,6 +284,7 @@ def process_siemens_csi(img, verbose):
 
 def process_siemens_csi_xa(img, verbose):
     """Process Siemens DICOM CSI data acquired on a NumarisX system."""
+    # NOTE: WTC expect to need to reverse the phase convention as above for svs.
     raise NotImplementedError('Method process_siemens_csi_xa not implemented, example data needed!')
 
 

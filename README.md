@@ -21,8 +21,8 @@ or
 Miniconda can be installed by following the instructions on the [Conda website](https://docs.conda.io/en/latest/miniconda.html). To create a suitable environment run the following three commands after installing Conda.
 
 ```
-    conda create -c conda-forge -n spec2nii python=3.8
-    conda activate spec2nii
+    conda create -c conda-forge -n my_env python=3.8
+    conda activate my_env
     conda install -c conda-forge spec2nii
 ```
 
