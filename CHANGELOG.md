@@ -1,5 +1,9 @@
 This document contains the FSL-MRS release history in reverse chronological order.
 
+0.4.5 (Friday 8th July 2022)
+----------------------------
+- Improved handling of Siemens DICOM files. Now explicitly handle Siemens Syngo Non Image Storage or MRSpectroscopyStorage DICOM types, irregardless of scanner baseline.
+
 0.4.4 (Thursday 28th April 2022)
 --------------------------------
 - Improved handling of Philips enhanced DICOM

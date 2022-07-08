@@ -3,7 +3,6 @@ Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
 Copyright (C) 2020 University of Oxford
 """
 from datetime import datetime
-import re
 
 import numpy as np
 import nibabel.nicom.dicomwrappers
@@ -24,27 +23,28 @@ class missingTagError(Exception):
     pass
 
 
-class IncompatibleSoftwareVersion(Exception):
+class IncompatibleSOPClassUID(Exception):
     pass
 
 
 def xa_or_vx(img):
-    """Determine siemens software type
+    """Determine siemens DICOM type
 
     :param img: DICOM image object
     :type img: nibabel.nicom.dicomwrappers.SiemensWrapper
-    :raises IncompatibleSoftwareVersion: Raised if not a VX or XA dicom file
+    :raises IncompatibleSOPClassUID: Raised if not a Siemens Syngo Non Image Storage or MRSpectroscopyStorage dicom file
     :return: String either 'xa' or 'vx'
     :rtype: str
     """
-    if re.search(r'syngo MR XA\d{2}', img.dcm_data.SoftwareVersions):
-        return 'xa'
-    elif re.search(r'syngo MR [A-Z]\d{2}', img.dcm_data.SoftwareVersions):
+    if img.dcm_data.SOPClassUID == '1.3.12.2.1107.5.9.1':
         return 'vx'
+    elif img.dcm_data.SOPClassUID == '1.2.840.10008.5.1.4.1.1.4.2':
+        return 'xa'
     else:
-        raise IncompatibleSoftwareVersion(
-            'spec2nii does not recognise this Siemens software version'
-            f' ({img.dcm_data.SoftwareVersions}).'
+        raise IncompatibleSOPClassUID(
+            'spec2nii does not recognise this SOPClassUID '
+            f'{img.dcm_data.SOPClassUID}. This data was collected on a'
+            f' {img.dcm_data.SoftwareVersions} baseline scanner.'
             ' spec2nii is tested on VA-VE, and XA20 and XA30 DICOM files.')
 
 
@@ -229,7 +229,12 @@ def process_siemens_svs_xa(img, verbose):
     dcm_hdrs = img.dcm_data.PerFrameFunctionalGroupsSequence[0]
     dcm_hdrs1 = img.dcm_data.SharedFunctionalGroupsSequence[0]
     # 1) Extract dicom parameters
-    imageOrientationPatient = np.array(dcm_hdrs.PlaneOrientationSequence[0].ImageOrientationPatient).reshape(2, 3)
+    try:
+        imageOrientationPatient = np.array(dcm_hdrs.PlaneOrientationSequence[0].ImageOrientationPatient).reshape(2, 3)
+    except AttributeError:
+        # For VB19 data formatted as MRSpectroscopyStorage this seems to be different to
+        # the XA data I've seen. But this could also be a sequence specific thing!
+        imageOrientationPatient = np.array(dcm_hdrs1.PlaneOrientationSequence[0].ImageOrientationPatient).reshape(2, 3)
     # VoiPosition - this does not have the FOV shift that imagePositionPatient has
     imagePositionPatient = dcm_hdrs.PlanePositionSequence[0].ImagePositionPatient
 
