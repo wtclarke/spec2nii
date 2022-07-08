@@ -303,11 +303,11 @@ def _populate_metadata(pfile, water_suppressed=True):
     # Standard defined metadata
     # # 5.1 MRS specific Tags
     # 'EchoTime'
-    meta.set_standard_def('EchoTime', float(hdr.rhi_te))
+    meta.set_standard_def('EchoTime', float(hdr.rhi_te) / 1E6)
     # 'RepetitionTime'
-    meta.set_standard_def('RepetitionTime', float(hdr.rhi_tr))
+    meta.set_standard_def('RepetitionTime', float(hdr.rhi_tr) / 1E6)
     # 'InversionTime'
-    meta.set_standard_def('InversionTime', float(hdr.rhi_ti))
+    meta.set_standard_def('InversionTime', float(hdr.rhi_ti) / 1E6)
     # 'MixingTime'
     # Not known
     # 'ExcitationFlipAngle'

@@ -47,6 +47,9 @@ def test_svs(tmp_path):
     assert hdr_ext['ResonantNucleus'][0] == '1H'
     assert hdr_ext['OriginalFile'][0] == svs_path.name
 
+    assert np.isclose(hdr_ext['EchoTime'], 0.27)
+    assert np.isclose(hdr_ext['RepetitionTime'], 2.0)
+
 
 def test_mrsi(tmp_path):
 
@@ -98,3 +101,6 @@ def test_mpress(tmp_path):
     assert hdr_ext['SpectrometerFrequency'][0] == 127.758139
     assert hdr_ext['ResonantNucleus'][0] == '1H'
     assert hdr_ext['OriginalFile'][0] == mpress_path.name
+
+    assert np.isclose(hdr_ext['EchoTime'], 0.068)
+    assert np.isclose(hdr_ext['RepetitionTime'], 2.0)
