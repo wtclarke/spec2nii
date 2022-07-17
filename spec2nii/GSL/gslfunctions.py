@@ -63,7 +63,7 @@ def class_ori(sag_comp, cor_comp, tra_comp, debug):
 
         if debug:
             print('Mainly sagittal.')
-        case = 0  # Sagital
+        case = 0  # Sagittal
 
     else:    # Invalid slice orientation...
         raise ValueError('Error: Invalid slice orientation')

@@ -190,7 +190,7 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         try:
             nifti_mrs_out.append(nifti_mrs.NIfTI_MRS(combined_data, or_used.Q44, dt_used, meta_used))
         except np.linalg.LinAlgError:
-            warnings.warn("""The quartenion passes to NIfTI_MRS was singular.
+            warnings.warn("""The quaternion passes to NIfTI_MRS was singular.
                            Most likely your slice position is not well defined. I have set it to None.""")
             nifti_mrs_out.append(nifti_mrs.NIfTI_MRS(combined_data, None, dt_used, meta_used))
 

@@ -63,7 +63,7 @@ def xa_or_vx(hdr):
 
 
 def is_xa_product(hdr):
-    """If the basline is xa and the sequence is a svs prodcut sequence return True."""
+    """If the baseline is xa and the sequence is a svs product sequence return True."""
     def is_product():
         seq_name = hdr['Meas'][('tSequenceString')]
         if any([seq_name == seq for seq in xa_product_seq]):
@@ -72,7 +72,7 @@ def is_xa_product(hdr):
     return xa_or_vx(hdr) == 'xa' and is_product()
 
 
-def process_twix(twixObj, base_name_out, name_in, dataKey, dim_overides, quiet=False, verbose=False, remove_os=False):
+def process_twix(twixObj, base_name_out, name_in, dataKey, dim_overrides, quiet=False, verbose=False, remove_os=False):
     """Process a twix file. Identify type of MRS and then pass to the relevant function."""
 
     if twixObj.hdr.Meas.lFinalMatrixSizePhase \
@@ -97,7 +97,7 @@ def process_twix(twixObj, base_name_out, name_in, dataKey, dim_overides, quiet=F
             base_name_out,
             name_in,
             dataKey,
-            dim_overides,
+            dim_overrides,
             remove_os,
             quiet=quiet,
             verbose=verbose)
@@ -108,7 +108,7 @@ def process_mrsi(twixObj, base_name_out, name_in, dataKey, quiet=False, verbose=
     raise NotImplementedError('MRSI pathway not yet implemented.')
 
 
-def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overides, remove_os, quiet=False, verbose=False):
+def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_os, quiet=False, verbose=False):
     """Process a twix file into a NIfTI MRS file.
     Inputs:
         twixObj: object from mapVBVD.
@@ -215,21 +215,21 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overides, remove_o
 
     # Now process the user specified order
     for dim_index in range(3):
-        if dim_overides['dims'][dim_index]:
-            if dim_overides['dims'][dim_index] in dim_order:
-                curr_index = dim_order.index(dim_overides['dims'][dim_index])
+        if dim_overrides['dims'][dim_index]:
+            if dim_overrides['dims'][dim_index] in dim_order:
+                curr_index = dim_order.index(dim_overrides['dims'][dim_index])
                 dim_order[dim_index], dim_order[curr_index] = dim_order[curr_index], dim_order[dim_index]
                 dim_tags[dim_index], dim_tags[curr_index] = dim_tags[curr_index], dim_tags[dim_index]
             else:
-                dim_order.insert(dim_index, dim_overides['dims'][0])
-                if dim_overides['dims'][dim_index] in curr_defaults.keys():
-                    dim_tags.insert(dim_index, curr_defaults['tags'][dim_overides['dims'][dim_index]])
+                dim_order.insert(dim_index, dim_overrides['dims'][0])
+                if dim_overrides['dims'][dim_index] in curr_defaults.keys():
+                    dim_tags.insert(dim_index, curr_defaults['tags'][dim_overrides['dims'][dim_index]])
                 else:
                     dim_tags.insert(dim_index, f'DIM_USER_{unknown_counter}')
                     unknown_counter += 1
 
     # Override with any of the specified tags
-    for idx, tag in enumerate(dim_overides['tags']):
+    for idx, tag in enumerate(dim_overrides['tags']):
         if tag:
             dim_tags[idx] = tag
 
