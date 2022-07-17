@@ -1093,8 +1093,6 @@ class PfileMapper(object):
             self.raw_unsuppressed = None
             self.avg_unsuppressed = None
             self.phase_of_first_point_deg = None
-            
-        return
 
 
 class PfileMapperProbeSL(PfileMapper):

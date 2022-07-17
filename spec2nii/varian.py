@@ -441,8 +441,6 @@ def write(dir, dic, data, fid_file="fid", procpar_file="procpar",
     # write out procpar file
     write_procpar(os.path.join(dir, procpar_file), dic["procpar"], overwrite)
 
-    return
-
 
 def write_lowmem(dir, dic, data, fid_file="fid", procpar_file="procpar",
                  torder=None, repack=False, overwrite=False):
@@ -490,8 +488,6 @@ def write_lowmem(dir, dic, data, fid_file="fid", procpar_file="procpar",
 
     # write out procpar file
     write_procpar(os.path.join(dir, procpar_file), dic["procpar"], overwrite)
-
-    return
 
 ############
 # ordering #
@@ -1001,7 +997,6 @@ def write_fid(filename, dic, data, torder='flat', repack=False, correct=True,
             put_block(f, trace, dic["nbheaders"], bh)
 
     f.close()
-    return
 
 
 def write_fid_lowmem(filename, dic, data, torder='f', repack=False, correct=True,
@@ -1087,7 +1082,6 @@ def write_fid_lowmem(filename, dic, data, torder='f', repack=False, correct=True
             trace = np.array(interleave_data(data[tup]), dtype=dt)
             put_block(f, trace, dic["nbheaders"], bh)
     f.close()
-    return
 
 
 #####################
@@ -1364,7 +1358,6 @@ def skip_blockheader(f):
     This is a replacement for get_blockheader.  It skips f ahead 28 bytes.
     """
     f.read(28)
-    return
 
 
 def get_hyperheader(file):
@@ -1433,15 +1426,12 @@ def put_block(f, trace, nbheaders, bh, hh=False):
     # write the trace
     put_trace(f, trace)
 
-    return
-
 
 def put_trace(f, trace):
     """
     Write a trace to file f.
     """
     f.write(trace.tobytes())
-    return
 
 
 def put_fileheader(f, fh):
@@ -1457,7 +1447,6 @@ def put_fileheader(f, fh):
 
     """
     f.write(struct.pack('>6lhhl', *fh))
-    return
 
 
 def put_blockheader(f, bh):
@@ -1473,7 +1462,6 @@ def put_blockheader(f, bh):
 
     """
     f.write(struct.pack('>4hl4f', *bh))
-    return
 
 
 def put_hyperheader(f, hh):
@@ -1489,7 +1477,6 @@ def put_hyperheader(f, hh):
 
     """
     f.write(struct.pack('>4hl4f', *hh))
-    return
 
 
 #########################
@@ -2026,8 +2013,6 @@ def write_procpar(filename, dic, overwrite=False):
         print("", file=f)   # end the enumerable line
 
     f.close()
-
-    return
 
 
 subtypes = ["undefined", "real", "string", "delay", "flag", "frequency",
