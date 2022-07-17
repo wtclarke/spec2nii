@@ -66,7 +66,7 @@ def is_xa_product(hdr):
     """If the basline is xa and the sequence is a svs prodcut sequence return True."""
     def is_product():
         seq_name = hdr['Meas'][('tSequenceString')]
-        if any([seq_name == seq for seq in xa_product_seq]):
+        if any(seq_name == seq for seq in xa_product_seq):
             return True
 
     return xa_or_vx(hdr) == 'xa' and is_product()
