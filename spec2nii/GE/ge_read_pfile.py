@@ -102,7 +102,7 @@ class RevisionNumBig(ct.BigEndianStructure):
     _fields_ = [('revision', ct.c_float)]
 
 
-class Pfile(object):
+class Pfile:
     """
     This class was based on the style of code from the pfile-tools 
     package written by Nathan Vack in that we use ctypes to organize 
@@ -423,7 +423,7 @@ class Pfile(object):
 # ------------------------------------------------------------------------------
 
 
-class PfileMapper(object):
+class PfileMapper:
 
     def __init__(self, file_name, hdr, version, endian):
         """

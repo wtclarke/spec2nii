@@ -611,7 +611,7 @@ def trace2index_reg(shape, ntrace):
 #
 
 
-class data_nd(object):
+class data_nd:
     """
     Base class for building objects which emulate ndarray objects without
     loading data into memory.  These object have the following properties:
