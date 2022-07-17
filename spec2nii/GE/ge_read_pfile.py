@@ -928,7 +928,8 @@ class PfileMapper(object):
 
         return x, y, z
 
-    def get_center_from_origin(self, origin, numVoxels, voxelSpacing, dcos): 
+    @staticmethod
+    def get_center_from_origin(origin, numVoxels, voxelSpacing, dcos): 
         """
         Calculates the LPS center from the origin(toplc).
         
@@ -941,7 +942,8 @@ class PfileMapper(object):
                 center[i] += dcos[j][i] * voxelSpacing[j] * (numVoxels[j] / 2.0 - 0.5)
         return center
 
-    def get_origin_from_center(self, center, numVoxels, voxelSpacing, dcos): 
+    @staticmethod
+    def get_origin_from_center(center, numVoxels, voxelSpacing, dcos): 
         """
         Calculates the LPS origin (toplc) from the center.
         

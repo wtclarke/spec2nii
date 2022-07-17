@@ -295,7 +295,8 @@ class unit_conversion():
         return self.__pnt2unit(val, unit)
 
     # limits and scales
-    def percent_limits(self):
+    @staticmethod
+    def percent_limits():
         """
         Return tuple of left and right edges in percent
         """

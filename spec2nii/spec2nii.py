@@ -502,12 +502,14 @@ class spec2nii:
         self.imageOut, self.fileoutNames = anon_nifti_mrs(args)
 
     # Dump function
-    def dump(self, args):
+    @staticmethod
+    def dump(args):
         from spec2nii.other import dump_headers
         dump_headers(args)
 
     # Extract function
-    def extract(self, args):
+    @staticmethod
+    def extract(args):
         from spec2nii.other import extract_hdr_ext
         extract_hdr_ext(args)
 
