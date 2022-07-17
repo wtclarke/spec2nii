@@ -333,7 +333,7 @@ def twix2DCMOrientation(mapVBVDHdr, force_svs=False, verbose=False):
             raise ValueError('In slice-selective spectroscopy, only the first slice is supported')
 
     # Orientation information
-    # Added the force_svs because in some sequences there are slice objects initilised
+    # Added the force_svs because in some sequences there are slice objects initialised
     # and recorded but this seems sporadic behaviour.
     if ('sSpecPara', 'sVoI', 'sNormal', 'dSag') in mapVBVDHdr['MeasYaps']:
         NormaldSag = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'sNormal', 'dSag')]
