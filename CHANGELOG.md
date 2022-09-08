@@ -3,6 +3,7 @@ This document contains the FSL-MRS release history in reverse chronological orde
 0.4.7 (WIP)
 ----------------------------
 - Add tests fro previous Siemens SOP UID DICOM types from VB line scanners.
+- Fixed bug in Siemens RDA header read. Still no orientation tests for RDA format.
 
 0.4.6 (Friday 8th July 2022)
 ----------------------------

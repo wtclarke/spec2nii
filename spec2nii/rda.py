@@ -20,7 +20,7 @@ class MRSINotHandledError(Exception):
 def convert_rda(rda_path, fname_out, verbose):
     hdr_st = re.compile(r'>>> Begin of header <<<')
     hdr_val = re.compile(r'^([\d\w\[\],]+): (.*)\r\n')
-    hdr_end = re.compile(r'>>> End of header <<< ')
+    hdr_end = re.compile(r'>>> End of header <<<')
     hdr = {}
 
     with open(rda_path, 'rb') as fp:
