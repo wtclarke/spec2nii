@@ -1,4 +1,14 @@
-# Notes on Siemens Orientation and positioning
+# Notes on Siemens file types
+
+## DICOM file types
+There are two types of Siemens MRS DICOM files in use:
+1. Siemens Syngo Non Image Storage: SOPClassUID = 1.3.12.2.1107.5.9.1
+2. MRSpectroscopyStorage : SOPClassUID = 1.2.840.10008.5.1.4.1.1.4.2
+
+The former is typically exported from older VX (VB, VE) line scanners, and the latter newer XA line scanners. However some older scanners with newer baselines e.g. `MRDCM_VB13A_2.0` are now using the latter.
+
+The latter has no CSA header but stores parameters of use in one of a couple of nested DICOM tags `Shared Functional Groups Sequence` or `PerFrameFunctionalGroupsSequence`. More investigation of the purpose of both of these tags is needed by me.
+
 
 ## Positioning
 ### In the sequence
@@ -73,7 +83,7 @@ All set to 0.
 _All_  
 At some subsequent point the first two elements in the imagePositionPatient vector is updated to include the half FOV shift.
 
-### VE
+#### VE
 
     sVec dPosVecPCS(m_dVoI_Position_Sag, m_dVoI_Position_Cor, m_dVoI_Position_Tra);
     SodaPointer->setSlicePosVec(dPosVecPCS)

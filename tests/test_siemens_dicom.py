@@ -23,6 +23,9 @@ ve_mrsi_path = siemens_path / 'VEData' / 'DICOM/csi_se_3D_t>c23.5>s20.3_R10_7_1/
 xa20_svs_path = siemens_path / 'XAData' / 'XA20/DICOM/26516628.dcm'
 xa30_svs_path = siemens_path / 'XAData' / 'XA30/meas_MID00479_FID106847_svs_se_135sws.dcm'
 
+tim_trio_non_image = siemens_path / 'VBData' / 'tim_trio_sop_class_uid' / 'timtrio_mr_vb19a.dcm'
+tim_trio_mrspecstorage = siemens_path / 'VBData' / 'tim_trio_sop_class_uid' / 'timtrio_mrdcm_vb13a_2_0.dcm'
+
 
 def test_VB_svs(tmp_path):
 
@@ -135,3 +138,26 @@ def test_voi_generation(tmp_path):
     assert np.asarray(hdr_ext['VOI']).shape == (4, 4)
 
     assert (tmp_path / 'mrsi_voi.nii.gz').exists()
+
+
+def test_sop_class_vb(tmp_path):
+    """Test the two different SOPClassUIDs arising from the same type of scanner.
+    """
+    subprocess.check_call(['spec2nii', 'dicom',
+                           '-f', 'sop_non_image',
+                           '-o', tmp_path,
+                           '-j', str(tim_trio_non_image)])
+
+    subprocess.check_call(['spec2nii', 'dicom',
+                           '-f', 'sop_mrspecstorage',
+                           '-o', tmp_path,
+                           '-j', str(tim_trio_mrspecstorage)])
+
+    img_1 = read_nifti_mrs(tmp_path / 'sop_non_image.nii.gz')
+    img_2 = read_nifti_mrs(tmp_path / 'sop_mrspecstorage.nii.gz')
+
+    assert img_1.shape == (1, 1, 1, 2048)
+    assert np.iscomplexobj(img_1.dataobj)
+
+    assert img_2.shape == (1, 1, 1, 2048)
+    assert np.iscomplexobj(img_2.dataobj)

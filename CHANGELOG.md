@@ -1,9 +1,12 @@
 This document contains the FSL-MRS release history in reverse chronological order.
 
+0.4.7 (WIP)
+----------------------------
+- Add tests fro previous Siemens SOP UID DICOM types from VB line scanners.
+
 0.4.6 (Friday 8th July 2022)
 ----------------------------
 - Fix GE p file incorrect TR and TE. Were expressed in microseconds.
-
 
 0.4.5 (Friday 8th July 2022)
 ----------------------------
