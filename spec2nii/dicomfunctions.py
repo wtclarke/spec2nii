@@ -303,6 +303,16 @@ def process_siemens_csi_vx(img, verbose):
     slices = img.csa_header['tags']['NumberOfFrames']['items'][0]
     spectral_points = img.csa_header['tags']['DataPointColumns']['items'][0]
 
+    # I think the above is sufficient, but might need to access more specific Siemens specific parameters
+    # In that case I could use the following use the full MrPhoenixProtocol sSpecPara parameters
+    # fullcsa = csar.get_csa_header(img.dcm_data, csa_type='series')
+    # xprot = parse_buffer(fullcsa['tags']['MrPhoenixProtocol']['items'][0])
+
+    # rows = int(xprot[('sSpecPara', 'lFinalMatrixSizePhase')])
+    # cols = int(xprot[('sSpecPara', 'lFinalMatrixSizeRead')])
+    # slices = int(xprot[('sSpecPara', 'lFinalMatrixSizeSlice')])
+    # spectral_points = int(xprot[('sSpecPara', 'lVectorSize')])
+
     specDataCmplx = specDataCmplx.reshape((slices, rows, cols, spectral_points))
     specDataCmplx = np.moveaxis(specDataCmplx, (0, 1, 2), (2, 1, 0))
 
