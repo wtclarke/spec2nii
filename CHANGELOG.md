@@ -2,8 +2,10 @@ This document contains the FSL-MRS release history in reverse chronological orde
 
 0.4.7 (WIP)
 ----------------------------
-- Add tests fro previous Siemens SOP UID DICOM types from VB line scanners.
+- Add tests for previous Siemens SOP UID DICOM types from VB line scanners.
 - Fixed bug in Siemens RDA header read. Still no orientation tests for RDA format.
+- Siemens VX line dicom files will now sum arrays of TE values.
+- Added better ID of the Siemens implementation of the standard SLASER sequence (as DICOM).
 
 0.4.6 (Friday 8th July 2022)
 ----------------------------

@@ -3,6 +3,7 @@ Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
 Copyright (C) 2020 University of Oxford
 """
 from datetime import datetime
+import re
 
 import numpy as np
 import nibabel.nicom.dicomwrappers
@@ -493,8 +494,20 @@ def extractDicomMetadata_vx(dcmdata):
             pass
 
     # # 5.1 MRS specific Tags
-    # 'EchoTime'
-    obj.set_standard_def('EchoTime', float(dcmdata.csa_header['tags']['EchoTime']['items'][0] * 1E-3))
+    # 'EchoTime' - requires substantial extraction from the full protocol incase there are multiple
+    # sub-values, e.g. summing the three TEs of a sLAASER sequence together.
+    fullcsa = csar.get_csa_header(dcmdata.dcm_data, csa_type='series')
+    xprot = parse_buffer(fullcsa['tags']['MrPhoenixProtocol']['items'][0])
+    te_sum = 0
+    for teDx in range(128):
+        try:
+            te_sum += xprot[('alTE', str(teDx))]
+        except KeyError:
+            break
+    obj.set_standard_def('EchoTime', float(te_sum * 1E-6))
+    # Original
+    # obj.set_standard_def('EchoTime', float(dcmdata.csa_header['tags']['EchoTime']['items'][0] * 1E-3))
+
     # 'RepetitionTime'
     obj.set_standard_def('RepetitionTime', float(dcmdata.csa_header['tags']['RepetitionTime']['items'][0] / 1E3))
     # 'InversionTime'
@@ -570,7 +583,7 @@ def extractDicomMetadata_vx(dcmdata):
 
 def identify_integrated_references(img, inst_num):
     '''Heuristics for identifying integrated reference scans in known sequences.
-    Sequences handled: CMRR svs_slaserVOI_dkd
+    Sequences handled: CMRR svs_slaserVOI_dkd(2)
 
     :param img: nibable dicom image
 
@@ -587,8 +600,9 @@ def identify_integrated_references(img, inst_num):
     # Handle CMRR DKD sequence
     # https://www.cmrr.umn.edu/spectro/
     # SEMI-LASER (MRM 2011, NMB 2019) Release 2016-12
-    if xprot[('tSequenceFileName',)].strip('"').lower() == '%customerseq%\\svs_slaservoi_dkd'\
-            and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0:
+    seq_file_name = xprot[('tSequenceFileName',)].strip('"').lower()
+    match = re.search(r'svs_slaservoi_dkd', seq_file_name)
+    if match and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0:
         num_ref = int(xprot[('sSpecPara', 'lAutoRefScanNo')])
         num_dyn = int(xprot[('lAverages',)])
         total_dyn = num_dyn + (num_ref * 4)
