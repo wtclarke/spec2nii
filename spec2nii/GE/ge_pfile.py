@@ -91,7 +91,7 @@ def _process_svs_pfile(pfile):
 
     if psd == 'probe-p':
         data, meta, dwelltime, fname_suffix = _process_probe_p(pfile)
-    elif psd == 'oslaser':
+    elif psd in ['oslaser', 'slaser_cni']:
         data, meta, dwelltime, fname_suffix = _process_oslaser(pfile)
     elif psd == 'gaba':
         data, meta, dwelltime, fname_suffix = _process_gaba(pfile)
@@ -205,8 +205,10 @@ def _process_mrsi_pfile(pfile):
     psd = pfile.hdr.rhi_psdname.decode('utf-8').lower()
 
     if psd != 'probe-p' \
-            and psd != 'probe-sl':
-        raise UnsupportedPulseSequenceError('Unrecognised sequence, psdname must be "probe-p".')
+            and psd != 'probe-sl'\
+            and psd != 'slaser_cni':
+        raise UnsupportedPulseSequenceError(
+            f'Unrecognised sequence {psd}, psdname must be "probe-p", "probe-sl", or "slaser_cni".')
 
     warn('The interpretation of pfile CSI data is poorly tested; rotations or transpositions of the'
          ' CSI grid could be present. Spec2nii currently lacks a complete set of CSI test data.'

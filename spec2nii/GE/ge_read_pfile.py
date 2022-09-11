@@ -180,7 +180,7 @@ class Pfile(object):
         
         if psd == 'probe-p':
             mapper = PfileMapper
-        elif psd == 'oslaser':
+        elif psd in ['oslaser', 'slaser_cni']:
             mapper = PfileMapperSlaser
         elif psd == 'presscsi':
             mapper = PfileMapper
