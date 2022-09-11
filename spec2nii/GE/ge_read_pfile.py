@@ -578,7 +578,7 @@ class PfileMapper(object):
             xdim = int(pow(2, math.ceil(math.log(nvox[0], 2))))
             ydim = int(pow(2, math.ceil(math.log(nvox[1], 2))))
 
-            if(ydim > xdim):
+            if (ydim > xdim):
                 fov_spatial_resolution = dfov / ydim
             else:
                 fov_spatial_resolution = dfov / xdim
