@@ -295,7 +295,8 @@ class unit_conversion():
         return self.__pnt2unit(val, unit)
 
     # limits and scales
-    def percent_limits(self):
+    @staticmethod
+    def percent_limits():
         """
         Return tuple of left and right edges in percent
         """
@@ -610,7 +611,7 @@ def trace2index_reg(shape, ntrace):
 #
 
 
-class data_nd(object):
+class data_nd:
     """
     Base class for building objects which emulate ndarray objects without
     loading data into memory.  These object have the following properties:

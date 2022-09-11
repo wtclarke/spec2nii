@@ -441,8 +441,6 @@ def write(dir, dic, data, fid_file="fid", procpar_file="procpar",
     # write out procpar file
     write_procpar(os.path.join(dir, procpar_file), dic["procpar"], overwrite)
 
-    return
-
 
 def write_lowmem(dir, dic, data, fid_file="fid", procpar_file="procpar",
                  torder=None, repack=False, overwrite=False):
@@ -490,8 +488,6 @@ def write_lowmem(dir, dic, data, fid_file="fid", procpar_file="procpar",
 
     # write out procpar file
     write_procpar(os.path.join(dir, procpar_file), dic["procpar"], overwrite)
-
-    return
 
 ############
 # ordering #
@@ -572,11 +568,11 @@ def torder2i2t(torder):
     # if torder is a function, return it
     if inspect.isfunction(torder):
         return torder
-    elif torder == 'flat' or torder == 'f':
+    elif torder in ('flat', 'f'):
         return fileiobase.index2trace_flat
-    elif torder == 'opposite' or torder == 'o':
+    elif torder in ('opposite', 'o'):
         return fileiobase.index2trace_opp
-    elif torder == 'regular' or torder == 'r':
+    elif torder in ('regular', 'r'):
         return fileiobase.index2trace_reg
     else:
         raise ValueError("unknown torder" + str(torder))
@@ -588,11 +584,11 @@ def torder2t2i(torder):
     """
     if inspect.isfunction(torder):
         return torder
-    elif torder == 'flat' or torder == 'f':
+    elif torder in ('flat', 'f'):
         return fileiobase.trace2index_flat
-    elif torder == 'opposite' or torder == 'o':
+    elif torder in ('opposite', 'o'):
         return fileiobase.trace2index_opp
-    elif torder == 'regular' or torder == 'r':
+    elif torder in ('regular', 'r'):
         return fileiobase.trace2index_reg
     else:
         raise ValueError("unknown torder" + str(torder))
@@ -623,7 +619,7 @@ def reorder_data(data, shape, torder):
 
     """
     # take care of flat files...
-    if torder == 'flat' or torder == 'f':
+    if torder in ('flat', 'f'):
         try:
             data = data.reshape(shape)
         except ValueError:
@@ -668,7 +664,7 @@ def order_data(data, torder):
     nshape = (ntraces, data.shape[-1])
 
     # take care of flat files
-    if torder == 'flat' or torder == 'f':
+    if torder in ('flat', 'f'):
         return data.reshape(nshape)
 
     # make an emprt array to hold the 2D disk formatted data matrix
@@ -1001,7 +997,6 @@ def write_fid(filename, dic, data, torder='flat', repack=False, correct=True,
             put_block(f, trace, dic["nbheaders"], bh)
 
     f.close()
-    return
 
 
 def write_fid_lowmem(filename, dic, data, torder='f', repack=False, correct=True,
@@ -1087,7 +1082,6 @@ def write_fid_lowmem(filename, dic, data, torder='f', repack=False, correct=True
             trace = np.array(interleave_data(data[tup]), dtype=dt)
             put_block(f, trace, dic["nbheaders"], bh)
     f.close()
-    return
 
 
 #####################
@@ -1364,7 +1358,6 @@ def skip_blockheader(f):
     This is a replacement for get_blockheader.  It skips f ahead 28 bytes.
     """
     f.read(28)
-    return
 
 
 def get_hyperheader(file):
@@ -1433,15 +1426,12 @@ def put_block(f, trace, nbheaders, bh, hh=False):
     # write the trace
     put_trace(f, trace)
 
-    return
-
 
 def put_trace(f, trace):
     """
     Write a trace to file f.
     """
     f.write(trace.tobytes())
-    return
 
 
 def put_fileheader(f, fh):
@@ -1457,7 +1447,6 @@ def put_fileheader(f, fh):
 
     """
     f.write(struct.pack('>6lhhl', *fh))
-    return
 
 
 def put_blockheader(f, bh):
@@ -1473,7 +1462,6 @@ def put_blockheader(f, bh):
 
     """
     f.write(struct.pack('>4hl4f', *bh))
-    return
 
 
 def put_hyperheader(f, hh):
@@ -1489,7 +1477,6 @@ def put_hyperheader(f, hh):
 
     """
     f.write(struct.pack('>4hl4f', *hh))
-    return
 
 
 #########################
@@ -2026,8 +2013,6 @@ def write_procpar(filename, dic, overwrite=False):
         print("", file=f)   # end the enumerable line
 
     f.close()
-
-    return
 
 
 subtypes = ["undefined", "real", "string", "delay", "flag", "frequency",

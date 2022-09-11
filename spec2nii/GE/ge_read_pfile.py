@@ -102,7 +102,7 @@ class RevisionNumBig(ct.BigEndianStructure):
     _fields_ = [('revision', ct.c_float)]
 
 
-class Pfile(object):
+class Pfile:
     """
     This class was based on the style of code from the pfile-tools 
     package written by Nathan Vack in that we use ctypes to organize 
@@ -423,7 +423,7 @@ class Pfile(object):
 # ------------------------------------------------------------------------------
 
 
-class PfileMapper(object):
+class PfileMapper:
 
     def __init__(self, file_name, hdr, version, endian):
         """
@@ -928,7 +928,8 @@ class PfileMapper(object):
 
         return x, y, z
 
-    def get_center_from_origin(self, origin, numVoxels, voxelSpacing, dcos): 
+    @staticmethod
+    def get_center_from_origin(origin, numVoxels, voxelSpacing, dcos): 
         """
         Calculates the LPS center from the origin(toplc).
         
@@ -941,7 +942,8 @@ class PfileMapper(object):
                 center[i] += dcos[j][i] * voxelSpacing[j] * (numVoxels[j] / 2.0 - 0.5)
         return center
 
-    def get_origin_from_center(self, center, numVoxels, voxelSpacing, dcos): 
+    @staticmethod
+    def get_origin_from_center(center, numVoxels, voxelSpacing, dcos): 
         """
         Calculates the LPS origin (toplc) from the center.
         
@@ -1091,8 +1093,6 @@ class PfileMapper(object):
             self.raw_unsuppressed = None
             self.avg_unsuppressed = None
             self.phase_of_first_point_deg = None
-            
-        return
 
 
 class PfileMapperProbeSL(PfileMapper):
