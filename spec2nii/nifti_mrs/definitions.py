@@ -38,7 +38,7 @@ required = {'SpectrometerFrequency':
 # 'RepetitionTime'
 # 'InversionTime'
 # 'MixingTime'
-# 'AcqusitionStartTime'
+# 'AcquisitionStartTime'
 # 'ExcitationFlipAngle'
 # 'TxOffset'
 # 'VOI'
@@ -95,7 +95,7 @@ standard_defined = {
          's',
          'Mixing time in e.g. STEAM sequence. Units: Seconds',
          False),
-    'AcqusitionStartTime':
+    'AcquisitionStartTime':
         (float,
          's',
          'Time, relative to EchoTime, that the acquisition starts. Positive values indicate a time after the EchoTime, negative indicate before the EchoTime, a value of zero indicates no offset. Units: Seconds',
