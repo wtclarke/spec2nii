@@ -11,6 +11,10 @@ from os.path import basename, splitext
 from spec2nii import __version__ as spec2nii_ver
 
 
+class InsufficentHeaderInformationError(Exception):
+    pass
+
+
 def text(args):
     '''Processing for simple ascii formatted columns of data.'''
     # Read text from file
@@ -66,9 +70,26 @@ def lcm_raw(args):
     data = data.reshape(newshape)
 
     # meta
-    dwelltime = header['dwelltime']
+    try:
+        dwelltime = header['dwelltime']
+    except KeyError:
+        if args.bandwidth is not None:
+            dwelltime = 1 / args.bandwidth
+        else:
+            raise InsufficentHeaderInformationError(
+                "There is no 'dwelltime' key in the header information, "
+                "please use the optional '-b' argument to provide a bandwidth.")
 
-    meta = nifti_mrs.hdr_ext(header['centralFrequency'],
+    spec_frequency = header['centralFrequency']
+    if spec_frequency is None:
+        if args.imagingfreq is not None:
+            spec_frequency = args.imagingfreq
+        else:
+            raise InsufficentHeaderInformationError(
+                "There is no 'centralFrequency' key in the header information, "
+                "please use the optional '-i' argument to provide a frequency.")
+
+    meta = nifti_mrs.hdr_ext(spec_frequency,
                              args.nucleus)
 
     meta.set_standard_def('ConversionMethod', f'spec2nii v{spec2nii_ver}')

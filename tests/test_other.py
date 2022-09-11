@@ -18,6 +18,7 @@ import numpy as np
 file_path = Path(__file__).parent
 testdata = {'txtfile': file_path / 'spec2nii_test_data/other/metab.txt',
             'rawfile': file_path / 'spec2nii_test_data/other/metab.RAW',
+            'rawnohdfile': file_path / 'spec2nii_test_data/other/metab_nohdr.RAW',
             'niftifile': file_path / 'spec2nii_test_data/other/metab.nii'}
 
 
@@ -71,6 +72,29 @@ def test_raw(affine_file, tmp_path):
                      '-o', str(tmp_path),
                      '-a', affine_file,
                      '-j', testdata['rawfile']])
+    # Load the new nifti file
+    converted = nib.load(tmp_path / 'raw.nii.gz')
+    # Compare to original nifti file
+    original = nib.load(testdata['niftifile'])
+
+    assert converted.shape == (1, 1, 1, 4096)
+    assert np.iscomplexobj(converted.dataobj)
+    assert np.allclose(np.loadtxt(affine_file), converted.affine)
+    assert np.allclose(converted.dataobj, original.dataobj)
+    assert (tmp_path / 'raw.json').exists()
+
+
+def test_raw_nohdr(affine_file, tmp_path):
+    """Test the 'raw' conversion + optional arguments."""
+    # Run spec2nii on text
+    subprocess.call(['spec2nii', 'raw',
+                     '-f', 'raw',
+                     '-i', '297.219948',
+                     '-b', '12000',
+                     '-n', '1H',
+                     '-o', str(tmp_path),
+                     '-a', affine_file,
+                     '-j', testdata['rawnohdfile']])
     # Load the new nifti file
     converted = nib.load(tmp_path / 'raw.nii.gz')
     # Compare to original nifti file

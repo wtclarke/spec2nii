@@ -7,6 +7,8 @@ This document contains the FSL-MRS release history in reverse chronological orde
 - Siemens VX line dicom files will now sum arrays of TE values.
 - Added better ID of the Siemens implementation of the standardised SLASER sequence (as DICOM).
 - Added provisional support for the GE slaser_cni sequence.
+- Added handling of LCModel RAW files lacking header information.
+- Included code and spelling fixes kindly contributed by Dimitri Papadopoulos
 
 0.4.6 (Friday 8th July 2022)
 ----------------------------

@@ -177,6 +177,10 @@ class spec2nii:
         parser_raw.add_argument('file', help='file to convert', type=str)
         parser_raw.add_argument("-n", "--nucleus", type=str,
                                 help="Nucleus string. e.g. 1H or 31P.", required=True)
+        parser_raw.add_argument("-i", "--imagingfreq", type=float,
+                                help="Optional. Imaging (central) frequency in MHz", required=False)
+        parser_raw.add_argument("-b", "--bandwidth", type=float,
+                                help="Optional. Receiver bandwidth (spectral width) in Hz.", required=False)
         parser_raw.add_argument("-a", "--affine", type=str, help="NIfTI affine file", required=False, metavar='<file>')
         parser_raw = add_common_parameters(parser_raw)
         parser_raw.set_defaults(func=self.raw)
