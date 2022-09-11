@@ -308,7 +308,7 @@ def read(dir=".", fid_file="fid", procpar_file="procpar", read_blockhead=False,
 
     See Also
     --------
-    read_lowmem : Read Agilent/Varian files using mimimal amounts of memory.
+    read_lowmem : Read Agilent/Varian files using minimal amounts of memory.
     write : Write Agilent/Varian files.
 
     """
@@ -371,7 +371,7 @@ def read_lowmem(dir=".", fid_file="fid", procpar_file="procpar",
     See Also
     --------
     read : Read Agilent/Varian files.
-    write_lowmem : Write Agilent/Varian files using mimimal memory
+    write_lowmem : Write Agilent/Varian files using minimal memory
 
     """
     if os.path.isdir(dir) is False:
@@ -427,7 +427,7 @@ def write(dir, dic, data, fid_file="fid", procpar_file="procpar",
 
     See Also
     --------
-    write_lowmem : Write Agilent/Varian files using mimimal memory
+    write_lowmem : Write Agilent/Varian files using minimal memory
     read : Read Agilent/Varian files.
 
     """
@@ -447,7 +447,7 @@ def write(dir, dic, data, fid_file="fid", procpar_file="procpar",
 def write_lowmem(dir, dic, data, fid_file="fid", procpar_file="procpar",
                  torder=None, repack=False, overwrite=False):
     """
-    Write Agilent/Varian files to a directory using mimimal amounts of memory.
+    Write Agilent/Varian files to a directory using minimal amounts of memory.
 
     Parameters
     ----------
@@ -502,7 +502,7 @@ def find_torder(dic, shape):
     """
     Find the torder from the procpar dictionary.
 
-    If propar dictionary is incomplete a UserWarning is issued and 'r' is
+    If procpar dictionary is incomplete a UserWarning is issued and 'r' is
     returned.
 
     Parameters
@@ -515,7 +515,7 @@ def find_torder(dic, shape):
     Returns
     --------
     torder : {'r', 'f', 'o'}
-        File ording for using in :py:func:`read` or :py:func:`write`.
+        File ordering for using in :py:func:`read` or :py:func:`write`.
 
     """
     ndim = len(shape)
@@ -671,7 +671,7 @@ def order_data(data, torder):
     if torder == 'flat' or torder == 'f':
         return data.reshape(nshape)
 
-    # make an emprt array to hold the 2D disk formated data matrix
+    # make an emprt array to hold the 2D disk formatted data matrix
     ndata = np.empty(nshape, dtype=data.dtype)
 
     # index2tuple converter
@@ -787,7 +787,7 @@ def read_fid(filename, shape=None, torder='flat', as_2d=False,
 def read_fid_lowmem(filename, shape=None, torder='flat', as_2d=False,
                     read_blockhead=False):
     """
-    Read a Agilent/Varian binary (fid) file using mimimal amounts of memory.
+    Read a Agilent/Varian binary (fid) file using minimal amounts of memory.
 
     Parameters
     ----------
@@ -946,7 +946,7 @@ def write_fid(filename, dic, data, torder='flat', repack=False, correct=True,
 
     See Also
     --------
-    write_fid_lowmem : Write a Agilent/Varian binary file using mimimal
+    write_fid_lowmem : Write a Agilent/Varian binary file using minimal
         amounts of memory
     write : Write Agilent/Varian files to a directory.
 
@@ -1007,7 +1007,7 @@ def write_fid(filename, dic, data, torder='flat', repack=False, correct=True,
 def write_fid_lowmem(filename, dic, data, torder='f', repack=False, correct=True,
                      overwrite=False):
     """
-    Write a Agilent/Varian binary (fid) file using mimimal amounts of memory.
+    Write a Agilent/Varian binary (fid) file using minimal amounts of memory.
 
     File is written trace by trace with each trace read from data before
     writing to reduce memory usage.

@@ -179,7 +179,7 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
 
 
 def _process_philips_svs(img, verbose):
-    """Process svs data using, using the relavent pathway"""
+    """Process svs data using, using the relevant pathway"""
     if _is_new_format(img):
         return _process_philips_svs_new(img, verbose)
     else:

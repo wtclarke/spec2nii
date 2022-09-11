@@ -143,12 +143,12 @@ class Pfile(object):
                 return False
         else:
             offset = self.hdr.rhr_rdb_hdr_off_data
-            # ARC 20220209: coverage here is likey to be incomplete. This check
+            # ARC 20220209: coverage here is likely to be incomplete. This check
             # may well be redundant anyway, since revision number has
             # previously been validated in _version
             if offset in \
                     [
-                        61464,   # bjs from matlap script for ver = 9
+                        61464,   # bjs from Matlab script for ver = 9
                         66072,
                         145908,
                         149788,
@@ -427,7 +427,7 @@ class PfileMapper(object):
 
     def __init__(self, file_name, hdr, version, endian):
         """
-        Given a file name, its header, version number and endianess, this
+        Given a file name, its header, version number and endianness, this
         class will parse the data section of the file for the suppressed and
         unsuppressed data.  
         
