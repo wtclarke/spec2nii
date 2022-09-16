@@ -655,7 +655,7 @@ class data_nd:
         """ Set the ndim and shape attributes from fshape """
         # set ndim and shape
         self.ndim = len(self.fshape)
-        self.shape = tuple([self.fshape[i] for i in self.order])
+        self.shape = tuple(self.fshape[i] for i in self.order)
 
     def __copy__(self):
         """
@@ -797,4 +797,4 @@ class data_nd:
             raise ValueError("repeated axis in tranpose")
 
         # create a new data_nd object with transposed order
-        return self.__fcopy__(order=tuple([self.order[i] for i in axes]))
+        return self.__fcopy__(order=tuple(self.order[i] for i in axes))
