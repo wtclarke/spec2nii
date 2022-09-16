@@ -204,9 +204,7 @@ def _process_mrsi_pfile(pfile):
     '''
     psd = pfile.hdr.rhi_psdname.decode('utf-8').lower()
 
-    if psd != 'probe-p' \
-            and psd != 'probe-sl'\
-            and psd != 'slaser_cni':
+    if psd not in ('probe-p', 'probe-sl', 'slaser_cni'):
         raise UnsupportedPulseSequenceError(
             f'Unrecognised sequence {psd}, psdname must be "probe-p", "probe-sl", or "slaser_cni".')
 
