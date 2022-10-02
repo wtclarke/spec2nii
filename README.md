@@ -5,9 +5,19 @@
 
 A program for multi-format conversion of in vivo MRS to the [NIfTI-MRS format](https://github.com/wexeee/mrs_nifti_standard).  
 
+## About
+
 This program was inspired by the imaging DICOM to NIfTI converter [dcm2niix](https://github.com/rordenlab/dcm2niix) developed by Chris Rorden. All MRS(I) orientations are tested with images converted using dcm2niix. I consider the combination of images converted using dcm2niix and displayed in [FSLeyes](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FSLeyes) the de facto standard.
 
-Visualisation of MRS converted by spec2nii can be carried out with a recent (>0.31.0) version of FSLeyes. A FSLeyes plugin for NIfTI-MRS is now available:
+## Citing Spec2nii
+
+If you use `spec2nii` or the [NIfTI-MRS](https://github.com/wexeee/mrs_nifti_standard) format in your work please cite:
+
+    `Clarke WT, Bell TK, Emir UE, Mikkelsen M, Oeltzschner G, Shamaei A, Soher BJ, Wilson M. NIfTI-MRS: A standard data format for magnetic resonance spectroscopy. Magn Reson Med. 2022. doi: 10.1002/mrm.29418.`
+
+## Visualising output
+
+Visualisation of MRS data converted by spec2nii to NIfTI-MRS can be carried out with a recent (>0.31.0) version of FSLeyes. A FSLeyes plugin for NIfTI-MRS is now available:
 - [Gitlab](https://git.fmrib.ox.ac.uk/wclarke/fsleyes-plugin-mrs),
 - `conda install -c conda-forge fsleyes-plugin-mrs`,
 - `pip install fsleyes-plugin-mrs`.
@@ -17,7 +27,7 @@ Visualisation of MRS converted by spec2nii can be carried out with a recent (>0.
 or  
 `pip install spec2nii`
 
-### Installing Conda (for first option)
+### Installing Conda (option #1)
 Miniconda can be installed by following the instructions on the [Conda website](https://docs.conda.io/en/latest/miniconda.html). To create a suitable environment run the following three commands after installing Conda.
 
 ```
@@ -152,8 +162,11 @@ Overwrite the header extension in a NIfTI-MRS file using a separate json formatt
 `spec2nii insert FILE JSON_FILE`
 
 ## Contributors & contributing
-This program was written by Will Clarke, University of Oxford. Contributions to add new file formats or improve existing ones are very welcome. Please fork the repository and request changes using a merge (pull) request. All I ask is that test data and tests are included with any submission.
+This program was written by Will Clarke, University of Oxford. Contributions to add new file formats or improve existing ones are very welcome. Please fork the repository and request changes using a merge (pull) request. I ask that test data and tests are included with any submission.
 
 Particular thanks go to Tomáš Pšorn for contributing the Bruker interface, and to Jack Miller for the Varian interface.
+
+Elements of the Varian reader come from [NMR glue](https://github.com/jjhelmus/nmrglue/), if you use the varian components in your research please cite J.J. Helmus, C.P. Jaroniec, Nmrglue: An open source Python package for the
+analysis of multidimensional NMR data, J. Biomol. NMR 2013, 55, 355-367. doi: 10.1007/s10858-013-9718-x
 
 Some GE test data comes from the [BIG GABA](https://www.nitrc.org/projects/biggaba/) dataset which was funded by NIH grant R01 EB016089. Please see Mikkelsen M et al. Big GABA: Edited MR spectroscopy at 24 research sites. NeuroImage 2017;159:32–45. doi: 10.1016/j.neuroimage.2017.07.021 for more information.

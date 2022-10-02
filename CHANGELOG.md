@@ -1,5 +1,12 @@
 This document contains the FSL-MRS release history in reverse chronological order.
 
+0.4.8 (Sunday 2nd October)
+--------------------------
+- Updated citation information with publication of NIfTI-MRS paper.
+- Updated README information.
+- Added check that file had been written successfully.
+- Minor under the hood changes
+
 0.4.7 (Sunday 11th September)
 -----------------------------
 - Add tests for previous Siemens SOP UID DICOM types from VB line scanners.

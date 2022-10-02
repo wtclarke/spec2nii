@@ -35,7 +35,12 @@ from spec2nii import __version__ as spec2nii_ver
 
 class spec2nii:
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Convert raw spectroscopy data to NIfTI format.')
+        cite_str = "Clarke WT, Bell TK, Emir UE, Mikkelsen M, Oeltzschner G, Shamaei A, Soher BJ, Wilson M. "\
+                   "NIfTI-MRS: A standard data format for magnetic resonance spectroscopy. "\
+                   "Magn Reson Med. 2022. doi: 10.1002/mrm.29418."
+        parser = argparse.ArgumentParser(
+            description='Convert raw spectroscopy data to NIfTI format.',
+            epilog=f"If you use spec2nii please cite: {cite_str}")
         parser.add_argument('-v', '--version', action='version', version=spec2nii_ver)
 
         subparsers = parser.add_subparsers(title='spec2nii subcommands')
@@ -279,6 +284,9 @@ class spec2nii:
             self.implement_overrides(args)
             self.validate_output()
             self.write_output(args.json)
+            self.validate_write(args.verbose)
+            if args.verbose:
+                print(f'Please cite {cite_str}.')
         elif hasattr(args, 'view') and not args.view:
             print('No files to write.')
 
@@ -322,6 +330,19 @@ class spec2nii:
                 out_json = self.outputDir / (f_out + '.json')
                 with open(out_json, 'w') as fp:
                     json.dump(json.loads(nifti_mrs_img.header.extensions[0].get_content()), fp, indent=4)
+
+    class NIfTIMRSWriteError(IOError):
+        pass
+
+    def validate_write(self, verbose):
+        for f_out in self.fileoutNames:
+            out = self.outputDir / (f_out + '.nii.gz')
+            if out.exists() and verbose:
+                print(f'Output {out.name} written to {out.parent}')
+            elif out.exists():
+                pass
+            else:
+                raise self.NIfTIMRSWriteError(f'Output {out.name} in {out.parent} not found!')
 
     # Start of the specific format handling functions.
     # Siemens twix (.dat) format
