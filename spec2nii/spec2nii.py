@@ -257,7 +257,8 @@ class spec2nii:
                                    json=False,
                                    override_nucleus=None,
                                    override_frequency=None,
-                                   override_dwelltime=None)
+                                   override_dwelltime=None,
+                                   verbose=False)
 
         if len(sys.argv) == 1:
             parser.print_usage(sys.stderr)

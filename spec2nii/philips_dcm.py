@@ -129,7 +129,8 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         # Combine files into single MRS NIfTI
         # Single file name
         fnames_out.append(mainStr)
-        fnames_out.append(mainStr + '_ref')
+        if ref_list[0] is not None:
+            fnames_out.append(mainStr + '_ref')
 
         dt_used = dwelltime_list[0]
         or_used = orientation_list[0]
