@@ -1,6 +1,6 @@
 '''Definitions of NIfTI-MRS standard meta data and dimension tags.
 
-Type fields should either be generic python types: float, int, str 
+Type fields should either be generic python types: float, int, str
 or a tuple indicating an array type and element type : (list, float) or (list, str)
 
 Copyright Will Clarke, University of Oxford, 2021
@@ -75,7 +75,7 @@ required = {'SpectrometerFrequency':
 # Format is a dict of tuples containing (type, unit string, doc string, anonymisation state)
 standard_defined = {
     # 5.1 MRS specific Tags
-    'EchoTime': 
+    'EchoTime':
         (float,
          's',
          'Time from centroid of excitation to start of FID or centre of echo. Units: Seconds',
@@ -220,7 +220,7 @@ standard_defined = {
          "Description of the process or program used for conversion. May include additional information like software version.",
          False),
     'ConversionTime':
-        (str, 
+        (str,
          None,
          "Time and date of conversion. ISO 8601 compliant format",
          False),

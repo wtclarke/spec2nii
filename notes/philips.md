@@ -11,4 +11,4 @@ The newer format `MR Spectroscopy Storage` can be identified by the `MediaStorag
 
 There are many differences between the format of the two types, not least data storage location, header structure, and the use of multiple files versus one to store the complete data set in.
 
-For DICOM tag interpretation in the old format see https://github.com/malaterre/dicom-private-dicts/blob/master/PMS-R32-dict.txt 
+For DICOM tag interpretation in the old format see https://github.com/malaterre/dicom-private-dicts/blob/master/PMS-R32-dict.txt
