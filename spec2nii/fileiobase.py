@@ -421,7 +421,7 @@ def uc_from_freqscale(scale, obs, unit='ppm'):
     scale = np.array(scale)
     size = len(scale)
 
-    if unit in ['ppm', 'hz', 'khz']:
+    if unit in ('ppm', 'hz', 'khz'):
         complex = False
 
         min = scale.min()

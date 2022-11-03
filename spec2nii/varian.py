@@ -1876,7 +1876,7 @@ def uninterleave_data(data):
     # determind the output dtype
     rdt = data.dtype.name
 
-    if rdt == 'int16' or rdt == "float32":
+    if rdt in ("int16", "float32"):
         cdt = "complex64"
     elif rdt == 'int32':
         cdt = "complex128"

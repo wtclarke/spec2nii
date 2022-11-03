@@ -54,7 +54,7 @@ class hdr_ext:
                     "info": info,
                     "hdr": hdr}
 
-        if dim in [0, 1, 2]:
+        if dim in (0, 1, 2):
             self.dim_info[dim] = new_info
         elif dim in ("5th", "6th", "7th"):
             if dim == "5th":
