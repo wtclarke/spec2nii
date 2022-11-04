@@ -62,11 +62,21 @@ def xa_or_vx(hdr):
             ' spec2nii is tested on VA-VE, and XA20 and XA30 DICOM files.')
 
 
+def seq_name(hdr):
+    """Return sequence (binary) name
+
+    :param hdr: twixobject hdr
+    :type hdr: dict
+    :return: Sequence name string
+    :rtype: str
+    """
+    return hdr['Meas'][('tSequenceString')]
+
+
 def is_xa_product(hdr):
     """If the baseline is xa and the sequence is a svs product sequence return True."""
     def is_product():
-        seq_name = hdr['Meas'][('tSequenceString')]
-        if any(seq_name == seq for seq in xa_product_seq):
+        if any(seq_name(hdr) == seq for seq in xa_product_seq):
             return True
 
     return xa_or_vx(hdr) == 'xa' and is_product()
@@ -74,8 +84,9 @@ def is_xa_product(hdr):
 
 def process_twix(twixObj, base_name_out, name_in, dataKey, dim_overrides, quiet=False, verbose=False, remove_os=False):
     """Process a twix file. Identify type of MRS and then pass to the relevant function."""
-
-    if twixObj.hdr.Meas.lFinalMatrixSizePhase \
+    if seq_name(twixObj.hdr) == 'fid':
+        n_voxels = 0
+    elif twixObj.hdr.Meas.lFinalMatrixSizePhase \
             and twixObj.hdr.Meas.lFinalMatrixSizeRead:
         n_voxels = twixObj.hdr.Meas.lFinalMatrixSizeSlice \
             * twixObj.hdr.Meas.lFinalMatrixSizePhase \
@@ -91,6 +102,16 @@ def process_twix(twixObj, base_name_out, name_in, dataKey, dim_overrides, quiet=
 
     if n_voxels > 1:
         return process_mrsi(twixObj, base_name_out, name_in, dataKey, quiet=quiet, verbose=verbose)
+    elif n_voxels == 0:
+        return process_fid(
+            twixObj,
+            base_name_out,
+            name_in,
+            dataKey,
+            dim_overrides,
+            remove_os,
+            quiet=quiet,
+            verbose=verbose)
     else:
         return process_svs(
             twixObj,
@@ -109,6 +130,198 @@ def process_mrsi(twixObj, base_name_out, name_in, dataKey, quiet=False, verbose=
 
 
 def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_os, quiet=False, verbose=False):
+    """Process a twix file into a NIfTI MRS file.
+    Inputs:
+        twixObj: object from mapVBVD.
+        base_name_out: Core string of output file.
+        name_in: name of input file.
+        dataKey: eval info flag name,
+        remove_os: Remove time-doain overrides
+        quiet: True to suppress text output.
+    """
+
+    # Set squeeze data
+    twixObj[dataKey].flagRemoveOS = remove_os
+    twixObj[dataKey].squeeze = True
+    squeezedData = twixObj[dataKey]['']
+
+    if not quiet:
+        print(f'Found data of size {squeezedData.shape}.')
+
+    # Conjugate the data from the twix file to match the phase conventions of the format
+    squeezedData = squeezedData.conj()
+
+    # Perform Orientation calculations
+    # 1) Calculate dicom like imageOrientationPatient,imagePositionPatient,pixelSpacing and slicethickness
+    orient = twix2DCMOrientation(twixObj['hdr'], force_svs=True, verbose=verbose)
+    imageOrientationPatient, imagePositionPatient, pixelSpacing, slicethickness = orient
+
+    # 2) In the style of dcm2niix calculate the affine matrix
+    orientation = dcm_to_nifti_orientation(imageOrientationPatient,
+                                           imagePositionPatient,
+                                           np.append(pixelSpacing, slicethickness),
+                                           (1, 1, 1),
+                                           verbose=verbose)
+
+    # # 2) in style of dcm2niix
+    # #   a) calculate Q44
+    # xyzMM = np.append(pixelSpacing, slicethickness)
+    # Q44 = nifti_dicom2mat(imageOrientationPatient, imagePositionPatient, xyzMM, verbose=verbose)
+
+    # #   b) calculate nifti quaternion parameters
+    # Q44[:2, :] *= -1
+
+    # # 3) place in data class for nifti orientation parameters
+    # orientation = NIFTIOrient(Q44)
+
+    # Extract dwellTime
+    dwellTime = twixObj['hdr']['MeasYaps'][('sRXSPEC', 'alDwellTime', '0')] / 1E9
+    if remove_os:
+        dwellTime *= 2
+
+    # Extract metadata
+    meta_obj = extractTwixMetadata(twixObj['hdr'], basename(twixObj[dataKey].filename))
+
+    # Identify what those indices are
+    # If cha is one: loop over 3rd and higher dims and make 2D images
+    # If cha isn't present one: loop over 2nd and higher dims and make 1D images
+    # Don't write here, just fill up class property lists for later writing
+    if base_name_out:
+        mainStr = base_name_out
+    else:
+        mainStr = name_in.split('.')[0]
+
+    dims = twixObj[dataKey].sqzDims
+    if dims[0] != 'Col':
+        # This is very unlikely to occur but would cause complete failure.
+        raise ValueError('Col is expected to be the first dimension in the Twix file, it is not.')
+
+    curr_defaults = defaults[twixObj[dataKey].softwareVersion]
+    dim_order = twixObj[dataKey].sqzDims[1:]
+
+    # SPECIAL CASE FOR XA 20/30 product sequences.
+    # A single? reference scan is encoded in the first element of the phs loop
+    # If so strip out the scan and add it as a separate output file.
+    if is_xa_product(twixObj['hdr'])\
+            and 'Phs' in dim_order:
+
+        phs_dim = dim_order.index('Phs') + 1
+        ref_index = [slice(None), ] * squeezedData.ndim
+        ref_index[phs_dim] = slice(1)
+        xa_ref_scans = squeezedData[tuple(ref_index)]
+        ref_index[phs_dim] = slice(1, None, 1)
+        squeezedData_noref = squeezedData[tuple(ref_index)]
+
+        if squeezedData_noref.shape[phs_dim] == 1:
+            dim_order.remove('Phs')
+            squeezedData = squeezedData_noref.squeeze()
+
+        # To do, handle any other dimensions properly
+        xa_ref_scans = xa_ref_scans.squeeze()
+        xa_zero_index = xa_ref_scans[0, :, :] == 0.0
+        xa_ref_scans = xa_ref_scans[:, ~xa_zero_index]\
+            .reshape(xa_ref_scans.shape[0], xa_ref_scans.shape[1], -1)
+    else:
+        xa_ref_scans = None
+
+    # Make list of tags (both default and user specified)
+    dim_tags = []
+    unknown_counter = 0
+    for do in dim_order:
+        if do in curr_defaults.keys():
+            dim_tags.append(curr_defaults[do])
+        else:
+            dim_tags.append(f'DIM_USER_{unknown_counter}')
+            unknown_counter += 1
+
+    # Now process the user specified order
+    for dim_index in range(3):
+        if dim_overrides['dims'][dim_index]:
+            if dim_overrides['dims'][dim_index] in dim_order:
+                curr_index = dim_order.index(dim_overrides['dims'][dim_index])
+                dim_order[dim_index], dim_order[curr_index] = dim_order[curr_index], dim_order[dim_index]
+                dim_tags[dim_index], dim_tags[curr_index] = dim_tags[curr_index], dim_tags[dim_index]
+            else:
+                dim_order.insert(dim_index, dim_overrides['dims'][0])
+                if dim_overrides['dims'][dim_index] in curr_defaults.keys():
+                    dim_tags.insert(dim_index, curr_defaults['tags'][dim_overrides['dims'][dim_index]])
+                else:
+                    dim_tags.insert(dim_index, f'DIM_USER_{unknown_counter}')
+                    unknown_counter += 1
+
+    # Override with any of the specified tags
+    for idx, tag in enumerate(dim_overrides['tags']):
+        if tag:
+            dim_tags[idx] = tag
+
+    # Permute the order of dimension in the data
+    original = list(range(1, squeezedData.ndim))
+    new = [twixObj[dataKey].sqzDims.index(dd) for dd in dim_order]
+    reord_data = np.moveaxis(squeezedData, original, new)
+
+    # Now assemble data
+    nifit_mrs_out = []
+    filename_out = []
+    if reord_data.ndim <= 4:
+        # Pad with three singleton dimensions (x,y,z)
+        newshape = (1, 1, 1) + reord_data.shape
+
+        nifit_mrs_out.append(assemble_nifti_mrs(reord_data.reshape(newshape),
+                                                dwellTime,
+                                                orientation,
+                                                meta_obj,
+                                                dim_tags))
+
+        filename_out.append(mainStr)
+
+    else:
+        # loop over any dimensions over 4
+        for index in np.ndindex(reord_data.shape[4:]):
+            modIndex = (slice(None), slice(None), slice(None), slice(None)) + index
+
+            # Pad with three singleton dimensions (x,y,z)
+            newshape = (1, 1, 1) + reord_data[modIndex].shape
+
+            nifit_mrs_out.append(
+                assemble_nifti_mrs(reord_data[modIndex].reshape(newshape),
+                                   dwellTime,
+                                   orientation,
+                                   meta_obj,
+                                   dim_tags))
+
+            # Create strings
+            out_name = f'{mainStr}'
+            for idx, ii in enumerate(index):
+                indexStr = dim_order[3 + idx]
+                out_name += f'_{indexStr}{ii :03d}'
+
+            filename_out.append(out_name)
+
+    if xa_ref_scans is not None:
+        # Pad with three singleton dimensions (x,y,z)
+        newshape = (1, 1, 1) + xa_ref_scans.shape
+        if xa_ref_scans.ndim > 2:
+            ref_tags = ['DIM_COIL', 'DIM_DYN', None]
+        else:
+            ref_tags = ['DIM_COIL', None, None]
+
+        meta_obj_ref = extractTwixMetadata(twixObj['hdr'], basename(twixObj[dataKey].filename))
+        meta_obj_ref.set_standard_def('WaterSuppressed', True)
+
+        nifit_mrs_out.append(
+            assemble_nifti_mrs(
+                xa_ref_scans.reshape(newshape),
+                dwellTime,
+                orientation,
+                meta_obj_ref,
+                ref_tags))
+
+        filename_out.append(mainStr + '_ref')
+
+    return nifit_mrs_out, filename_out
+
+
+def process_fid(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_os, quiet=False, verbose=False):
     """Process a twix file into a NIfTI MRS file.
     Inputs:
         twixObj: object from mapVBVD.
@@ -366,14 +579,20 @@ def twix2DCMOrientation(mapVBVDHdr, force_svs=False, verbose=False):
         inplaneRotation = 0.0
 
     TwixSliceNormal = np.array([NormaldSag, NormaldCor, NormaldTra], dtype=float)
+    # If all zeros make a 'normal' orientation (e.g. for unlocalised data)
+    if not TwixSliceNormal.any():
+        TwixSliceNormal[0] += 1.0
 
     if ('sSliceArray', 'asSlice', '0', 'dReadoutFOV') in mapVBVDHdr['MeasYaps']\
             and not force_svs:
         RoFoV = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'dReadoutFOV')]
         PeFoV = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'dPhaseFOV')]
-    else:
+    elif ('sSpecPara', 'sVoI', 'dReadoutFOV') in mapVBVDHdr['MeasYaps']:
         RoFoV = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'dReadoutFOV')]
         PeFoV = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'dPhaseFOV')]
+    else:
+        RoFoV = 10000.0
+        PeFoV = 10000.0
 
     dColVec_vector, dRowVec_vector = GSL.calc_prs(TwixSliceNormal, inplaneRotation, verbose)
 
@@ -386,7 +605,7 @@ def twix2DCMOrientation(mapVBVDHdr, force_svs=False, verbose=False):
     elif ('sSpecPara', 'sVoI', 'dThickness') in mapVBVDHdr['MeasYaps']:
         sliceThickness = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'dThickness')]
     else:
-        sliceThickness = 0.0
+        sliceThickness = 10000.0
 
     # Position info (including table position)
     if ('sSpecPara', 'sVoI', 'sPosition', 'dSag') in mapVBVDHdr['MeasYaps']:

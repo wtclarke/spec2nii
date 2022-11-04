@@ -1,5 +1,11 @@
 This document contains the FSL-MRS release history in reverse chronological order.
 
+0.4.9 (Friday 4th November)
+---------------------------
+- Handle FID sequence in twix converter.
+- Code lint updates
+- Updated versioneer.
+
 0.4.8 (Sunday 2nd October)
 --------------------------
 - Updated citation information with publication of NIfTI-MRS paper.
