@@ -259,7 +259,7 @@ def _vax_to_ieee_single_float(data):
             # note 16777216.0 == 2^24
             val = sign_mult * (0.5 + (fract / 16777216.0)) * pow(2.0, expon - 128.0)
             f.append(val)
-        elif expon == 0 and sign == 0:
+        elif expon == sign == 0:
             f.append(0)
         else:
             f.append(0)

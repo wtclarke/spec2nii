@@ -91,7 +91,7 @@ def _process_svs_pfile(pfile):
 
     if psd == 'probe-p':
         data, meta, dwelltime, fname_suffix = _process_probe_p(pfile)
-    elif psd in ['oslaser', 'slaser_cni']:
+    elif psd in ('oslaser', 'slaser_cni'):
         data, meta, dwelltime, fname_suffix = _process_oslaser(pfile)
     elif psd == 'gaba':
         data, meta, dwelltime, fname_suffix = _process_gaba(pfile)

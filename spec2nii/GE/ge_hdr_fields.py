@@ -82,7 +82,7 @@ def get_pfile_hdr_fields(version):
     version_major = int(np.trunc(version))
 
     # ARC 20220209 : consistent with previous _version_major mapping
-    if version_major in [7, 8]:
+    if version_major in (7, 8):
         plist.append(('rhr_rh_rdbm_rev',          ct.c_float))
         plist.append(('pad_xx',                   ct.c_char * 12))
         plist.append(('rhr_rh_scan_date',         ct.c_char * 10))
@@ -517,7 +517,7 @@ def get_pfile_hdr_fields(version):
         plist.append(('rhi_user47',               ct.c_float))
         plist.append(('rhi_user48',               ct.c_float))
 
-    elif version_major in [11, 12]:
+    elif version_major in (11, 12):
         plist.append(('rhr_rh_rdbm_rev',          ct.c_float))
         plist.append(('pad_xx',                   ct.c_char * 12))
         plist.append(('rhr_rh_scan_date',         ct.c_char * 10))
@@ -2076,7 +2076,7 @@ def get_pfile_hdr_fields(version):
         plist.append(('pad_xx',                   ct.c_char * 51))
         plist.append(('rhi_image_uid',            ct.c_char * 32))
 
-    elif version_major in [24, 25]:
+    elif version_major in (24, 25):
         plist.append(('rhr_rh_rdbm_rev',          ct.c_float))
         plist.append(('pad_xx',                   ct.c_char * 12))
         plist.append(('rhr_rh_scan_date',         ct.c_char * 10))
@@ -2303,7 +2303,7 @@ def get_pfile_hdr_fields(version):
         plist.append(('pad_xx',                   ct.c_char * 51))
         plist.append(('rhi_image_uid',            ct.c_char * 32))
 
-    elif version_major in [26, 27, 28]:
+    elif version_major in (26, 27, 28):
         plist.append(('rhr_rh_rdbm_rev',           ct.c_float))
         plist.append(('rhr_rdb_hdr_off_data',      ct.c_int))
         plist.append(('pad_xx',                    ct.c_char * 84))

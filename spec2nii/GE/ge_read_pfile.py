@@ -147,7 +147,7 @@ class Pfile:
             # may well be redundant anyway, since revision number has
             # previously been validated in _version
             if offset in \
-                    [
+                    (
                         61464,   # bjs from Matlab script for ver = 9
                         66072,
                         145908,
@@ -157,7 +157,7 @@ class Pfile:
                         213684,  # 26.002
                         219828,  # 27.000
                         228020   # 28.003
-                    ]:
+                    ):
                 return True
             else:
                 return False
@@ -180,7 +180,7 @@ class Pfile:
 
         if psd == 'probe-p':
             mapper = PfileMapper
-        elif psd in ['oslaser', 'slaser_cni']:
+        elif psd in ('oslaser', 'slaser_cni'):
             mapper = PfileMapperSlaser
         elif psd == 'presscsi':
             mapper = PfileMapper
