@@ -243,7 +243,7 @@
               "RfProfile.ppg",
               "fmap_fq.ppg",
               "ste_laser_dIR_WSTM.ppg",
-              "mt_sLASER.ppg"  
+              "mt_sLASER.ppg"
             ]
           ],
           "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
@@ -729,7 +729,7 @@
         "cmd": "#ACQ_dim",
         "conditions": []
       }
-  
+
     ],
     "shape_storage": [
       {

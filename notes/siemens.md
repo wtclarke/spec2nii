@@ -30,7 +30,7 @@ In the product CSI sequence the position of the image is moved by applying an ex
     if( !( (n = rMrProt.getsSpecPara().getlFinalMatrixSizeRead()) % 2 ) )
             m_d_read_pos += voxelshift_read * rMrProt.sliceSeries().front().readoutFOV() / (double) n;
 
-    if( !( (n = rMrProt.getsSpecPara().getlFinalMatrixSizePhase()) % 2 ) 
+    if( !( (n = rMrProt.getsSpecPara().getlFinalMatrixSizePhase()) % 2 )
             m_d_phase_pos += voxelshift_phase * rMrProt.sliceSeries().front().phaseFOV() / (double) n;
 
 `voxelshift_read` and `voxelshift_phase` are set to 0.5.
@@ -77,10 +77,10 @@ _SVS_
     dPosVec_vector[2] = m_fVoI_Position_Tra;
     pMiniHeader->setArrayValues("PosVec", dPosVec_vector)
 
-_FID_  
+_FID_
 All set to 0.
 
-_All_  
+_All_
 At some subsequent point the first two elements in the imagePositionPatient vector is updated to include the half FOV shift.
 
 #### VE

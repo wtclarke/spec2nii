@@ -3,7 +3,7 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/spec2nii)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5907960.svg)](https://doi.org/10.5281/zenodo.5907960)
 
-A program for multi-format conversion of in vivo MRS to the [NIfTI-MRS format](https://github.com/wexeee/mrs_nifti_standard).  
+A program for multi-format conversion of in vivo MRS to the [NIfTI-MRS format](https://github.com/wexeee/mrs_nifti_standard).
 
 ## About
 
@@ -23,8 +23,8 @@ Visualisation of MRS data converted by spec2nii to NIfTI-MRS can be carried out 
 - `pip install fsleyes-plugin-mrs`.
 
 ## Installation
-`conda install -c conda-forge spec2nii`  
-or  
+`conda install -c conda-forge spec2nii`
+or
 `pip install spec2nii`
 
 ### Installing Conda (option #1)
@@ -71,7 +71,7 @@ Manual overrides can be provided for incorrectly interpreted required header fie
 ### Twix
 Call `spec2nii twix -v FILE` to view a list of contained MDH flags. -m can be used to specify which multi-raid file to convert if used on VE data.
 
-Call with the -e flag to specify which MDH flag to convert. e.g.  
+Call with the -e flag to specify which MDH flag to convert. e.g.
 `spec2nii twix -e image FILE`
 
 Twix format loop variables (e.g. `Ave` or `ida`) can be assigned to specific NIfTI dimensions using the `-d{5,6,7}` command line options. NIfTI MRS dimension tags (e.g. `DIM_COIL`) can be specified using the `-t{5,6,7}` command line options.
@@ -98,12 +98,12 @@ NIfTI MRS dimension tags (e.g. `DIM_COIL`) can be specified using the `-t` comma
 ### Philips (SPAR/SDAT)
 `spec2nii philips SDAT_FILE SPAR_FILE`
 
-Two optional arguments are available for the SPAR/SDAT pathway:  
+Two optional arguments are available for the SPAR/SDAT pathway:
 - `-t/--tags` allows the user to specify the dimension tags for each of the higher dimensions (up to three).
 - `-s/--shape` allows the user to perform numpy style reshaping of multiple transients. By default (without specifying a shape) all transients will be listed in a single 5th dimension.
 
 ### Philips (data/list)
-Must be provided along side a matching SPAR file.  
+Must be provided along side a matching SPAR file.
 `spec2nii philips_dl DATA_FILE LIST_FILE SPAR_FILE`
 
 ### Philips DICOM
@@ -116,7 +116,7 @@ Generates separate reference file if present.
 **NOTE** Only enhanced DICOM is currently handled. Older 'classic' DICOM may work but is likely to need more testing with appropriate example data first.
 
 ### Bruker (2dseq/fid)
-`spec2nii bruker -m 2DSEQ 2DSEQ_FILE_or_DIR`  
+`spec2nii bruker -m 2DSEQ 2DSEQ_FILE_or_DIR`
 `spec2nii bruker -m FID FID_FILE_or_DIR`
 
 Use the `-d` option to dump the header files (method and acqp for fid, visu_pars for 2dseq) into the header extension.
@@ -125,15 +125,15 @@ Additional filters can be added by defining additional queries using the `-q` fl
 
 Bruker conversion is powered by the [BrukerAPI package](https://github.com/isi-nmr/brukerapi-python) written by Tomas Psorn.
 
-### Varian 
-`spec2nii varian /path/to/fid.fid`  
-where fid.fid is a Varian fid directory containing a fid and procpar file.  
-Use the `-d` option to dump the procpar header file contents into the header extension.  
-Use the `-t` option to set an alternative dimension tag for the 6th dimension (default = `DIM_DYN`).  
+### Varian
+`spec2nii varian /path/to/fid.fid`
+where fid.fid is a Varian fid directory containing a fid and procpar file.
+Use the `-d` option to dump the procpar header file contents into the header extension.
+Use the `-t` option to set an alternative dimension tag for the 6th dimension (default = `DIM_DYN`).
 
-Note that the varian file format is very flexible -- the binary `fid` itself essentially is a long 2D list of (`complex_points * everything_else`), and the current code makes several significant assumptions about how that should be interpreted and reshaped. 
-In particular, if you are using a sequence derived from something different to either `spuls`, `s2pul`, `press`, or `steam`, it is quite likely that this will not work. Edit `varian_importer.py` and add cases based on your `seqfil` as appropriate. 
-It is assumed that the `comment` parameter should be the patient's name. 
+Note that the varian file format is very flexible -- the binary `fid` itself essentially is a long 2D list of (`complex_points * everything_else`), and the current code makes several significant assumptions about how that should be interpreted and reshaped.
+In particular, if you are using a sequence derived from something different to either `spuls`, `s2pul`, `press`, or `steam`, it is quite likely that this will not work. Edit `varian_importer.py` and add cases based on your `seqfil` as appropriate.
+It is assumed that the `comment` parameter should be the patient's name.
 
 (Further bells and whistles pending; Written by Jack J. Miller <jack.miller@physics.org>)
 
@@ -144,21 +144,21 @@ All take an optional -a argument to specify a text file containing a 4x4 affine 
 
 The text format requires additional information, namely imaging frequency in MHz and bandwidth in hertz.
 
-`spec2nii raw -a AFFINE_FILE FILE`  
-`spec2nii jmrui -a AFFINE_FILE FILE`  
+`spec2nii raw -a AFFINE_FILE FILE`
+`spec2nii jmrui -a AFFINE_FILE FILE`
 `spec2nii text -a AFFINE_FILE -i imaging_freq -b bandwidth FILE`
 
 ### Other functions
 Anonymise the NIfTI-MRS file. All standard-defined keys marked as sensitive will be removed. User defined parameters marked as `private_` will also be removed. Use the `-v` flag to view the removed header keys. The `-r` argument may be used (repeatedly) to remove additional keys from the header extension manually.
-`spec2nii anon FILE`  
- 
-Dump the NIfTI headers and header extension to Stdout.  
-`spec2nii dump FILE`  
- 
-Produce a json file containing the header extension as a separate file from a NIfTI-MRS file.  
-`spec2nii extract FILE`  
+`spec2nii anon FILE`
 
-Overwrite the header extension in a NIfTI-MRS file using a separate json formatted file.  
+Dump the NIfTI headers and header extension to Stdout.
+`spec2nii dump FILE`
+
+Produce a json file containing the header extension as a separate file from a NIfTI-MRS file.
+`spec2nii extract FILE`
+
+Overwrite the header extension in a NIfTI-MRS file using a separate json formatted file.
 `spec2nii insert FILE JSON_FILE`
 
 ## Contributors & contributing
