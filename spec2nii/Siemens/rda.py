@@ -17,6 +17,23 @@ class MRSINotHandledError(Exception):
     pass
 
 
+def _locale_float(x):
+    """Handle locale specific flaoting point representations in header
+
+    :param x: Header value as string with either . or , decimal separator
+    :type x: str
+    :return: Value cast to float
+    :rtype: float
+    """
+    try:
+        return float(x)
+    except ValueError as e:
+        if ',' in x:
+            return float(x.replace(',', '.'))
+        else:
+            raise e
+
+
 def convert_rda(rda_path, fname_out, verbose):
     hdr_st = re.compile(r'>>> Begin of header <<<')
     hdr_val = re.compile(r'^([\d\w\[\],]+): (.*)\r\n')
@@ -50,27 +67,26 @@ def convert_rda(rda_path, fname_out, verbose):
 
     data_cmplx = data[0::2] + 1j * data[1::2]
     data_cmplx = data_cmplx.reshape((1, 1, 1) + data_cmplx.shape)
-
-    dwelltime = float(hdr['DwellTime']) / 1E6
+    dwelltime = _locale_float(hdr['DwellTime']) / 1E6
 
     warnings.warn(
         'The orientation calculations for rda data is mostly untested.'
         ' Please contribute test data if you can!')
 
     imagePositionPatient = np.asarray([
-        float(hdr['PositionVector[0]']),
-        float(hdr['PositionVector[1]']),
-        float(hdr['PositionVector[2]'])])
+        _locale_float(hdr['PositionVector[0]']),
+        _locale_float(hdr['PositionVector[1]']),
+        _locale_float(hdr['PositionVector[2]'])])
 
     imageOrientationPatient = np.asarray([
-        [float(hdr['RowVector[0]']), float(hdr['ColumnVector[0]'])],
-        [float(hdr['RowVector[1]']), float(hdr['ColumnVector[1]'])],
-        [float(hdr['RowVector[2]']), float(hdr['ColumnVector[2]'])]]).T
+        [_locale_float(hdr['RowVector[0]']), _locale_float(hdr['ColumnVector[0]'])],
+        [_locale_float(hdr['RowVector[1]']), _locale_float(hdr['ColumnVector[1]'])],
+        [_locale_float(hdr['RowVector[2]']), _locale_float(hdr['ColumnVector[2]'])]]).T
 
     xyzMM = np.asarray([
-        float(hdr['PixelSpacingRow']),
-        float(hdr['PixelSpacingCol']),
-        float(hdr['SliceThickness'])])
+        _locale_float(hdr['PixelSpacingRow']),
+        _locale_float(hdr['PixelSpacingCol']),
+        _locale_float(hdr['SliceThickness'])])
 
     currNiftiOrientation = dcm_to_nifti_orientation(imageOrientationPatient,
                                                     imagePositionPatient,
@@ -99,7 +115,7 @@ def extractRdaMetadata(hdr):
     """
 
     # Extract required metadata and create hdr_ext object
-    obj = nifti_mrs.hdr_ext(float(hdr['MRFrequency']),
+    obj = nifti_mrs.hdr_ext(_locale_float(hdr['MRFrequency']),
                             hdr['Nucleus'])
 
     # Standard defined metadata
@@ -114,15 +130,15 @@ def extractRdaMetadata(hdr):
 
     # # 5.1 MRS specific Tags
     # 'EchoTime'
-    obj.set_standard_def('EchoTime', float(hdr['TE']) * 1E-3)
+    obj.set_standard_def('EchoTime', _locale_float(hdr['TE']) * 1E-3)
     # 'RepetitionTime'
-    obj.set_standard_def('RepetitionTime', float(hdr['TR']) * 1E-3)
+    obj.set_standard_def('RepetitionTime', _locale_float(hdr['TR']) * 1E-3)
     # 'InversionTime'
-    obj.set_standard_def('InversionTime', float(hdr['TI']) * 1E-3)
+    obj.set_standard_def('InversionTime', _locale_float(hdr['TI']) * 1E-3)
     # 'MixingTime'
-    obj.set_standard_def('MixingTime', float(hdr['TM']) * 1E-3)
+    obj.set_standard_def('MixingTime', _locale_float(hdr['TM']) * 1E-3)
     # 'ExcitationFlipAngle'
-    obj.set_standard_def('ExcitationFlipAngle', float(hdr['FlipAngle']))
+    obj.set_standard_def('ExcitationFlipAngle', _locale_float(hdr['FlipAngle']))
     # 'TxOffset'
     # 'VOI'
     # 'WaterSuppressed'
@@ -158,7 +174,7 @@ def extractRdaMetadata(hdr):
     # 'PatientID'
     obj.set_standard_def('PatientID', hdr['PatientID'])
     # 'PatientWeight'
-    obj.set_standard_def('PatientWeight', float(hdr['PatientWeight']))
+    obj.set_standard_def('PatientWeight', _locale_float(hdr['PatientWeight']))
     # 'PatientDoB'
     obj.set_standard_def('PatientDoB', hdr['PatientBirthDate'])
     # 'PatientSex'
