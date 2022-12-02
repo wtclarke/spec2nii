@@ -3,7 +3,8 @@ This document contains the FSL-MRS release history in reverse chronological orde
 0.5.0 (Friday 2nd December)
 ---------------------------
 - NIfTI-MRS version 0.6
-- 
+- Handle locale specific decimal separators in rda format.
+- Added special-case handling of the mgs_svs_ed(_universal) for twix data inputs.
 
 0.4.9 (Friday 4th November)
 ---------------------------

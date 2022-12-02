@@ -96,3 +96,10 @@ At some subsequent point the first two elements in the imagePositionPatient vect
 A one half voxel shift appears to be added in the sequence code. But a similar shift is not apparent in the reconstruction code. The value of the first two elements imagePositionPatient is exactly one half a FOV from the centre of the UI element. I.e. this takes you to a voxel edge (as displayed on the scanner) not a voxel centre (as required by DICOM and NIfTI).
 
 This means that the sequence and reconstruction match: for a sequence with an even number of voxels there will be a voxel edge at the centre of the UI element. But this is inconsistent with the use of imagePositionPatient as the shift to a centre of a voxel.
+
+## Siemens sequences special-cased
+
+### mgs_svs_ed - Vendor standardised editing sequence (Muhammad G Saleh)
+Special cased for twix data. See spec2nii/Siemens/twix_special_case.py mgs_svs_ed_twix
+
+Used for MEGA and HERCULES editing.

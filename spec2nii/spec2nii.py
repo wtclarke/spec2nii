@@ -350,7 +350,7 @@ class spec2nii:
     def twix(self, args):
         """ Twix format handler."""
         from mapvbvd import mapVBVD
-        from spec2nii.twixfunctions import process_twix, examineTwix
+        from spec2nii.Siemens.twixfunctions import process_twix, examineTwix
 
         # Call mapvbvd to load the twix file.
         twixObj = mapVBVD(args.file, quiet=args.quiet)
@@ -380,7 +380,7 @@ class spec2nii:
     # (Siemens) DICOM (.ima) format
     def dicom(self, args):
         """Siemens DICOM format handler."""
-        from spec2nii.dicomfunctions import multi_file_dicom
+        from spec2nii.Siemens.dicomfunctions import multi_file_dicom
         path_in = Path(args.file)
         if path_in.is_dir():
             # Look for typical dicom file extensions
@@ -410,7 +410,7 @@ class spec2nii:
     # Siemens RDA (.rda) format
     def rda(self, args):
         """Siemens RDA format handler."""
-        from spec2nii.rda import convert_rda
+        from spec2nii.Siemens.rda import convert_rda
         self.imageOut, self.fileoutNames = convert_rda(args.file, args.fileout, args.verbose)
 
     # (UIH) DICOM (.dcm) format

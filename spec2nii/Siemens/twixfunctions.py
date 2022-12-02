@@ -259,6 +259,16 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
     new = [twixObj[dataKey].sqzDims.index(dd) for dd in dim_order]
     reord_data = np.moveaxis(squeezedData, original, new)
 
+    # Special-cased sequences
+    if twixObj['hdr']['Meas'][('tSequenceString')] in ('mgs_svs_ed', ):
+        from spec2nii.Siemens.twix_special_case import mgs_svs_ed_twix
+        reord_data, meta_obj, dim_tags = mgs_svs_ed_twix(twixObj, reord_data, meta_obj, dim_tags)
+
+    else:
+        # Set dim tags in meta now as no additional info
+        for idx, dt in enumerate(dim_tags):
+            meta_obj.set_dim_info(idx, dt)
+
     # Now assemble data
     nifit_mrs_out = []
     filename_out = []
@@ -269,8 +279,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
         nifit_mrs_out.append(assemble_nifti_mrs(reord_data.reshape(newshape),
                                                 dwellTime,
                                                 orientation,
-                                                meta_obj,
-                                                dim_tags))
+                                                meta_obj))
 
         filename_out.append(mainStr)
 
@@ -286,8 +295,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
                 assemble_nifti_mrs(reord_data[modIndex].reshape(newshape),
                                    dwellTime,
                                    orientation,
-                                   meta_obj,
-                                   dim_tags))
+                                   meta_obj))
 
             # Create strings
             out_name = f'{mainStr}'
@@ -314,7 +322,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
                 dwellTime,
                 orientation,
                 meta_obj_ref,
-                ref_tags))
+                dim_tags=ref_tags))
 
         filename_out.append(mainStr + '_ref')
 
@@ -513,10 +521,11 @@ def process_fid(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
     return nifit_mrs_out, filename_out
 
 
-def assemble_nifti_mrs(data, dwellTime, orientation, meta_obj, dim_tags):
+def assemble_nifti_mrs(data, dwellTime, orientation, meta_obj, dim_tags=None):
 
-    for idx, dt in zip(range(data.ndim - 4), dim_tags):
-        meta_obj.set_dim_info(idx, dt)
+    if dim_tags is not None:
+        for idx, dt in zip(range(data.ndim - 4), dim_tags):
+            meta_obj.set_dim_info(idx, dt)
 
     return nifti_mrs.NIfTI_MRS(data, orientation.Q44, dwellTime, meta_obj)
 
