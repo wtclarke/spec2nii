@@ -1,4 +1,4 @@
-This document contains the FSL-MRS release history in reverse chronological order.
+This document contains the Spec2nii release history in reverse chronological order.
 
 0.5.0 (Friday 2nd December)
 ---------------------------
