@@ -8,7 +8,7 @@ Copyright Will Clarke, University of Oxford, 2021
 
 # Define nifti-mrs version number here.
 # First element is major version, second is minor
-nifti_mrs_version = [0, 5]
+nifti_mrs_version = [0, 6]
 
 # Possible dimension tags and descriptions
 dimension_tags = {"DIM_COIL": "For storage of data from each individual receiver coil element.",
@@ -16,7 +16,7 @@ dimension_tags = {"DIM_COIL": "For storage of data from each individual receiver
                   "DIM_INDIRECT_0": "The indirect detection dimension - necessary for 2D (and greater) MRS acquisitions.",
                   "DIM_INDIRECT_1": "The indirect detection dimension - necessary for 2D (and greater) MRS acquisitions.",
                   "DIM_INDIRECT_2": "The indirect detection dimension - necessary for 2D (and greater) MRS acquisitions.",
-                  "DIM_PHASE_CYCLE": "Used for the time-proportional phase incrementation method.",
+                  "DIM_PHASE_CYCLE": "Used for increments of phase-cycling, for example in dephasing unwanted coherence order pathways, or TPPI for 2D spectra.",
                   "DIM_EDIT": "Used for edited MRS techniques such as MEGA or HERMES.",
                   "DIM_MEAS": "Used to indicate multiple repeats of the full sequence contained within the same original data file.",
                   "DIM_USER_0": "User defined dimension.",
@@ -70,6 +70,11 @@ required = {'SpectrometerFrequency':
 # 'OriginalFile'
 # # 5.6 Spatial information
 # 'kSpace'
+# # 5.7 Editing Pulse information structure
+# 'EditCondition'
+# 'EditPulse'
+# # 5.8 Processing Provenance
+# 'ProcessingApplied'
 
 # These fields are optional but must not be redefined.
 # Format is a dict of tuples containing (type, unit string, doc string, anonymisation state)
@@ -234,5 +239,21 @@ standard_defined = {
         ((list, bool),
          None,
          "Three element list, corresponding to the first three spatial dimensions. If True the data is stored as a dense k-space representation.",
-         False)
-      }
+         False),
+    # 5.7 Editing Pulse information structure
+    'EditConditon':
+        ((list, str),
+         None,
+         "List of strings that index the entries of the EditPulse structure that are used in this data acquisition. Typically used in dynamic headers (dim_N_header).",
+         False),
+    'EditPulse':
+        (dict,
+         None,
+         "Structure defining editing pulse parameters for each condition. Each condition must be assigned a key.",
+         False),
+    # 5.8 Processing Provenance
+    'ProcessingApplied':
+        (dict,
+         None,
+         "Describes and records the processing steps applied to the data.",
+         False)}
