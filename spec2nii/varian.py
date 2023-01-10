@@ -55,7 +55,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
 
-from __future__ import print_function, division
 
 __developer_doc__ = """
 Agilent/Varian file format information
@@ -313,7 +312,7 @@ def read(dir=".", fid_file="fid", procpar_file="procpar", read_blockhead=False,
 
     """
     if os.path.isdir(dir) is False:
-        raise IOError("directory %s does not exist" % (dir))
+        raise OSError("directory %s does not exist" % (dir))
 
     # read in the procpar file
     pdic = read_procpar(os.path.join(dir, procpar_file))
@@ -375,7 +374,7 @@ def read_lowmem(dir=".", fid_file="fid", procpar_file="procpar",
 
     """
     if os.path.isdir(dir) is False:
-        raise IOError("directory %s does not exist" % (dir))
+        raise OSError("directory %s does not exist" % (dir))
 
     # read in the procpar file
     pdic = read_procpar(os.path.join(dir, procpar_file))

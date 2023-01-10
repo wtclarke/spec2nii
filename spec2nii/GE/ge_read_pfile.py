@@ -402,14 +402,14 @@ class Pfile:
         struct_class = type(struct)
         if include_structs:
             output.append(StructInfo(
-                "%s (%s)" % (prefix, struct_class.__name__),
+                f"{prefix} ({struct_class.__name__})",
                 depth, '', str(struct_class), ctypes.sizeof(struct_class), base_offset))
         for f in struct._fields_:
             name = f[0]
             field_type = f[1]
             field_meta = getattr(struct_class, name)
             field = getattr(struct, name)
-            cur_prefix = "%s%s." % (prefix, name)
+            cur_prefix = f"{prefix}{name}."
             field_offset = base_offset + field_meta.offset
             if isinstance(field, ctypes.Structure):
                 self._dump_struct_rec(field, output, include_structs, cur_prefix, depth + 1, field_offset)
