@@ -5,6 +5,8 @@ This document contains the Spec2nii release history in reverse chronological ord
 - NIfTI-MRS version 0.6
 - Handle locale specific decimal separators in rda format.
 - Added special-case handling of the mgs_svs_ed(_universal) for twix data inputs.
+- Modified repository structure. Siemens and Philips files now have dedicated directories.
+- Support Python 3.11
 
 0.4.9 (Friday 4th November 2022)
 --------------------------------
