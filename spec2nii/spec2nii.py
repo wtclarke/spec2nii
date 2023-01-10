@@ -436,7 +436,7 @@ class spec2nii:
     # Philips SDAP/SPAR handler
     def philips(self, args):
         # philips specific imports
-        from spec2nii.philips import read_sdat_spar_pair
+        from spec2nii.Philips.philips import read_sdat_spar_pair
 
         self.imageOut = read_sdat_spar_pair(args.sdat, args.spar, args.shape, args.tags)
 
@@ -451,7 +451,7 @@ class spec2nii:
     # Philips data/list (+SPAR) handler
     def philips_dl(self, args):
         # philips specific imports
-        from spec2nii.philips_data_list import read_data_list_pair
+        from spec2nii.Philips.philips_data_list import read_data_list_pair
 
         # TO DO
         # overrides = {'dims': (args.dim5, args.dim6, args.dim7),
@@ -473,7 +473,7 @@ class spec2nii:
     def philips_dicom(self, args):
         """Philips DICOM format handler."""
         from warnings import warn
-        from spec2nii.philips_dcm import multi_file_dicom
+        from spec2nii.Philips.philips_dcm import multi_file_dicom
         warn('This Philips DICOM conversion routine is experimental and poorly tested.'
              ' Please get in contact with test data to help improve it.')
         path_in = Path(args.file)

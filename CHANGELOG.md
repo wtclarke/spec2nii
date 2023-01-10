@@ -1,26 +1,26 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
-0.5.0 (Friday 2nd December)
----------------------------
+0.5.0 (Friday 2nd December 2022)
+--------------------------------
 - NIfTI-MRS version 0.6
 - Handle locale specific decimal separators in rda format.
 - Added special-case handling of the mgs_svs_ed(_universal) for twix data inputs.
 
-0.4.9 (Friday 4th November)
----------------------------
+0.4.9 (Friday 4th November 2022)
+--------------------------------
 - Handle FID sequence in twix converter.
 - Code lint updates
 - Updated versioneer.
 
-0.4.8 (Sunday 2nd October)
---------------------------
+0.4.8 (Sunday 2nd October 2022)
+-------------------------------
 - Updated citation information with publication of NIfTI-MRS paper.
 - Updated README information.
 - Added check that file had been written successfully.
 - Minor under the hood changes
 
-0.4.7 (Sunday 11th September)
------------------------------
+0.4.7 (Sunday 11th September 2022)
+----------------------------------
 - Add tests for previous Siemens SOP UID DICOM types from VB line scanners.
 - Fixed bug in Siemens RDA header read. Still no orientation tests for RDA format.
 - Siemens VX line dicom files will now sum arrays of TE values.

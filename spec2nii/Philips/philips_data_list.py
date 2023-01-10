@@ -8,7 +8,7 @@ import re
 import pandas as pd
 import numpy as np
 
-from spec2nii.philips import read_spar, spar_to_nmrs_hdrext, _philips_orientation
+from spec2nii.Philips.philips import read_spar, spar_to_nmrs_hdrext, _philips_orientation
 from spec2nii.nifti_orientation import NIFTIOrient
 from spec2nii import nifti_mrs
 
