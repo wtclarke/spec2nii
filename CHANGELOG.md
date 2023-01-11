@@ -8,6 +8,7 @@ This document contains the Spec2nii release history in reverse chronological ord
 - Modified repository structure. Siemens and Philips files now have dedicated directories.
 - Support Python 3.11
 - Enable automatic Pypi upload and move to pyproject.toml file build.
+- Bruker conversion currently limited to numpy installations <1.20.0. Awaiting brukerapi package update.
 
 0.4.9 (Friday 4th November 2022)
 --------------------------------

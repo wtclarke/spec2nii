@@ -33,6 +33,10 @@ from spec2nii import __version__ as spec2nii_ver
 # There are case specific imports below
 
 
+class Spec2niiError(Exception):
+    pass
+
+
 class spec2nii:
     def __init__(self):
         cite_str = "Clarke WT, Bell TK, Emir UE, Mikkelsen M, Oeltzschner G, Shamaei A, Soher BJ, Wilson M. "\
@@ -521,7 +525,16 @@ class spec2nii:
     # Bruker 2dseq files with FG_COMPLEX
     def bruker(self, args):
         from spec2nii.bruker import read_bruker
-        self.imageOut, self.fileoutNames = read_bruker(args)
+        from warnings import warn
+        from brukerapi.exceptions import MissingProperty
+        warn('Bruker conversion must currently be run with numpy<1.20.0')
+
+        try:
+            self.imageOut, self.fileoutNames = read_bruker(args)
+        except MissingProperty:
+            raise Spec2niiError(
+                'Bruker conversion must currently be run with numpy<1.20.0. '
+                'The underlying brukerapi package requires updating for ongoing compatibility.')
 
     # Varian parser
     def varian(self, args):
