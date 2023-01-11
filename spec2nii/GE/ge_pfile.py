@@ -43,9 +43,11 @@ from warnings import warn
 # 3rd party modules
 import numpy as np
 
+from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
+from nifti_mrs.hdr_ext import Hdr_Ext
+
 # Our modules
 from spec2nii.GE.ge_read_pfile import Pfile
-from spec2nii import nifti_mrs
 from spec2nii.nifti_orientation import NIFTIOrient
 from spec2nii import __version__ as spec2nii_ver
 
@@ -104,7 +106,7 @@ def _process_svs_pfile(pfile):
 
     out_nmrs = []
     for dd, mm in zip(data, meta):
-        out_nmrs.append(nifti_mrs.NIfTI_MRS(dd, orientation.Q44, dwelltime, mm))
+        out_nmrs.append(gen_nifti_mrs_hdr_ext(dd, dwelltime, mm, orientation.Q44))
 
     return out_nmrs, fname_suffix
 
@@ -228,7 +230,7 @@ def _process_mrsi_pfile(pfile):
     meta = _populate_metadata(pfile)
     orientation = NIFTIOrient(_calculate_affine_mrsi(pfile))
 
-    return [nifti_mrs.NIfTI_MRS(data, orientation.Q44, dwelltime, meta), ], ['', ]
+    return [gen_nifti_mrs_hdr_ext(data, dwelltime, meta, orientation.Q44), ], ['', ]
 
 
 def _calculate_affine_mrsi(pfile):
@@ -297,8 +299,9 @@ def _populate_metadata(pfile, water_suppressed=True):
               'Use the --override_nucleus option to specify a different nuclide.')
         nucleus = "1H"
 
-    meta = nifti_mrs.hdr_ext(spec_frequency,
-                             nucleus)
+    meta = Hdr_Ext(
+        spec_frequency,
+        nucleus)
 
     # Standard defined metadata
     # # 5.1 MRS specific Tags

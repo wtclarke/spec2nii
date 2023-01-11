@@ -4,15 +4,18 @@ Copyright (C) 2020 University of Oxford
 """
 from datetime import datetime
 import re
+import warnings
 
 import numpy as np
 import nibabel.nicom.dicomwrappers
-import warnings
 from nibabel.nicom import csareader as csar
 
-from spec2nii.dcm2niiOrientation.orientationFuncs import dcm_to_nifti_orientation
-from spec2nii import nifti_mrs
 from mapvbvd.read_twix_hdr import parse_buffer
+
+from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
+from nifti_mrs.hdr_ext import Hdr_Ext
+
+from spec2nii.dcm2niiOrientation.orientationFuncs import dcm_to_nifti_orientation
 from spec2nii import __version__ as spec2nii_ver
 
 
@@ -189,11 +192,11 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
 
         # Create NIFTI MRS object.
         try:
-            nifti_mrs_out.append(nifti_mrs.NIfTI_MRS(combined_data, or_used.Q44, dt_used, meta_used))
+            nifti_mrs_out.append(gen_nifti_mrs_hdr_ext(combined_data, dt_used, meta_used, or_used.Q44))
         except np.linalg.LinAlgError:
-            warnings.warn("""The quaternion passes to NIfTI_MRS was singular.
-                           Most likely your slice position is not well defined. I have set it to None.""")
-            nifti_mrs_out.append(nifti_mrs.NIfTI_MRS(combined_data, None, dt_used, meta_used))
+            warnings.warn("""The quaternion passed to NIfTI_MRS was singular.
+                           Most likely your slice position is not well defined. I have set it to default.""")
+            nifti_mrs_out.append(gen_nifti_mrs_hdr_ext(combined_data, dt_used, meta_used))
 
     # If there are any identical names then append an index
     seen = np.unique(fnames_out)
@@ -381,8 +384,9 @@ def extractDicomMetadata_xa(dcmdata):
     dcm_hdrs1 = dcmdata.dcm_data.SharedFunctionalGroupsSequence[0]
 
     # Extract required metadata and create hdr_ext object
-    obj = nifti_mrs.hdr_ext(dcmdata.dcm_data.TransmitterFrequency,
-                            dcmdata.dcm_data.ResonantNucleus)
+    obj = Hdr_Ext(
+        dcmdata.dcm_data.TransmitterFrequency,
+        dcmdata.dcm_data.ResonantNucleus)
 
     # Standard defined metadata
     def set_standard_def(nifti_mrs_key, location, key, cast=None):
@@ -480,8 +484,9 @@ def extractDicomMetadata_vx(dcmdata):
     """
 
     # Extract required metadata and create hdr_ext object
-    obj = nifti_mrs.hdr_ext(dcmdata.csa_header['tags']['ImagingFrequency']['items'][0],
-                            dcmdata.csa_header['tags']['ImagedNucleus']['items'][0])
+    obj = Hdr_Ext(
+        dcmdata.csa_header['tags']['ImagingFrequency']['items'][0],
+        dcmdata.csa_header['tags']['ImagedNucleus']['items'][0])
 
     # Standard defined metadata
     def set_standard_def(nifti_mrs_key, location, key, cast=None):

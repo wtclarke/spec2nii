@@ -8,9 +8,10 @@ import re
 import pandas as pd
 import numpy as np
 
+from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
+
 from spec2nii.Philips.philips import read_spar, spar_to_nmrs_hdrext, _philips_orientation
 from spec2nii.nifti_orientation import NIFTIOrient
-from spec2nii import nifti_mrs
 
 index_options = ['STD', 'REJ', 'PHC', 'FRC', 'NOI', 'NAV']
 index_headers = ['typ', 'mix', 'dyn', 'card', 'echo', 'loca',
@@ -84,7 +85,7 @@ def read_data_list_pair(data_file, list_file, spar_file):
         # Apply conjugate
         out_data = out_data.conj()
 
-        data_out.append(nifti_mrs.NIfTI_MRS(out_data, orientation.Q44, dwelltime, meta))
+        data_out.append(gen_nifti_mrs_hdr_ext(out_data, dwelltime, meta, orientation.Q44))
         name_out.append(name)
 
     return data_out, name_out

@@ -86,7 +86,7 @@ def test_XA20(tmp_path):
     hdr_ext_codes = img_ref.header.extensions.get_codes()
     hdr_ext = json.loads(img_ref.header.extensions[hdr_ext_codes.index(44)].get_content())
 
-    assert img_ref.shape == (1, 1, 1, 2080, 42, 1)
+    assert img_ref.shape == (1, 1, 1, 2080, 42)
     assert np.iscomplexobj(img_ref.dataobj)
     assert hdr_ext['dim_5'] == 'DIM_COIL'
 
@@ -113,7 +113,7 @@ def test_XA30(tmp_path):
     hdr_ext_codes = img_ref.header.extensions.get_codes()
     hdr_ext = json.loads(img_ref.header.extensions[hdr_ext_codes.index(44)].get_content())
 
-    assert img_ref.shape == (1, 1, 1, 4096, 44, 1)
+    assert img_ref.shape == (1, 1, 1, 4096, 44)
     assert np.iscomplexobj(img_ref.dataobj)
     assert hdr_ext['dim_5'] == 'DIM_COIL'
 

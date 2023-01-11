@@ -28,7 +28,6 @@ from pathlib import Path
 import json
 
 from nibabel.nifti2 import Nifti2Image
-from spec2nii import nifti_mrs
 from spec2nii import __version__ as spec2nii_ver
 # There are case specific imports below
 
@@ -278,17 +277,12 @@ class spec2nii:
 
         self.outputDir = args.outdir
 
-        if args.nifti1:
-            nifti_mrs.NIfTI_MRS = nifti_mrs.get_mrs_class(nifti=1)
-        else:
-            nifti_mrs.NIfTI_MRS = nifti_mrs.get_mrs_class(nifti=2)
-
         args.func(args)
 
         if self.imageOut:
             self.implement_overrides(args)
             self.validate_output()
-            self.write_output(args.json)
+            self.write_output(args.json, args.nifti1)
             self.validate_write(args.verbose)
             if args.verbose:
                 print(f'Please cite {cite_str}.')
@@ -318,10 +312,20 @@ class spec2nii:
 
     def validate_output(self):
         """Run NIfTI MRS validation on output."""
+        import nifti_mrs.validator as validate
+        # Currently this repeats the validation before the save.
+        # But useful here to do exception handling
         for f_out, nifti_mrs_img in zip(self.fileoutNames, self.imageOut):
-            nifti_mrs_img.validate()
+            try:
+                validate.validate_nifti_mrs(nifti_mrs_img)
+            except (
+                    validate.headerExtensionError,
+                    validate.niftiDataError,
+                    validate.niftiHeaderError) as exc:
 
-    def write_output(self, write_json=False):
+                raise Spec2niiError(f'Generated file {f_out} failed validation.') from exc
+
+    def write_output(self, write_json=False, nifti1=False):
         """Write any NIfTI MRS objects stored.
         If write_json is true also write meta-data as sidecar.
         """
@@ -329,7 +333,20 @@ class spec2nii:
 
         for f_out, nifti_mrs_img in zip(self.fileoutNames, self.imageOut):
             out = self.outputDir / (f_out + '.nii.gz')
-            nifti_mrs_img.save(out)
+
+            if nifti1:
+                # If nifti1 is requested just remake the file.
+                # This is more than a bit hacky, but avoids passing the option to every end-point.
+                from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
+                gen_nifti_mrs_hdr_ext(
+                    nifti_mrs_img[:],
+                    nifti_mrs_img.dwelltime,
+                    nifti_mrs_img.hdr_ext,
+                    nifti_mrs_img.getAffine('voxel', 'world'),
+                    nifti_version=1)\
+                    .save(out)
+            else:
+                nifti_mrs_img.save(out)
 
             if write_json:
                 out_json = self.outputDir / (f_out + '.json')

@@ -6,9 +6,10 @@ from datetime import datetime
 from ast import literal_eval
 
 import numpy as np
+from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
+from nifti_mrs.hdr_ext import Hdr_Ext
 
 from spec2nii.nifti_orientation import NIFTIOrient, calc_affine
-from spec2nii import nifti_mrs
 from spec2nii import __version__ as spec2nii_ver
 
 
@@ -62,7 +63,7 @@ def read_sdat_spar_pair(sdat_file, spar_file, shape=None, tags=None):
         affine = np.diag(np.array([10000, 10000, 10000, 1]))
     orientation = NIFTIOrient(affine)
 
-    return [nifti_mrs.NIfTI_MRS(data, orientation.Q44, dwelltime, meta), ]
+    return [gen_nifti_mrs_hdr_ext(data, dwelltime, meta, orientation.Q44), ]
 
 
 def read_spar(filename):
@@ -143,8 +144,9 @@ def spar_to_nmrs_hdrext(spar_dict):
 
     # Extract required metadata and create hdr_ext object
     cf = float(spar_dict["synthesizer_frequency"]) / 1E6
-    obj = nifti_mrs.hdr_ext(cf,
-                            spar_dict["nucleus"])
+    obj = Hdr_Ext(
+        cf,
+        spar_dict["nucleus"])
 
     def set_standard_def(nifti_mrs_key, location, key, cast=None):
         try:
