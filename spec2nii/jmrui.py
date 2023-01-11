@@ -264,7 +264,7 @@ def readjMRUItxt(filename):
 
     # Reshape data
     data = np.concatenate([np.array(i) for i in data])
-    data = (data[0::2] + 1j * data[1::2]).astype(np.complex)
+    data = (data[0::2] + 1j * data[1::2]).astype(complex)
     data = data.reshape((signal_index, -1)).T.squeeze()
     data = data.conj()
 

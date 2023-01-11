@@ -38,6 +38,6 @@ jobs:
       - name: Run pytest
         shell: bash -l {0}
         run: |
-            conda install pytest
+            conda install pytest h5py
             pip install .
             pytest -k "not orientation" tests

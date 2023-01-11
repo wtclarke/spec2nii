@@ -105,7 +105,7 @@ def _read_data(data_file, df):
             spec_res = int(curr_df['size'].max() / 8)
             ncha = curr_df['chan'].max() + 1
             nloca = curr_df['loca'].max() + 1
-            output_dict[tt] = np.zeros((spec_res, ncha, nloca), dtype=np.complex)
+            output_dict[tt] = np.zeros((spec_res, ncha, nloca), dtype=complex)
         else:
             n_mix = curr_df['mix'].max() + 1
             # Other types might use all the loops
@@ -115,7 +115,7 @@ def _read_data(data_file, df):
                 shape.append(int(curr_mix_df['size'].max() / 8))
                 for ind in indices:
                     shape.append(curr_mix_df[ind].max() + 1)
-                output_dict[f'{tt}_{mix}'] = np.zeros(shape, dtype=np.complex)
+                output_dict[f'{tt}_{mix}'] = np.zeros(shape, dtype=complex)
 
     # Now extract data
     offset = 0
@@ -178,7 +178,7 @@ def _read_list(list_file):
                         line,
                         flags=re.IGNORECASE)
                     if matched[3] not in os_dict:
-                        os_dict[matched[3]] = np.zeros((n_mixes, n_echoes), dtype=np.float)
+                        os_dict[matched[3]] = np.zeros((n_mixes, n_echoes), dtype=float)
                     os_dict[matched[3]][int(matched[1]), int(matched[2])] = int(matched[4])
                 elif any(opt in line for opt in index_options):
                     index_array.append(pd.Series(line.split(), index=index_headers))

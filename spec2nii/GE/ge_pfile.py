@@ -244,7 +244,7 @@ def _calculate_affine_mrsi(pfile):
                                                     pfile.map.get_voxel_spacing,
                                                     pfile.map.get_dcos)
 
-    affine = np.zeros((4, 4), dtype=np.float)
+    affine = np.zeros((4, 4), dtype=float)
     affine[:3, :3] = dcos @ voxel_size_eye
 
     affine[:3, 3] = voi_position
@@ -263,7 +263,7 @@ def _calculate_affine(pfile):
     voxel_size_eye = np.diag(voxel_size)
     voi_position = pfile.map.get_select_box_center
 
-    affine = np.zeros((4, 4), dtype=np.float)
+    affine = np.zeros((4, 4), dtype=float)
     affine[:3, :3] = dcos @ voxel_size_eye
 
     affine[:3, 3] = voi_position

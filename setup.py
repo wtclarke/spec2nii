@@ -28,6 +28,7 @@ setup(name='spec2nii',
                 'spec2nii.GSL',
                 'spec2nii.dcm2niiOrientation',
                 'spec2nii.nifti_mrs',
+                'spec2nii.Philips',
                 'spec2nii.GE'],
       install_requires=install_requires,
       classifiers=[

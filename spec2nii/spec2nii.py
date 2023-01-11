@@ -405,7 +405,12 @@ class spec2nii:
             from nibabel import save
             for img, f_out in zip(self.imageOut, self.fileoutNames):
                 out = self.outputDir / (f_out + '_voi.nii.gz')
-                save(Nifti2Image(np.ones((1, 1, 1), int), img.hdr_ext['VOI']), out)
+                save(
+                    Nifti2Image(
+                        np.ones((1, 1, 1), int),
+                        img.hdr_ext['VOI'],
+                        dtype=int),
+                    out)
 
     # Siemens RDA (.rda) format
     def rda(self, args):

@@ -154,7 +154,7 @@ def readLCModelRaw(filename, conjugate=True):
 
     # Reshape data
     data = np.concatenate([np.array(i) for i in data])
-    data = (data[0::2] + 1j * data[1::2]).astype(np.complex)
+    data = (data[0::2] + 1j * data[1::2]).astype(complex)
 
     # LCModel-specific conjugation
     if conjugate:
