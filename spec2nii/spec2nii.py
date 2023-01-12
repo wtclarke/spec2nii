@@ -120,6 +120,11 @@ class spec2nii:
             nargs='+',
             default=None,
             help="Specify the shape of higher (5th-7th) dimensions. Applies numpy style reshaping.")
+        parser_philips.add_argument(
+            "--special",
+            type=str,
+            default=None,
+            help="Identify special case sequence. Options: 'hyper'.")
         parser_philips = add_common_parameters(parser_philips)
         parser_philips.set_defaults(func=self.philips)
 
@@ -465,15 +470,13 @@ class spec2nii:
         # philips specific imports
         from spec2nii.Philips.philips import read_sdat_spar_pair
 
-        self.imageOut = read_sdat_spar_pair(args.sdat, args.spar, args.shape, args.tags)
-
-        # name of output
-        if args.fileout:
-            mainStr = args.fileout
-        else:
-            mainStr = args.sdat.stem
-
-        self.fileoutNames.append(mainStr)
+        self.imageOut, self.fileoutNames = read_sdat_spar_pair(
+            args.sdat,
+            args.spar,
+            args.shape,
+            args.tags,
+            args.fileout,
+            args.special)
 
     # Philips data/list (+SPAR) handler
     def philips_dl(self, args):

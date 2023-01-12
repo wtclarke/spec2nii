@@ -1,5 +1,9 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.6.1 (WIP)
+-----------
+
+
 0.6.0 (Wednesday 11th January 2023)
 -----------------------------------
 - NIfTI-MRS creation/handling/verification now performed by nifti-mrs package.
