@@ -104,7 +104,7 @@ def convert_rda(rda_path, fname_out, verbose):
     else:
         name = rda_path.stem
 
-    return [gen_nifti_mrs_hdr_ext(data_cmplx, dwelltime, meta, currNiftiOrientation.Q44), ], [name, ]
+    return [gen_nifti_mrs_hdr_ext(data_cmplx, dwelltime, meta, currNiftiOrientation.Q44, no_conj=True), ], [name, ]
 
 
 def extractRdaMetadata(hdr):

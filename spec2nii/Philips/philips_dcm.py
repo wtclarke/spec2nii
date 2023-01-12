@@ -159,9 +159,9 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
             meta_used.set_dim_info(0, tag)
 
         # Create NIFTI MRS object.
-        nifti_mrs_out.append(gen_nifti_mrs_hdr_ext(combined_data, dt_used, meta_used, or_used.Q44))
+        nifti_mrs_out.append(gen_nifti_mrs_hdr_ext(combined_data, dt_used, meta_used, or_used.Q44, no_conj=True))
         if ref_list[0] is not None:
-            nifti_mrs_out.append(gen_nifti_mrs_hdr_ext(combined_ref, dt_used, meta_ref_used, or_used.Q44))
+            nifti_mrs_out.append(gen_nifti_mrs_hdr_ext(combined_ref, dt_used, meta_ref_used, or_used.Q44, no_conj=True))
     else:
         for idx, (dd, rr, oo, dt, mm, mr, ff) in enumerate(zip(data_list,
                                                                ref_list,
@@ -173,12 +173,12 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
             # Add original files to nifti meta information.
             mm.set_standard_def('OriginalFile', [str(ff.name), ])
             fnames_out.append(f'{mainStr}_{idx:03}')
-            nifti_mrs_out.append(gen_nifti_mrs_hdr_ext(dd, dt, mm, oo.Q44))
+            nifti_mrs_out.append(gen_nifti_mrs_hdr_ext(dd, dt, mm, oo.Q44, no_conj=True))
 
             if rr is not None:
                 mr.set_standard_def('OriginalFile', [str(ff.name), ])
                 fnames_out.append(f'{mainStr}_ref_{idx:03}')
-                nifti_mrs_out.append(gen_nifti_mrs_hdr_ext(rr, dt, mr, oo.Q44))
+                nifti_mrs_out.append(gen_nifti_mrs_hdr_ext(rr, dt, mr, oo.Q44, no_conj=True))
 
     return nifti_mrs_out, fnames_out
 

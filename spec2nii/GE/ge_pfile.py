@@ -106,7 +106,7 @@ def _process_svs_pfile(pfile):
 
     out_nmrs = []
     for dd, mm in zip(data, meta):
-        out_nmrs.append(gen_nifti_mrs_hdr_ext(dd, dwelltime, mm, orientation.Q44))
+        out_nmrs.append(gen_nifti_mrs_hdr_ext(dd, dwelltime, mm, orientation.Q44, no_conj=True))
 
     return out_nmrs, fname_suffix
 
@@ -230,7 +230,7 @@ def _process_mrsi_pfile(pfile):
     meta = _populate_metadata(pfile)
     orientation = NIFTIOrient(_calculate_affine_mrsi(pfile))
 
-    return [gen_nifti_mrs_hdr_ext(data, dwelltime, meta, orientation.Q44), ], ['', ]
+    return [gen_nifti_mrs_hdr_ext(data, dwelltime, meta, orientation.Q44, no_conj=True), ], ['', ]
 
 
 def _calculate_affine_mrsi(pfile):

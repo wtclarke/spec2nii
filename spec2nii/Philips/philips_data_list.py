@@ -85,7 +85,7 @@ def read_data_list_pair(data_file, list_file, spar_file):
         # Apply conjugate
         out_data = out_data.conj()
 
-        data_out.append(gen_nifti_mrs_hdr_ext(out_data, dwelltime, meta, orientation.Q44))
+        data_out.append(gen_nifti_mrs_hdr_ext(out_data, dwelltime, meta, orientation.Q44, no_conj=True))
         name_out.append(name)
 
     return data_out, name_out

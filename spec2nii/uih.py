@@ -103,7 +103,8 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
                 combined_data,
                 dt_used,
                 meta_used,
-                or_used.Q44))
+                or_used.Q44,
+                no_conj=True))
     else:
         for idx, (dd, oo, dt, mm, ff) in enumerate(zip(data_list,
                                                    orientation_list,
@@ -118,7 +119,8 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
                     dd,
                     dt,
                     mm,
-                    oo.Q44oo.Q44))
+                    oo.Q44oo.Q44,
+                    no_conj=True))
 
     return nifti_mrs_out, fnames_out
 

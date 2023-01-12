@@ -23,7 +23,6 @@ def text(args):
     # Read text from file
     data = np.loadtxt(args.file)
     data = data[:, 0] + 1j * data[:, 1]
-    data = data.conj()
 
     newshape = (1, 1, 1) + data.shape
     data = data.reshape(newshape)
@@ -53,7 +52,8 @@ def text(args):
         data,
         dwelltime,
         meta,
-        nifti_orientation.Q44), ]
+        nifti_orientation.Q44,
+        no_conj=True), ]
 
     # File names
     if args.fileout:
@@ -70,7 +70,7 @@ def lcm_raw(args):
     Currently only handles one FID per file.
     '''
     # Read data from file
-    data, header = readLCModelRaw(args.file, conjugate=False)
+    data, header = readLCModelRaw(args.file, conjugate=True)
 
     newshape = (1, 1, 1) + data.shape
     data = data.reshape(newshape)
@@ -117,7 +117,8 @@ def lcm_raw(args):
         data,
         dwelltime,
         meta,
-        nifti_orientation.Q44), ]
+        nifti_orientation.Q44,
+        no_conj=True), ]
 
     # File names
     if args.fileout:

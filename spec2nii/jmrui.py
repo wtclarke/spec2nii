@@ -93,7 +93,8 @@ def jmrui_mrui(args):
         data,
         dwelltime,
         meta,
-        nifti_orientation.Q44), ]
+        nifti_orientation.Q44,
+        no_conj=True), ]
 
     # File names
     if args.fileout:
@@ -216,7 +217,8 @@ def jmrui_txt(args):
         data,
         dwelltime,
         meta,
-        nifti_orientation.Q44), ]
+        nifti_orientation.Q44,
+        no_conj=True), ]
 
     # File names
     if args.fileout:

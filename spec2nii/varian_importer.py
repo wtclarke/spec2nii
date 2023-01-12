@@ -136,7 +136,7 @@ def read_varian(args):
     else:
         fname_out = [splitext(basename(args.file))[0], ]
 
-    return [gen_nifti_mrs_hdr_ext(data, dwelltime, meta, orientation.Q44), ], fname_out
+    return [gen_nifti_mrs_hdr_ext(data, dwelltime, meta, orientation.Q44, no_conj=True), ], fname_out
 
 
 def _varian_orientation_1d(params):

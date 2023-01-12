@@ -528,7 +528,7 @@ def assemble_nifti_mrs(data, dwellTime, orientation, meta_obj, dim_tags=None):
         for idx, dt in zip(range(data.ndim - 4), dim_tags):
             meta_obj.set_dim_info(idx, dt)
 
-    return gen_nifti_mrs_hdr_ext(data, dwellTime, meta_obj, orientation.Q44)
+    return gen_nifti_mrs_hdr_ext(data, dwellTime, meta_obj, orientation.Q44, no_conj=True)
 
 
 def twix2DCMOrientation(mapVBVDHdr, force_svs=False, verbose=False):

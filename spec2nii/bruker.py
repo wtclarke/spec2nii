@@ -47,7 +47,8 @@ def read_bruker(args):
                 data,
                 dwelltime,
                 meta,
-                orientation.Q44)
+                orientation.Q44,
+                no_conj=True)
         )
         fileoutNames.append(name)
 

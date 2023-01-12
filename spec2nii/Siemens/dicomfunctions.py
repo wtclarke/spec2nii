@@ -192,11 +192,11 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
 
         # Create NIFTI MRS object.
         try:
-            nifti_mrs_out.append(gen_nifti_mrs_hdr_ext(combined_data, dt_used, meta_used, or_used.Q44))
+            nifti_mrs_out.append(gen_nifti_mrs_hdr_ext(combined_data, dt_used, meta_used, or_used.Q44, no_conj=True))
         except np.linalg.LinAlgError:
             warnings.warn("""The quaternion passed to NIfTI_MRS was singular.
                            Most likely your slice position is not well defined. I have set it to default.""")
-            nifti_mrs_out.append(gen_nifti_mrs_hdr_ext(combined_data, dt_used, meta_used))
+            nifti_mrs_out.append(gen_nifti_mrs_hdr_ext(combined_data, dt_used, meta_used, no_conj=True))
 
     # If there are any identical names then append an index
     seen = np.unique(fnames_out)

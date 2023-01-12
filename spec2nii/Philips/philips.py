@@ -63,7 +63,7 @@ def read_sdat_spar_pair(sdat_file, spar_file, shape=None, tags=None):
         affine = np.diag(np.array([10000, 10000, 10000, 1]))
     orientation = NIFTIOrient(affine)
 
-    return [gen_nifti_mrs_hdr_ext(data, dwelltime, meta, orientation.Q44), ]
+    return [gen_nifti_mrs_hdr_ext(data, dwelltime, meta, orientation.Q44, no_conj=True), ]
 
 
 def read_spar(filename):
