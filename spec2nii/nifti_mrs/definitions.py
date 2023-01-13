@@ -123,7 +123,7 @@ standard_defined = {
     'WaterSuppressed':
         (bool,
          None,
-         'Boolian value indicating whether data was collected with (True) or without (False) water suppression.',
+         'Boolean value indicating whether data was collected with (True) or without (False) water suppression.',
          False),
     'WaterSuppressionType':
         (str,
@@ -133,7 +133,7 @@ standard_defined = {
     'SequenceTriggered':
         (bool,
          None,
-         'Boolian value indicating whether the sequence is triggered. If triggered the repetition time might not be constant.',
+         'Boolean value indicating whether the sequence is triggered. If triggered the repetition time might not be constant.',
          False),
     # 5.2 Scanner information
     'Manufacturer':
@@ -159,12 +159,12 @@ standard_defined = {
     'InstitutionName':
         (str,
          None,
-         "Institution’s Name. DICOM tag (0008,0080).",
+         "Institution's Name. DICOM tag (0008,0080).",
          False),
     'InstitutionAddress':
         (str,
          None,
-         "Institution’s address. DICOM tag (0008,0081).",
+         "Institution's address. DICOM tag (0008,0081).",
          False),
     'TxCoil':
         (str,
@@ -216,7 +216,7 @@ standard_defined = {
     'PatientSex':
         (str,
          None,
-         "Sex of the named Patient. ‘M’, ‘F’, ‘O’. DICOM tag (0010,0040)",
+         "Sex of the named Patient. 'M', 'F', 'O'. DICOM tag (0010,0040)",
          False),
     # 5.5 Provenance and conversion metadata
     'ConversionMethod':
@@ -241,7 +241,7 @@ standard_defined = {
          "Three element list, corresponding to the first three spatial dimensions. If True the data is stored as a dense k-space representation.",
          False),
     # 5.7 Editing Pulse information structure
-    'EditConditon':
+    'EditCondition':
         ((list, str),
          None,
          "List of strings that index the entries of the EditPulse structure that are used in this data acquisition. Typically used in dynamic headers (dim_N_header).",
