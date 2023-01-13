@@ -2,7 +2,9 @@ This document contains the Spec2nii release history in reverse chronological ord
 
 0.6.1 (WIP)
 -----------
-
+- Fixed conjugation issue introduced by new nifti-mrs package dependency
+- SPAR/SDAT pipeline now handles HYPER special case.
+- Fixed issue with XA Twix PatientSex and TxOffset attributes.
 
 0.6.0 (Wednesday 11th January 2023)
 -----------------------------------
