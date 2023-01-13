@@ -145,12 +145,12 @@ standard_defined = {
         (str,
          None,
          "Manufacturer's model name of the device. DICOM tag (0008,1090).",
-         False),
+         True),
     'DeviceSerialNumber':
         (str,
          None,
          "Manufacturer's serial number of the device. DICOM tag (0018,1000).",
-         False),
+         True),
     'SoftwareVersions':
         (str,
          None,
