@@ -132,7 +132,7 @@ class spec2nii:
         parser_p_dl = subparsers.add_parser('philips_dl', help='Convert from Philips data/list format.')
         parser_p_dl.add_argument('data', help='.data file', type=Path)
         parser_p_dl.add_argument('list', help='.list file', type=Path)
-        parser_p_dl.add_argument('spar', help='.SPAR file', type=Path)
+        parser_p_dl.add_argument('aux', help='Auxiliary file: .SPAR or DICOM file', type=Path)
         # for idx in range(5, 8):
         #     parser_p_dl.add_argument(f"-d{idx}", f"--dim{idx}", type=str, help=f"Specify dim {idx} loop counter.")
         #     parser_p_dl.add_argument(f"-t{idx}", f"--tag{idx}", type=str, help=f"Specify dim {idx} NIfTI MRS tag.")
@@ -488,7 +488,7 @@ class spec2nii:
         #              'tags': (args.tag5, args.tag6, args.tag7)}
 
         # self.imageOut, file_names = read_data_list_pair(args.data, args.list, args.spar, overrides)
-        self.imageOut, file_names = read_data_list_pair(args.data, args.list, args.spar)
+        self.imageOut, file_names = read_data_list_pair(args.data, args.list, args.aux)
 
         # name of output
         if args.fileout:

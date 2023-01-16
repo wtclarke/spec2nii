@@ -296,9 +296,9 @@ def _special_case_hyper(data, dwelltime, meta, orientation, fout_str):
     meta_short_te = meta.copy()
     meta_edited = meta.copy()
 
-    edit_pulse_1 = 0.0
-    edit_pulse_2 = 0.0
-    edit_pulse_off = 0.0
+    edit_pulse_1 = 1.9
+    edit_pulse_2 = 4.58
+    edit_pulse_off = 4.18
     dim_info = "HERCULES j-difference editing, four conditions"
     dim_header = {"EditCondition": ["A", "B", "C", "D"]}
     edit_pulse_val = {

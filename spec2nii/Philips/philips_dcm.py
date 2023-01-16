@@ -269,7 +269,7 @@ def _process_philips_fid(img, verbose):
     return spec_data_main, spec_data_ref, currNiftiOrientation, dwelltime, meta, meta_r
 
 
-def _enhanced_dcm_svs_to_orientation(img, verbose):
+def _enhanced_dcm_svs_to_orientation(img, verbose=False):
     '''Convert the Volume Localization Sequence (0018,9126) enhanced DICOM tag
     to a 4x4 affine format.
 
@@ -329,7 +329,8 @@ def _enhanced_dcm_svs_to_orientation(img, verbose):
 
             from scipy.spatial.transform import Rotation
             rot = Rotation.from_euler('xyz', [-angle_lr, -angle_ap, angle_hf], degrees=True)
-            imageOrientationPatient = rot.as_matrix()
+            # THIS NEEDS TESTING!!! CODE WILL PASS BUT I DON"T TRUST IT AT ALL.
+            imageOrientationPatient = rot.as_matrix()[:, :2].T
             imagePositionPatient = [-shift_lr, -shift_ap, shift_hf]
 
         except KeyError:
@@ -361,9 +362,19 @@ def _extractDicomMetadata_old(dcmdata, water_suppressed=True):
     """
 
     # Extract required metadata and create hdr_ext object
+    try:
+        frequency = dcmdata.dcm_data.TransmitterFrequency
+    except AttributeError:
+        frequency = float(dcmdata.dcm_data[('2001', '1083')].value)
+
+    try:
+        nucleus = dcmdata.dcm_data.ResonantNucleus
+    except AttributeError:
+        nucleus = dcmdata.dcm_data[('2001', '1087')].value
+
     obj = Hdr_Ext(
-        dcmdata.dcm_data.TransmitterFrequency,
-        dcmdata.dcm_data.ResonantNucleus)
+        frequency,
+        nucleus)
 
     # private_mrs_tags = dcmdata[('2005', '140f')][0]
 
@@ -374,21 +385,33 @@ def _extractDicomMetadata_old(dcmdata, water_suppressed=True):
     # Standard metadata
     # # 5.1 MRS specific Tags
     # 'EchoTime'
-    echo_time = float(dcmdata.dcm_data.PerFrameFunctionalGroupsSequence[0]
-                      .MREchoSequence[0].EffectiveEchoTime) * 1E-3
+    try:
+        echo_time = float(dcmdata.dcm_data.PerFrameFunctionalGroupsSequence[0]
+                          .MREchoSequence[0].EffectiveEchoTime) * 1E-3
+    except AttributeError:
+        echo_time = float(dcmdata.dcm_data[('2005', '1310')].value)
     obj.set_standard_def('EchoTime', echo_time)
+
     # 'RepetitionTime'
-    rep_tim = float(dcmdata.dcm_data.PerFrameFunctionalGroupsSequence[0]
-                    .MRTimingAndRelatedParametersSequence[0].RepetitionTime) / 1E3
-    obj.set_standard_def('RepetitionTime', rep_tim)
+    try:
+        rep_time = float(dcmdata.dcm_data.PerFrameFunctionalGroupsSequence[0]
+                         .MRTimingAndRelatedParametersSequence[0].RepetitionTime) / 1E3
+    except AttributeError:
+        rep_time = dcmdata.dcm_data.RepetitionTime
+    obj.set_standard_def('RepetitionTime', rep_time)
+
     # 'InversionTime'
     # Not known
     # 'MixingTime'
     # Not known
     # 'ExcitationFlipAngle'
-    fa = float(dcmdata.dcm_data.PerFrameFunctionalGroupsSequence[0]
-               .MRTimingAndRelatedParametersSequence[0].RepetitionTime)
+    try:
+        fa = float(dcmdata.dcm_data.PerFrameFunctionalGroupsSequence[0]
+                   .MRTimingAndRelatedParametersSequence[0].RepetitionTime)
+    except AttributeError:
+        fa = dcmdata.dcm_data.FlipAngle
     obj.set_standard_def('ExcitationFlipAngle', fa)
+
     # 'TxOffset'
     # Not known
     # 'VOI'
@@ -422,7 +445,8 @@ def _extractDicomMetadata_old(dcmdata, water_suppressed=True):
 
     # # 5.3 Sequence information
     # 'SequenceName'
-    obj.set_standard_def('SequenceName', dcmdata.dcm_data.PulseSequenceName)
+    if 'SequenceName' in dcmdata.dcm_data:
+        obj.set_standard_def('SequenceName', dcmdata.dcm_data.PulseSequenceName)
     # 'ProtocolName'
     obj.set_standard_def('ProtocolName', dcmdata.dcm_data.ProtocolName)
     # # 5.4 Sequence information
