@@ -136,6 +136,11 @@ class spec2nii:
         # for idx in range(5, 8):
         #     parser_p_dl.add_argument(f"-d{idx}", f"--dim{idx}", type=str, help=f"Specify dim {idx} loop counter.")
         #     parser_p_dl.add_argument(f"-t{idx}", f"--tag{idx}", type=str, help=f"Specify dim {idx} NIfTI MRS tag.")
+        parser_p_dl.add_argument(
+            "--special",
+            type=str,
+            default=None,
+            help="Identify special case sequence. Options: 'hyper'.")
         parser_p_dl = add_common_parameters(parser_p_dl)
         parser_p_dl.set_defaults(func=self.philips_dl)
 
@@ -488,7 +493,7 @@ class spec2nii:
         #              'tags': (args.tag5, args.tag6, args.tag7)}
 
         # self.imageOut, file_names = read_data_list_pair(args.data, args.list, args.spar, overrides)
-        self.imageOut, file_names = read_data_list_pair(args.data, args.list, args.aux)
+        self.imageOut, file_names = read_data_list_pair(args.data, args.list, args.aux, args.special_case)
 
         # name of output
         if args.fileout:
