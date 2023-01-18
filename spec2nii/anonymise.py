@@ -4,14 +4,13 @@ Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
 Copyright (C) 2021 University of Oxford
 """
 
-import json
 import re
 import pprint
 
-import nibabel as nib
-
-from spec2nii.nifti_mrs.definitions import standard_defined
-from spec2nii import nifti_mrs
+from nifti_mrs.definitions import standard_defined
+from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
+from nifti_mrs.nifti_mrs import NIFTI_MRS
+from nifti_mrs.hdr_ext import Hdr_Ext
 
 
 def anon_nifti_mrs(args):
@@ -24,11 +23,10 @@ def anon_nifti_mrs(args):
     :rtype: [str,]
     """
     # Load data
-    nifti_mrs_img = nib.load(args.file)
+    nifti_mrs_img = NIFTI_MRS(args.file)
 
     # Extract header extension
-    hdr_ext_codes = nifti_mrs_img.header.extensions.get_codes()
-    hdr_ext = json.loads(nifti_mrs_img.header.extensions[hdr_ext_codes.index(44)].get_content())
+    hdr_ext = nifti_mrs_img.hdr_ext.to_dict()
 
     # Loop through fields. Remove those which are marked for anonymisation
     # Either those fields which are standard-defined and are marked for anonymisation,
@@ -75,10 +73,11 @@ def anon_nifti_mrs(args):
         pp.pprint(anon_hdr)
 
     # Make new NIfTI-MRS image
-    anon_out = nifti_mrs.NIfTI_MRS(nifti_mrs_img.get_fdata(dtype=nifti_mrs_img.get_data_dtype()),
-                                   nifti_mrs_img.affine,
-                                   nifti_mrs_img.header['pixdim'][4],
-                                   anon_hdr)
+    anon_out = gen_nifti_mrs_hdr_ext(
+        nifti_mrs_img[:],
+        nifti_mrs_img.dwelltime,
+        Hdr_Ext.from_header_ext(anon_hdr),
+        affine=nifti_mrs_img.getAffine('voxel', 'world'))
 
     # Process output name.
     if args.fileout:

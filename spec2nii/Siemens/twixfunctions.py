@@ -7,10 +7,11 @@ from os.path import basename
 from datetime import datetime
 
 import numpy as np
+from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
+from nifti_mrs.hdr_ext import Hdr_Ext
 
 import spec2nii.GSL.gslfunctions as GSL
 from spec2nii.dcm2niiOrientation.orientationFuncs import dcm_to_nifti_orientation
-from spec2nii import nifti_mrs
 from spec2nii import __version__ as spec2nii_ver
 
 
@@ -527,7 +528,7 @@ def assemble_nifti_mrs(data, dwellTime, orientation, meta_obj, dim_tags=None):
         for idx, dt in zip(range(data.ndim - 4), dim_tags):
             meta_obj.set_dim_info(idx, dt)
 
-    return nifti_mrs.NIfTI_MRS(data, orientation.Q44, dwellTime, meta_obj)
+    return gen_nifti_mrs_hdr_ext(data, dwellTime, meta_obj, orientation.Q44, no_conj=True)
 
 
 def twix2DCMOrientation(mapVBVDHdr, force_svs=False, verbose=False):
@@ -690,8 +691,9 @@ def extractTwixMetadata_xa(mapVBVDHdr, original_file):
     """
 
     # Extract required metadata and create hdr_ext object
-    obj = nifti_mrs.hdr_ext(mapVBVDHdr['Dicom'][('lFrequency')] / 1E6,
-                            mapVBVDHdr['MeasYaps'][('sTXSPEC', 'asNucleusInfo', '0', 'tNucleus')].strip('"'))
+    obj = Hdr_Ext(
+        mapVBVDHdr['Dicom'][('lFrequency')] / 1E6,
+        mapVBVDHdr['MeasYaps'][('sTXSPEC', 'asNucleusInfo', '0', 'tNucleus')].strip('"'))
 
     # Standard defined metadata
     # # 5.1 MRS specific Tags
@@ -707,7 +709,9 @@ def extractTwixMetadata_xa(mapVBVDHdr, original_file):
     # 'ExcitationFlipAngle'
     obj.set_standard_def('ExcitationFlipAngle', float(mapVBVDHdr['MeasYaps'][('adFlipAngleDegree', '0')]))
     # 'TxOffset'
-    obj.set_standard_def('TxOffset', empty_str_to_0float(mapVBVDHdr['MeasYaps'][('sSpecPara', 'dDeltaFrequency')]))
+    obj.set_standard_def(
+        'TxOffset',
+        empty_str_or_val_to_0float(mapVBVDHdr['MeasYaps'], ('sSpecPara', 'dDeltaFrequency')))
     # 'VOI'
     # 'WaterSuppressed'
     # TO DO
@@ -756,14 +760,15 @@ def extractTwixMetadata_xa(mapVBVDHdr, original_file):
     # 'PatientDoB'
     obj.set_standard_def('PatientDoB', str(mapVBVDHdr['Meas'][('PatientBirthDay')]))
     # 'PatientSex'
-    if mapVBVDHdr['Meas'][('PatientSex')] == 0.0:
+    patient_sex = mapVBVDHdr['Meas'][('PatientSex')]
+    if patient_sex == 1.0:
         sex_str = 'M'
-    elif mapVBVDHdr['Meas'][('PatientSex')] == 1.0:
+    elif patient_sex == 2.0:
         sex_str = 'F'
-    elif mapVBVDHdr['Meas'][('PatientSex')] == 2.0:
+    elif patient_sex == 3.0:
         sex_str = 'O'
     else:
-        raise ValueError('Meas, PatientSex, should be 0, 1, or 2.')
+        raise ValueError(f'Meas, PatientSex, should be 1, 2, or 3, but is {patient_sex}')
 
     obj.set_standard_def('PatientSex', sex_str)
 
@@ -802,8 +807,9 @@ def extractTwixMetadata_vx(mapVBVDHdr, original_file):
     """
 
     # Extract required metadata and create hdr_ext object
-    obj = nifti_mrs.hdr_ext(mapVBVDHdr['Meas'][('Frequency')] / 1E6,
-                            mapVBVDHdr['Meas'][('ResonantNucleus')])
+    obj = Hdr_Ext(
+        mapVBVDHdr['Meas'][('Frequency')] / 1E6,
+        mapVBVDHdr['Meas'][('ResonantNucleus')])
 
     # Standard defined metadata
     # # 5.1 MRS specific Tags
@@ -822,7 +828,7 @@ def extractTwixMetadata_vx(mapVBVDHdr, original_file):
     # 'ExcitationFlipAngle'
     obj.set_standard_def('ExcitationFlipAngle', float(mapVBVDHdr['Meas'][('FlipAngle')]))
     # 'TxOffset'
-    obj.set_standard_def('TxOffset', empty_str_to_0float(mapVBVDHdr['Meas'][('dDeltaFrequency')]))
+    obj.set_standard_def('TxOffset', empty_str_or_val_to_0float(mapVBVDHdr['Meas'], ('dDeltaFrequency')))
     # 'VOI'
     # 'WaterSuppressed'
     # TO DO
@@ -898,11 +904,14 @@ def extractTwixMetadata_vx(mapVBVDHdr, original_file):
     return obj
 
 
-def empty_str_to_0float(value):
-    if value == '':
+def empty_str_or_val_to_0float(param_dict, key):
+    try:
+        if param_dict[key] == '':
+            return 0.0
+        else:
+            return param_dict[key]
+    except KeyError:
         return 0.0
-    else:
-        return value
 
 
 def _try_int(value):

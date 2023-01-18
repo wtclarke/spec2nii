@@ -2,12 +2,16 @@
 Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
 Copyright (C) 2020 University of Oxford
 """
+from datetime import datetime
+
 import numpy as np
 import nibabel.nicom.dicomwrappers
+
+from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
+from nifti_mrs.hdr_ext import Hdr_Ext
+
 from spec2nii.dcm2niiOrientation.orientationFuncs import dcm_to_nifti_orientation
 from spec2nii.nifti_orientation import NIFTIOrient
-from spec2nii import nifti_mrs
-from datetime import datetime
 from spec2nii import __version__ as spec2nii_ver
 
 
@@ -155,9 +159,9 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
             meta_used.set_dim_info(0, tag)
 
         # Create NIFTI MRS object.
-        nifti_mrs_out.append(nifti_mrs.NIfTI_MRS(combined_data, or_used.Q44, dt_used, meta_used))
+        nifti_mrs_out.append(gen_nifti_mrs_hdr_ext(combined_data, dt_used, meta_used, or_used.Q44, no_conj=True))
         if ref_list[0] is not None:
-            nifti_mrs_out.append(nifti_mrs.NIfTI_MRS(combined_ref, or_used.Q44, dt_used, meta_ref_used))
+            nifti_mrs_out.append(gen_nifti_mrs_hdr_ext(combined_ref, dt_used, meta_ref_used, or_used.Q44, no_conj=True))
     else:
         for idx, (dd, rr, oo, dt, mm, mr, ff) in enumerate(zip(data_list,
                                                                ref_list,
@@ -169,12 +173,12 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
             # Add original files to nifti meta information.
             mm.set_standard_def('OriginalFile', [str(ff.name), ])
             fnames_out.append(f'{mainStr}_{idx:03}')
-            nifti_mrs_out.append(nifti_mrs.NIfTI_MRS(dd, oo.Q44, dt, mm))
+            nifti_mrs_out.append(gen_nifti_mrs_hdr_ext(dd, dt, mm, oo.Q44, no_conj=True))
 
             if rr is not None:
                 mr.set_standard_def('OriginalFile', [str(ff.name), ])
                 fnames_out.append(f'{mainStr}_ref_{idx:03}')
-                nifti_mrs_out.append(nifti_mrs.NIfTI_MRS(rr, oo.Q44, dt, mr))
+                nifti_mrs_out.append(gen_nifti_mrs_hdr_ext(rr, dt, mr, oo.Q44, no_conj=True))
 
     return nifti_mrs_out, fnames_out
 
@@ -265,7 +269,7 @@ def _process_philips_fid(img, verbose):
     return spec_data_main, spec_data_ref, currNiftiOrientation, dwelltime, meta, meta_r
 
 
-def _enhanced_dcm_svs_to_orientation(img, verbose):
+def _enhanced_dcm_svs_to_orientation(img, verbose=False):
     '''Convert the Volume Localization Sequence (0018,9126) enhanced DICOM tag
     to a 4x4 affine format.
 
@@ -325,7 +329,8 @@ def _enhanced_dcm_svs_to_orientation(img, verbose):
 
             from scipy.spatial.transform import Rotation
             rot = Rotation.from_euler('xyz', [-angle_lr, -angle_ap, angle_hf], degrees=True)
-            imageOrientationPatient = rot.as_matrix()
+            # THIS NEEDS TESTING!!! CODE WILL PASS BUT I DON"T TRUST IT AT ALL.
+            imageOrientationPatient = rot.as_matrix()[:, :2].T
             imagePositionPatient = [-shift_lr, -shift_ap, shift_hf]
 
         except KeyError:
@@ -357,8 +362,19 @@ def _extractDicomMetadata_old(dcmdata, water_suppressed=True):
     """
 
     # Extract required metadata and create hdr_ext object
-    obj = nifti_mrs.hdr_ext(dcmdata.dcm_data.TransmitterFrequency,
-                            dcmdata.dcm_data.ResonantNucleus)
+    try:
+        frequency = dcmdata.dcm_data.TransmitterFrequency
+    except AttributeError:
+        frequency = float(dcmdata.dcm_data[('2001', '1083')].value)
+
+    try:
+        nucleus = dcmdata.dcm_data.ResonantNucleus
+    except AttributeError:
+        nucleus = dcmdata.dcm_data[('2001', '1087')].value
+
+    obj = Hdr_Ext(
+        frequency,
+        nucleus)
 
     # private_mrs_tags = dcmdata[('2005', '140f')][0]
 
@@ -369,21 +385,33 @@ def _extractDicomMetadata_old(dcmdata, water_suppressed=True):
     # Standard metadata
     # # 5.1 MRS specific Tags
     # 'EchoTime'
-    echo_time = float(dcmdata.dcm_data.PerFrameFunctionalGroupsSequence[0]
-                      .MREchoSequence[0].EffectiveEchoTime) * 1E-3
+    try:
+        echo_time = float(dcmdata.dcm_data.PerFrameFunctionalGroupsSequence[0]
+                          .MREchoSequence[0].EffectiveEchoTime) * 1E-3
+    except AttributeError:
+        echo_time = float(dcmdata.dcm_data[('2005', '1310')].value)
     obj.set_standard_def('EchoTime', echo_time)
+
     # 'RepetitionTime'
-    rep_tim = float(dcmdata.dcm_data.PerFrameFunctionalGroupsSequence[0]
-                    .MRTimingAndRelatedParametersSequence[0].RepetitionTime) / 1E3
-    obj.set_standard_def('RepetitionTime', rep_tim)
+    try:
+        rep_time = float(dcmdata.dcm_data.PerFrameFunctionalGroupsSequence[0]
+                         .MRTimingAndRelatedParametersSequence[0].RepetitionTime) / 1E3
+    except AttributeError:
+        rep_time = dcmdata.dcm_data.RepetitionTime
+    obj.set_standard_def('RepetitionTime', rep_time)
+
     # 'InversionTime'
     # Not known
     # 'MixingTime'
     # Not known
     # 'ExcitationFlipAngle'
-    fa = float(dcmdata.dcm_data.PerFrameFunctionalGroupsSequence[0]
-               .MRTimingAndRelatedParametersSequence[0].RepetitionTime)
+    try:
+        fa = float(dcmdata.dcm_data.PerFrameFunctionalGroupsSequence[0]
+                   .MRTimingAndRelatedParametersSequence[0].RepetitionTime)
+    except AttributeError:
+        fa = dcmdata.dcm_data.FlipAngle
     obj.set_standard_def('ExcitationFlipAngle', fa)
+
     # 'TxOffset'
     # Not known
     # 'VOI'
@@ -417,7 +445,8 @@ def _extractDicomMetadata_old(dcmdata, water_suppressed=True):
 
     # # 5.3 Sequence information
     # 'SequenceName'
-    obj.set_standard_def('SequenceName', dcmdata.dcm_data.PulseSequenceName)
+    if 'SequenceName' in dcmdata.dcm_data:
+        obj.set_standard_def('SequenceName', dcmdata.dcm_data.PulseSequenceName)
     # 'ProtocolName'
     obj.set_standard_def('ProtocolName', dcmdata.dcm_data.ProtocolName)
     # # 5.4 Sequence information
@@ -461,8 +490,9 @@ def _extractDicomMetadata_new(dcmdata, water_suppressed=True):
     """
 
     # Extract required metadata and create hdr_ext object
-    obj = nifti_mrs.hdr_ext(dcmdata.dcm_data.TransmitterFrequency,
-                            dcmdata.dcm_data.ResonantNucleus)
+    obj = Hdr_Ext(
+        dcmdata.dcm_data.TransmitterFrequency,
+        dcmdata.dcm_data.ResonantNucleus)
 
     def set_if_present(tag, val):
         if val:

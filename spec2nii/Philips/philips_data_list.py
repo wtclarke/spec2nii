@@ -7,10 +7,19 @@ import re
 
 import pandas as pd
 import numpy as np
+from nibabel.nicom.dicomwrappers import wrapper_from_file
+from pydicom.errors import InvalidDicomError
+
+from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
 
 from spec2nii.Philips.philips import read_spar, spar_to_nmrs_hdrext, _philips_orientation
+from spec2nii.Philips.philips_dcm import \
+    _enhanced_dcm_svs_to_orientation,\
+    _is_new_format,\
+    _extractDicomMetadata_new,\
+    _extractDicomMetadata_old
 from spec2nii.nifti_orientation import NIFTIOrient
-from spec2nii import nifti_mrs
+
 
 index_options = ['STD', 'REJ', 'PHC', 'FRC', 'NOI', 'NAV']
 index_headers = ['typ', 'mix', 'dyn', 'card', 'echo', 'loca',
@@ -29,19 +38,39 @@ class TooManyDimError(Exception):
     pass
 
 
-def read_data_list_pair(data_file, list_file, spar_file):
+def read_data_list_pair(data_file, list_file, aux_file, special_case=None):
 
     df, num_dict, coord_dict, os_dict = _read_list(list_file)
     sorted_data_dict = _read_data(data_file, df)
 
-    spar_params = read_spar(spar_file)
+    if aux_file.suffix.lower() == '.spar':
+        spar_params = read_spar(aux_file)
 
-    # Dwelltime
-    dwelltime = 1.0 / float(spar_params["sample_frequency"])
+        dwelltime = 1.0 / float(spar_params["sample_frequency"])
+        orientation = NIFTIOrient(_philips_orientation(spar_params))
 
-    # Orientation
-    affine = _philips_orientation(spar_params)
-    orientation = NIFTIOrient(affine)
+        # Meta
+        base_meta = spar_to_nmrs_hdrext(spar_params)
+    else:
+        try:
+            dcm_obj = wrapper_from_file(aux_file)
+        except (InvalidDicomError, FileNotFoundError) as exc:
+            raise ValueError('Data/List auxiliary file must be a valid Philips .SPAR or DICOM file.') from exc
+
+        orientation = _enhanced_dcm_svs_to_orientation(dcm_obj)
+
+        if _is_new_format(dcm_obj):
+            base_meta = _extractDicomMetadata_new(dcm_obj)
+            dwelltime = 1.0 / dcm_obj.dcm_data.SpectralWidth
+        else:
+            base_meta = _extractDicomMetadata_old(dcm_obj)
+            dwelltime = 1.0 / dcm_obj.dcm_data[('2005', '1357')].value
+
+    base_meta.set_standard_def(
+        'OriginalFile',
+        [data_file.name,
+         list_file.name,
+         aux_file.name])
 
     data_out = []
     name_out = []
@@ -49,12 +78,7 @@ def read_data_list_pair(data_file, list_file, spar_file):
         data = sorted_data_dict[data_type]
         name = data_type
 
-        # Meta
-        meta = spar_to_nmrs_hdrext(spar_params)
-        meta.set_standard_def('OriginalFile',
-                              [data_file.name,
-                               list_file.name,
-                               spar_file.name])
+        meta = base_meta.copy()
 
         kept_ind = []
         for ii, sha in zip(indices, data.shape[1:]):
@@ -67,24 +91,63 @@ def read_data_list_pair(data_file, list_file, spar_file):
                                   f' Dimensions are {kept_ind} with shape {out_data.shape[1:]}.'
                                   ' NIFTI-MRS can only handle three dynamic dimensions. Unsure how to proceed.')
 
-        unknown_counter = 0
-        for idx, ki in enumerate(kept_ind):
-            if ki in defaults:
-                meta.set_dim_info(idx,
-                                  defaults[ki],
-                                  info=f'data/list dim {ki}')
-            else:
-                meta.set_dim_info(idx,
-                                  f'DIM_USER_{unknown_counter}',
-                                  info=f'data/list dim {ki}')
-                unknown_counter += 1
+        # Special cases
+        if data_type == 'STD_0'\
+                and (special_case == 'hyper' or 'hyper' in meta['ProtocolName'].lower()):
+            out_hyper, meta_hyper = _special_case_hyper(out_data, meta)
+            # Handle the main acqusition of the HYPER (short TE + editing) sequence
+
+            # Insert spatial dimensions
+            out_shortte = out_hyper[0].reshape((1, 1, 1) + out_hyper[0].shape)
+            out_edited = out_hyper[1].reshape((1, 1, 1) + out_hyper[1].shape)
+
+            # Apply conjugate
+            out_shortte = out_shortte.conj()
+            out_edited = out_edited.conj()
+
+            data_out.append(
+                gen_nifti_mrs_hdr_ext(out_shortte, dwelltime, meta_hyper[0], orientation.Q44, no_conj=True))
+            name_out.append('hyper_short_te')
+
+            data_out.append(
+                gen_nifti_mrs_hdr_ext(out_edited, dwelltime, meta_hyper[1], orientation.Q44, no_conj=True))
+            name_out.append('hyper_edited')
+
+            continue
+
+        elif data_type == 'STD_1'\
+                and (special_case == 'hyper' or 'hyper' in meta['ProtocolName'].lower()):
+            # Handle the water ref acqusition of the HYPER sequence
+
+            meta.set_dim_info(
+                1,
+                'DIM_USER_0',
+                info='HYPER water reference')
+
+            name = 'hyper_water_ref'
+
+        else:
+            # Default case: assign default DIM Tags.
+            unknown_counter = 0
+            for idx, ki in enumerate(kept_ind):
+                if ki in defaults:
+                    meta.set_dim_info(
+                        idx,
+                        defaults[ki],
+                        info=f'data/list dim {ki}')
+                else:
+                    meta.set_dim_info(
+                        idx,
+                        f'DIM_USER_{unknown_counter}',
+                        info=f'data/list dim {ki}')
+                    unknown_counter += 1
 
         # Insert spatial dimensions
         out_data = out_data.reshape((1, 1, 1) + out_data.shape)
         # Apply conjugate
         out_data = out_data.conj()
 
-        data_out.append(nifti_mrs.NIfTI_MRS(out_data, orientation.Q44, dwelltime, meta))
+        data_out.append(gen_nifti_mrs_hdr_ext(out_data, dwelltime, meta, orientation.Q44, no_conj=True))
         name_out.append(name)
 
     return data_out, name_out
@@ -132,6 +195,18 @@ def _read_data(data_file, df):
             output_dict[f'{tt}_{mix}'][ind] = raw[offset:(offset + dsize)]
         offset += dsize
 
+    # Slight hack - remove all zero data if there is any (skipped indices)
+    for key in output_dict:
+        if key == 'NOI':
+            continue
+        keyparts = key.split('_')
+        cdf = df[df.typ == keyparts[0]][df.mix == int(keyparts[1])]
+        used_df = cdf[indices].loc[:, cdf[indices].max() > 0]
+        used_col_indices = [indices.index(col) for col in used_df.columns]
+        for idx, col_idx in enumerate(used_col_indices):
+            used_indices_in_col = used_df.iloc[:, idx].unique()
+            output_dict[key] = np.take(output_dict[key], used_indices_in_col, axis=col_idx + 1)
+
     return output_dict
 
 
@@ -161,7 +236,7 @@ def _read_list(list_file):
                         r'(\d+)\s+\d+\s+\d+\s+number_of_([a-z0-9_]+)\s+:\s+(\d+)',
                         line)
                     if matched[2] not in num_dict:
-                        num_dict[matched[2]] = np.zeros((n_mixes), dtype=np.int)
+                        num_dict[matched[2]] = np.zeros((n_mixes), dtype=int)
                     num_dict[matched[2]][int(matched[1])] = int(matched[3])
                 elif '_range' in line:
                     matched = re.search(
@@ -169,7 +244,7 @@ def _read_list(list_file):
                         line,
                         flags=re.IGNORECASE)
                     if matched[3] not in coord_dict:
-                        coord_dict[matched[3]] = np.zeros((n_mixes, n_echoes, 2), dtype=np.int)
+                        coord_dict[matched[3]] = np.zeros((n_mixes, n_echoes, 2), dtype=int)
                     coord_dict[matched[3]][int(matched[1]), int(matched[2]), 0] = int(matched[4])
                     coord_dict[matched[3]][int(matched[1]), int(matched[2]), 1] = int(matched[5])
                 elif '_oversample_factor' in line:
@@ -187,3 +262,37 @@ def _read_list(list_file):
     df[index_headers[1:]] = df[index_headers[1:]].apply(pd.to_numeric)
 
     return df, num_dict, coord_dict, os_dict
+
+
+# Special cases
+def _special_case_hyper(data, meta):
+
+    data_short_te = data[:, :, :32]
+    data_edited = data[:, :, 32:]
+    data_edited = data_edited.T.reshape((56, 4, data.shape[1], data.shape[0])).T
+
+    meta_short_te = meta.copy()
+    meta_edited = meta.copy()
+
+    edit_pulse_1 = 1.9
+    edit_pulse_2 = 4.58
+    edit_pulse_off = 4.18
+    dim_info = "HERCULES j-difference editing, four conditions"
+    dim_header = {"EditCondition": ["A", "B", "C", "D"]}
+    edit_pulse_val = {
+        "A": {"PulseOffset": [edit_pulse_1, edit_pulse_2], "PulseDuration": 0.02},
+        "B": {"PulseOffset": [edit_pulse_off, edit_pulse_2], "PulseDuration": 0.02},
+        "C": {"PulseOffset": edit_pulse_1, "PulseDuration": 0.02},
+        "D": {"PulseOffset": edit_pulse_off, "PulseDuration": 0.02}}
+
+    meta_edited.set_dim_info(
+        1,
+        'DIM_EDIT',
+        dim_info,
+        dim_header)
+
+    meta_edited.set_dim_info(2, 'DIM_DYN')
+    meta_edited.set_standard_def("EditPulse", edit_pulse_val)
+
+    return [data_short_te, data_edited],\
+           [meta_short_te, meta_edited]

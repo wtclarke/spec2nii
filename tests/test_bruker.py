@@ -9,7 +9,6 @@ from pathlib import Path
 import json
 
 import numpy as np
-import pytest
 
 from .io_for_tests import read_nifti_mrs
 
@@ -18,7 +17,6 @@ bruker_path = Path(__file__).parent / 'spec2nii_test_data' / 'bruker'
 data_path = bruker_path / '20201208_105201_lego_rod_1_3'
 
 
-@pytest.mark.skip(reason="Awaiting fix of brukerapi package")
 def test_fid(tmp_path):
 
     subprocess.check_call(['spec2nii', 'bruker',
@@ -64,14 +62,13 @@ def test_fid(tmp_path):
     # Img 9 - svs
     img = read_nifti_mrs(tmp_path / 'fid_FID_9.nii.gz')
 
-    assert img.shape == (1, 1, 1, 1980, 1)
+    assert img.shape == (1, 1, 1, 1980)
     assert np.iscomplexobj(img.dataobj)
     assert np.isclose(1 / img.header['pixdim'][4], 4401.41)
 
     hdr_ext_codes = img.header.extensions.get_codes()
     hdr_ext = json.loads(img.header.extensions[hdr_ext_codes.index(44)].get_content())
 
-    assert hdr_ext['dim_5'] == 'DIM_DYN'
     assert np.isclose(hdr_ext['SpectrometerFrequency'][0], 400.32251)
     assert hdr_ext['ResonantNucleus'][0] == '1H'
     assert hdr_ext['OriginalFile'][0] == str(data_path.absolute() / '9' / 'fid')
@@ -81,14 +78,13 @@ def test_fid(tmp_path):
     # Img 10 - svs
     img = read_nifti_mrs(tmp_path / 'fid_FID_10.nii.gz')
 
-    assert img.shape == (1, 1, 1, 1980, 1)
+    assert img.shape == (1, 1, 1, 1980)
     assert np.iscomplexobj(img.dataobj)
     assert np.isclose(1 / img.header['pixdim'][4], 4401.41)
 
     hdr_ext_codes = img.header.extensions.get_codes()
     hdr_ext = json.loads(img.header.extensions[hdr_ext_codes.index(44)].get_content())
 
-    assert hdr_ext['dim_5'] == 'DIM_DYN'
     assert np.isclose(hdr_ext['SpectrometerFrequency'][0], 400.32251)
     assert hdr_ext['ResonantNucleus'][0] == '1H'
     assert hdr_ext['OriginalFile'][0] == str(data_path.absolute() / '10' / 'fid')
@@ -96,7 +92,6 @@ def test_fid(tmp_path):
     assert 'acqp' in hdr_ext
 
 
-@pytest.mark.skip(reason="Awaiting fix of brukerapi package")
 def test_2dseq(tmp_path):
 
     subprocess.check_call(['spec2nii', 'bruker',

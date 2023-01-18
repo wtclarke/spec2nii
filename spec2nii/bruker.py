@@ -18,8 +18,10 @@ from brukerapi.folders import Folder
 from brukerapi.mergers import FrameGroupMerger
 from brukerapi.exceptions import FilterEvalFalse
 
+from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
+from nifti_mrs.hdr_ext import Hdr_Ext
+
 from spec2nii.nifti_orientation import NIFTIOrient
-from spec2nii import nifti_mrs
 from spec2nii import __version__ as spec2nii_ver
 
 # Default dimension assignments.
@@ -41,10 +43,12 @@ def read_bruker(args):
     # for all Bruker datasets compliant all queries
     for data, orientation, dwelltime, meta, name in yield_bruker(args):
         imageOut.append(
-            nifti_mrs.NIfTI_MRS(data,
-                                orientation.Q44,
-                                dwelltime,
-                                meta)
+            gen_nifti_mrs_hdr_ext(
+                data,
+                dwelltime,
+                meta,
+                orientation.Q44,
+                no_conj=True)
         )
         fileoutNames.append(name)
 
@@ -222,8 +226,9 @@ def _2dseq_meta(d, dump=False):
 
     # Extract required metadata and create hdr_ext object
     cf = d.SpectrometerFrequency
-    obj = nifti_mrs.hdr_ext(cf,
-                            d.ResonantNucleus)
+    obj = Hdr_Ext(
+        cf,
+        d.ResonantNucleus)
 
     # # 5.1 MRS specific Tags
     # 'EchoTime'
@@ -310,8 +315,9 @@ def _fid_meta(d, dump=False):
 
     # Extract required metadata and create hdr_ext object
     cf = d.SpectrometerFrequency
-    obj = nifti_mrs.hdr_ext(cf,
-                            d.ResonantNucleus)
+    obj = Hdr_Ext(
+        cf,
+        d.ResonantNucleus)
 
     # # 5.1 MRS specific Tags
     # 'EchoTime'

@@ -3,13 +3,17 @@ Possibly also suitable for other manufacturer's DICOM (except Siemens)
 Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
 Copyright (C) 2020 University of Oxford
 """
-import numpy as np
-import nibabel.nicom.dicomwrappers
-from spec2nii.dcm2niiOrientation.orientationFuncs import dcm_to_nifti_orientation
-from spec2nii.nifti_orientation import NIFTIOrient
-from spec2nii import nifti_mrs
 from datetime import datetime
 from warnings import warn
+
+import numpy as np
+import nibabel.nicom.dicomwrappers
+
+from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
+from nifti_mrs.hdr_ext import Hdr_Ext
+
+from spec2nii.dcm2niiOrientation.orientationFuncs import dcm_to_nifti_orientation
+from spec2nii.nifti_orientation import NIFTIOrient
 from spec2nii import __version__ as spec2nii_ver
 
 
@@ -94,7 +98,13 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
             meta_used.set_dim_info(0, tag)
 
         # Create NIFTI MRS object.
-        nifti_mrs_out.append(nifti_mrs.NIfTI_MRS(combined_data, or_used.Q44, dt_used, meta_used))
+        nifti_mrs_out.append(
+            gen_nifti_mrs_hdr_ext(
+                combined_data,
+                dt_used,
+                meta_used,
+                or_used.Q44,
+                no_conj=True))
     else:
         for idx, (dd, oo, dt, mm, ff) in enumerate(zip(data_list,
                                                    orientation_list,
@@ -104,7 +114,13 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
             # Add original files to nifti meta information.
             mm.set_standard_def('OriginalFile', [str(ff.name), ])
             fnames_out.append(f'{mainStr}_{idx:03}')
-            nifti_mrs_out.append(nifti_mrs.NIfTI_MRS(dd, oo.Q44, dt, mm))
+            nifti_mrs_out.append(
+                gen_nifti_mrs_hdr_ext(
+                    dd,
+                    dt,
+                    mm,
+                    oo.Q44oo.Q44,
+                    no_conj=True))
 
     return nifti_mrs_out, fnames_out
 
@@ -192,8 +208,9 @@ def extractDicomMetadata(dcmdata):
     """
 
     # Extract required metadata and create hdr_ext object
-    obj = nifti_mrs.hdr_ext(dcmdata.dcm_data.TransmitterFrequency,
-                            dcmdata.dcm_data.ResonantNucleus)
+    obj = Hdr_Ext(
+        dcmdata.dcm_data.TransmitterFrequency,
+        dcmdata.dcm_data.ResonantNucleus)
 
     def set_if_present(tag, val):
         if val:

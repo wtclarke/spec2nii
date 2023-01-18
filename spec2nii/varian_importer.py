@@ -4,16 +4,19 @@
 Copyright (C) 2021 University of Oxford and University of Aarhus
 """
 
-import numpy as np
-from spec2nii.nifti_orientation import NIFTIOrient, calc_affine
-from spec2nii import nifti_mrs
+import re
+import warnings
 from datetime import datetime
 from os.path import basename, splitext
-from spec2nii import __version__ as spec2nii_ver
 
-import re
+import numpy as np
+
+from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
+from nifti_mrs.hdr_ext import Hdr_Ext
+
+from spec2nii import __version__ as spec2nii_ver
+from spec2nii.nifti_orientation import NIFTIOrient, calc_affine
 import spec2nii.varian as v
-import warnings
 
 
 def read_varian(args):
@@ -87,7 +90,7 @@ def read_varian(args):
     orientation = NIFTIOrient(affine)
 
     # create object
-    meta = nifti_mrs.hdr_ext(imagingfreq, nucleus)
+    meta = Hdr_Ext(imagingfreq, nucleus)
     meta.set_standard_def('ConversionMethod', f'spec2nii v{spec2nii_ver}')
     meta.set_standard_def('EchoTime', echotime)
     meta.set_standard_def('RepetitionTime', repetition_time)
@@ -133,16 +136,16 @@ def read_varian(args):
     else:
         fname_out = [splitext(basename(args.file))[0], ]
 
-    return [nifti_mrs.NIfTI_MRS(data, orientation.Q44, dwelltime, meta), ], fname_out
+    return [gen_nifti_mrs_hdr_ext(data, dwelltime, meta, orientation.Q44, no_conj=True), ], fname_out
 
 
 def _varian_orientation_1d(params):
     '''Calculate 1d slice orientation from parameters struct
      extract voxel positions if available
      NB:  0d spect -- thk etc not defined
-          1d slice -- thk, and then pss along the usual (theta, phi, psi) angles (and orient)
-          SVS voxel - vorient, vpsi, vphi, vtheta: define angle of voxel;
-                    - pos1, pos2, pos3           : define position of voxel
+          1d slice -- thk, and then pss along the usual (theta, phi, psi) angles (and orient)
+          SVS voxel - vorient, vpsi, vphi, vtheta: define angle of voxel;
+                    - pos1, pos2, pos3           : define position of voxel
                     - vox1, vox2, vox3, thkunit  : define size of voxel (no thkunit is mm)
     '''
     warnings.warn('Not yet implemented')

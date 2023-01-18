@@ -3,12 +3,15 @@ Contains text and LCModel formats.
 Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
 Copyright (C) 2020 University of Oxford
 """
-import numpy as np
-from spec2nii.nifti_orientation import NIFTIOrient
-from spec2nii import nifti_mrs
 from datetime import datetime
 from os.path import basename, splitext
+
+import numpy as np
+from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
+from nifti_mrs.hdr_ext import Hdr_Ext
+
 from spec2nii import __version__ as spec2nii_ver
+from spec2nii.nifti_orientation import NIFTIOrient
 
 
 class InsufficentHeaderInformationError(Exception):
@@ -27,8 +30,9 @@ def text(args):
     # Interpret required arguments (frequency and bandwidth)
     dwelltime = 1.0 / args.bandwidth
 
-    meta = nifti_mrs.hdr_ext(args.imagingfreq,
-                             args.nucleus)
+    meta = Hdr_Ext(
+        args.imagingfreq,
+        args.nucleus)
 
     meta.set_standard_def('ConversionMethod', 'spec2nii')
     conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')
@@ -44,10 +48,12 @@ def text(args):
 
     nifti_orientation = NIFTIOrient(affine)
 
-    img_out = [nifti_mrs.NIfTI_MRS(data,
-                                   nifti_orientation.Q44,
-                                   dwelltime,
-                                   meta), ]
+    img_out = [gen_nifti_mrs_hdr_ext(
+        data,
+        dwelltime,
+        meta,
+        nifti_orientation.Q44,
+        no_conj=True), ]
 
     # File names
     if args.fileout:
@@ -89,8 +95,9 @@ def lcm_raw(args):
                 "There is no 'centralFrequency' key in the header information, "
                 "please use the optional '-i' argument to provide a frequency.")
 
-    meta = nifti_mrs.hdr_ext(spec_frequency,
-                             args.nucleus)
+    meta = Hdr_Ext(
+        spec_frequency,
+        args.nucleus)
 
     meta.set_standard_def('ConversionMethod', f'spec2nii v{spec2nii_ver}')
     conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')
@@ -106,10 +113,12 @@ def lcm_raw(args):
 
     nifti_orientation = NIFTIOrient(affine)
 
-    img_out = [nifti_mrs.NIfTI_MRS(data,
-                                   nifti_orientation.Q44,
-                                   dwelltime,
-                                   meta), ]
+    img_out = [gen_nifti_mrs_hdr_ext(
+        data,
+        dwelltime,
+        meta,
+        nifti_orientation.Q44,
+        no_conj=True), ]
 
     # File names
     if args.fileout:

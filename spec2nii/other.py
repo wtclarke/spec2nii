@@ -6,9 +6,7 @@ Copyright (C) 2021 University of Oxford
 import json
 import pprint
 
-import nibabel as nib
-
-from spec2nii import nifti_mrs
+from nifti_mrs.nifti_mrs import NIFTI_MRS
 
 
 def dump_headers(args):
@@ -17,18 +15,15 @@ def dump_headers(args):
     :param args: Command line arguments
     """
     # Load file
-    nifti_mrs_img = nib.load(args.file)
+    nifti_mrs_img = NIFTI_MRS(args.file)
 
     # Print NIfTI header
     print('NIfTI header: ')
     print(nifti_mrs_img.header)
 
-    hdr_ext_codes = nifti_mrs_img.header.extensions.get_codes()
-    hdr_ext = json.loads(nifti_mrs_img.header.extensions[hdr_ext_codes.index(44)].get_content())
-
     print('\nNIfTI-MRS header extension: ')
     pp = pprint.PrettyPrinter()
-    pp.pprint(hdr_ext)
+    pp.pprint(nifti_mrs_img.hdr_ext.to_dict())
 
 
 def extract_hdr_ext(args):
@@ -36,9 +31,7 @@ def extract_hdr_ext(args):
 
     :param args: Command line arguments
     """
-    nifti_mrs_img = nib.load(args.file)
-
-    hdr_ext_codes = nifti_mrs_img.header.extensions.get_codes()
+    nifti_mrs_img = NIFTI_MRS(args.file)
 
     if args.outdir:
         args.outdir.mkdir(exist_ok=True, parents=True)
@@ -47,29 +40,25 @@ def extract_hdr_ext(args):
         out_json = args.file.parent / (args.file.with_suffix('').with_suffix('').name + '.json')
 
     with open(out_json, 'w') as fp:
-        json.dump(json.loads(nifti_mrs_img.header.extensions[hdr_ext_codes.index(44)].get_content()), fp, indent=4)
+        json.dump(nifti_mrs_img.hdr_ext.to_dict(), fp, indent=4)
 
 
 def insert_hdr_ext(args):
-    """Function for anonymising input NIfTI-MRS files.
+    """Function for inserting a new header into NIfTI-MRS files.
 
     :param args: Command line arguments parsed in spec2nii.py
-    :return: List of anonymised images
-    :rtype: [nib.nifti2.Nifti2Image,]
+    :return: Modified NIfTI-MRS file
+    :rtype: [nifti_mrs.nifti_mrs.NIFTI_MRS,]
     :return: List of output names
     :rtype: [str,]
     """
     # Load data
-    nifti_mrs_img = nib.load(args.file)
+    nifti_mrs_img = NIFTI_MRS(args.file)
 
     with open(args.json_file) as jf:
         new_hdr = json.load(jf)
 
-    # Make new NIfTI-MRS image
-    mod_out = nifti_mrs.NIfTI_MRS(nifti_mrs_img.get_fdata(dtype=nifti_mrs_img.get_data_dtype()),
-                                  nifti_mrs_img.affine,
-                                  nifti_mrs_img.header['pixdim'][4],
-                                  new_hdr)
+    nifti_mrs_img.hdr_ext = new_hdr
 
     # Process output name.
     if args.fileout:
@@ -77,4 +66,4 @@ def insert_hdr_ext(args):
     else:
         fname_out = [args.file.with_suffix('').with_suffix('').name, ]
 
-    return [mod_out, ], fname_out
+    return [nifti_mrs_img, ], fname_out

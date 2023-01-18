@@ -2,11 +2,15 @@
 Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
 Copyright (C) 2020 University of Oxford
 """
-import numpy as np
 import re
-from spec2nii.nifti_orientation import NIFTIOrient
-from spec2nii import nifti_mrs
 from datetime import datetime
+
+import numpy as np
+
+from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
+from nifti_mrs.hdr_ext import Hdr_Ext
+
+from spec2nii.nifti_orientation import NIFTIOrient
 from spec2nii import __version__ as spec2nii_ver
 
 
@@ -85,10 +89,12 @@ def jmrui_mrui(args):
 
     nifti_orientation = NIFTIOrient(affine)
 
-    img_out = [nifti_mrs.NIfTI_MRS(data,
-                                   nifti_orientation.Q44,
-                                   dwelltime,
-                                   meta), ]
+    img_out = [gen_nifti_mrs_hdr_ext(
+        data,
+        dwelltime,
+        meta,
+        nifti_orientation.Q44,
+        no_conj=True), ]
 
     # File names
     if args.fileout:
@@ -162,8 +168,9 @@ def jmrui_hdr_to_obj_mrui(header, str_info):
                          header['transmitter_frequency'],
                          header['magnetic_field'])
 
-    meta = nifti_mrs.hdr_ext(header['transmitter_frequency'],
-                             nucleus)
+    meta = Hdr_Ext(
+        header['transmitter_frequency'],
+        nucleus)
 
     # meta.set_standard_def('ManufacturersModelName', header['Spectrometer'])
     # meta.set_standard_def('PatientName', header['NameOfPatient'])
@@ -206,10 +213,12 @@ def jmrui_txt(args):
 
     nifti_orientation = NIFTIOrient(affine)
 
-    img_out = [nifti_mrs.NIfTI_MRS(data,
-                                   nifti_orientation.Q44,
-                                   dwelltime,
-                                   meta), ]
+    img_out = [gen_nifti_mrs_hdr_ext(
+        data,
+        dwelltime,
+        meta,
+        nifti_orientation.Q44,
+        no_conj=True), ]
 
     # File names
     if args.fileout:
@@ -310,8 +319,9 @@ def jmrui_hdr_to_obj(header):
                              header['TransmitterFrequency'],
                              header['MagneticField'])
 
-    meta = nifti_mrs.hdr_ext(float(header['TransmitterFrequency']),
-                             nucleus)
+    meta = Hdr_Ext(
+        float(header['TransmitterFrequency']),
+        nucleus)
 
     if 'Spectrometer' in header:
         meta.set_standard_def('ManufacturersModelName', header['Spectrometer'])

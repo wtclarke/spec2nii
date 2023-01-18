@@ -59,7 +59,7 @@ def test_text(affine_file, tmp_path):
     assert converted.shape == (1, 1, 1, 4096)
     assert np.iscomplexobj(converted.dataobj)
     assert np.allclose(np.loadtxt(affine_file), converted.affine)
-    assert np.allclose(converted.dataobj, original.dataobj)
+    assert np.allclose(converted.dataobj[:], original.dataobj[:])
     assert (tmp_path / "outdir" / 'text.json').exists()
 
 
@@ -80,7 +80,7 @@ def test_raw(affine_file, tmp_path):
     assert converted.shape == (1, 1, 1, 4096)
     assert np.iscomplexobj(converted.dataobj)
     assert np.allclose(np.loadtxt(affine_file), converted.affine)
-    assert np.allclose(converted.dataobj, original.dataobj)
+    assert np.allclose(converted.dataobj[:], original.dataobj[:])
     assert (tmp_path / 'raw.json').exists()
 
 
@@ -103,5 +103,5 @@ def test_raw_nohdr(affine_file, tmp_path):
     assert converted.shape == (1, 1, 1, 4096)
     assert np.iscomplexobj(converted.dataobj)
     assert np.allclose(np.loadtxt(affine_file), converted.affine)
-    assert np.allclose(converted.dataobj, original.dataobj)
+    assert np.allclose(converted.dataobj[:], original.dataobj[:])
     assert (tmp_path / 'raw.json').exists()

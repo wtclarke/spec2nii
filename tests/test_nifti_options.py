@@ -3,7 +3,8 @@
 import subprocess
 import nibabel as nib
 from pathlib import Path
-
+import numpy as np
+from nifti_mrs.nifti_mrs import NIFTI_MRS
 
 # Data paths
 siemens_path = Path(__file__).parent / 'spec2nii_test_data' / 'Siemens'
@@ -30,9 +31,13 @@ def test_process(tmp_path):
     assert type(img_nifti2) is nib.nifti2.Nifti2Image
     assert type(img_nifti1) is nib.nifti1.Nifti1Image
 
+    img_nifti2 = NIFTI_MRS(tmp_path / 'nifti_2.nii.gz')
+    img_nifti1 = NIFTI_MRS(tmp_path / 'nifti_1.nii.gz')
 
-def test_generation(tmp_path):
-    from spec2nii.nifti_mrs import get_mrs_class
+    assert type(img_nifti2.header) is nib.nifti2.Nifti2Header
+    assert type(img_nifti1.header) is nib.nifti1.Nifti1Header
 
-    assert get_mrs_class(nifti=2).__bases__[0] is nib.nifti2.Nifti2Image
-    assert get_mrs_class(nifti=1).__bases__[0] is nib.nifti1.Nifti1Image
+    # Check parameters stored are the same
+    assert np.allclose(img_nifti2[:], img_nifti1[:])
+    assert np.isclose(img_nifti2.dwelltime, img_nifti1.dwelltime)
+    assert img_nifti2.hdr_ext.current_keys == img_nifti1._hdr_ext.current_keys

@@ -6,27 +6,32 @@ from datetime import datetime
 from ast import literal_eval
 
 import numpy as np
+from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
+from nifti_mrs.hdr_ext import Hdr_Ext
 
 from spec2nii.nifti_orientation import NIFTIOrient, calc_affine
-from spec2nii import nifti_mrs
 from spec2nii import __version__ as spec2nii_ver
 
 
-def read_sdat_spar_pair(sdat_file, spar_file, shape=None, tags=None):
-    """_summary_
+def read_sdat_spar_pair(sdat_file, spar_file, shape=None, tags=None, fileout=None, special=None):
+    """Read and convert SPAR/SDAT pairs from Philips scanners
 
-    _extended_summary_
-
-    :param sdat_file: _description_
-    :type sdat_file: _type_
-    :param spar_file: _description_
-    :type spar_file: _type_
-    :param shape: _description_, defaults to None
-    :type shape: _type_, optional
-    :param tags: _description_, defaults to None
-    :type tags: _type_, optional
-    :return: _description_
-    :rtype: _type_
+    :param sdat_file: Path to .SDAT file
+    :type sdat_file: pathlib.Path
+    :param spar_file: Path to .SPAR file
+    :type spar_file: pathlib.Path
+    :param shape: List of dimension shapes to reshape array, defaults to None
+    :type shape: list of ints, optional
+    :param tags: List of higher dimension tags, defaults to None
+    :type tags: List of strings, optional
+    :param fileout: File name string passed by user, defaults to None/stem of file
+    :type fileout: str, optional
+    :param special: Identifier for special-cased sequence, defaults to None
+    :type special: str, optional
+    :return: List of NIFTI-MRS objects
+    :rtype: list of nifti_mrs.nifti_mrs.NIFTI_MRS
+    :return: List of file name parts
+    :rtype: list of strings
     """
     spar_params = read_spar(spar_file)
     data = read_sdat(sdat_file,
@@ -62,7 +67,21 @@ def read_sdat_spar_pair(sdat_file, spar_file, shape=None, tags=None):
         affine = np.diag(np.array([10000, 10000, 10000, 1]))
     orientation = NIFTIOrient(affine)
 
-    return [nifti_mrs.NIfTI_MRS(data, orientation.Q44, dwelltime, meta), ]
+    # name of output
+    if fileout is not None:
+        mainStr = fileout
+    else:
+        mainStr = sdat_file.stem
+
+    # Special cases
+    if spar_params['scan_id'].lower() == 'hyper'\
+            or (special is not None and
+                special.lower() == 'hyper'):
+        return _special_case_hyper(data, dwelltime, meta, orientation.Q44, mainStr)
+    else:
+        # Normal case
+        return [gen_nifti_mrs_hdr_ext(data, dwelltime, meta, orientation.Q44, no_conj=True), ],\
+               [mainStr, ]
 
 
 def read_spar(filename):
@@ -143,8 +162,9 @@ def spar_to_nmrs_hdrext(spar_dict):
 
     # Extract required metadata and create hdr_ext object
     cf = float(spar_dict["synthesizer_frequency"]) / 1E6
-    obj = nifti_mrs.hdr_ext(cf,
-                            spar_dict["nucleus"])
+    obj = Hdr_Ext(
+        cf,
+        spar_dict["nucleus"])
 
     def set_standard_def(nifti_mrs_key, location, key, cast=None):
         try:
@@ -266,3 +286,37 @@ def _vax_to_ieee_single_float(data):
             # may want to raise an exception here ...
 
     return f
+
+
+def _special_case_hyper(data, dwelltime, meta, orientation, fout_str):
+    # Reorganise the data. This unfortunately makes hardcoded assumptions about the size of each part.
+    data_short_te = data[:, :, :, :, :32]
+    data_edited = data[:, :, :, :, 32:]
+    data_edited = data_edited.T.reshape((56, 4, data.shape[3], 1, 1, 1)).T
+
+    meta_short_te = meta.copy()
+    meta_edited = meta.copy()
+
+    edit_pulse_1 = 1.9
+    edit_pulse_2 = 4.58
+    edit_pulse_off = 4.18
+    dim_info = "HERCULES j-difference editing, four conditions"
+    dim_header = {"EditCondition": ["A", "B", "C", "D"]}
+    edit_pulse_val = {
+        "A": {"PulseOffset": [edit_pulse_1, edit_pulse_2], "PulseDuration": 0.02},
+        "B": {"PulseOffset": [edit_pulse_off, edit_pulse_2], "PulseDuration": 0.02},
+        "C": {"PulseOffset": edit_pulse_1, "PulseDuration": 0.02},
+        "D": {"PulseOffset": edit_pulse_off, "PulseDuration": 0.02}}
+
+    meta_edited.set_dim_info(
+        0,
+        'DIM_EDIT',
+        dim_info,
+        dim_header)
+
+    meta_edited.set_dim_info(1, 'DIM_DYN')
+    meta_edited.set_standard_def("EditPulse", edit_pulse_val)
+
+    return [gen_nifti_mrs_hdr_ext(data_short_te, dwelltime, meta_short_te, orientation, no_conj=True),
+            gen_nifti_mrs_hdr_ext(data_edited, dwelltime, meta_edited, orientation, no_conj=True)],\
+           [fout_str + '_hyper_short_te', fout_str + '_hyper_edited']

@@ -8,7 +8,9 @@ import warnings
 
 import numpy as np
 
-from spec2nii import nifti_mrs
+from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
+from nifti_mrs.hdr_ext import Hdr_Ext
+
 from spec2nii.dcm2niiOrientation.orientationFuncs import dcm_to_nifti_orientation
 from spec2nii import __version__ as spec2nii_ver
 
@@ -102,7 +104,7 @@ def convert_rda(rda_path, fname_out, verbose):
     else:
         name = rda_path.stem
 
-    return [nifti_mrs.NIfTI_MRS(data_cmplx, currNiftiOrientation.Q44, dwelltime, meta), ], [name, ]
+    return [gen_nifti_mrs_hdr_ext(data_cmplx, dwelltime, meta, currNiftiOrientation.Q44, no_conj=True), ], [name, ]
 
 
 def extractRdaMetadata(hdr):
@@ -111,12 +113,13 @@ def extractRdaMetadata(hdr):
     :param hdr: Header read from rda file
     :type hdr: dict
     :return: Complete nifti_mrs header object
-    :rtype: spec2nii.nifti_mrs.hdr_ext
+    :rtype: nifti_mrs.nifti_mrs.Hdr_Ext
     """
 
     # Extract required metadata and create hdr_ext object
-    obj = nifti_mrs.hdr_ext(_locale_float(hdr['MRFrequency']),
-                            hdr['Nucleus'])
+    obj = Hdr_Ext(
+        _locale_float(hdr['MRFrequency']),
+        hdr['Nucleus'])
 
     # Standard defined metadata
     def set_standard_def(nifti_mrs_key, location, key, cast=None):

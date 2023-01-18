@@ -28,7 +28,6 @@ from pathlib import Path
 import json
 
 from nibabel.nifti2 import Nifti2Image
-from spec2nii import nifti_mrs
 from spec2nii import __version__ as spec2nii_ver
 # There are case specific imports below
 
@@ -121,6 +120,11 @@ class spec2nii:
             nargs='+',
             default=None,
             help="Specify the shape of higher (5th-7th) dimensions. Applies numpy style reshaping.")
+        parser_philips.add_argument(
+            "--special",
+            type=str,
+            default=None,
+            help="Identify special case sequence. Options: 'hyper'.")
         parser_philips = add_common_parameters(parser_philips)
         parser_philips.set_defaults(func=self.philips)
 
@@ -128,10 +132,15 @@ class spec2nii:
         parser_p_dl = subparsers.add_parser('philips_dl', help='Convert from Philips data/list format.')
         parser_p_dl.add_argument('data', help='.data file', type=Path)
         parser_p_dl.add_argument('list', help='.list file', type=Path)
-        parser_p_dl.add_argument('spar', help='.SPAR file', type=Path)
+        parser_p_dl.add_argument('aux', help='Auxiliary file: .SPAR or DICOM file', type=Path)
         # for idx in range(5, 8):
         #     parser_p_dl.add_argument(f"-d{idx}", f"--dim{idx}", type=str, help=f"Specify dim {idx} loop counter.")
         #     parser_p_dl.add_argument(f"-t{idx}", f"--tag{idx}", type=str, help=f"Specify dim {idx} NIfTI MRS tag.")
+        parser_p_dl.add_argument(
+            "--special",
+            type=str,
+            default=None,
+            help="Identify special case sequence. Options: 'hyper'.")
         parser_p_dl = add_common_parameters(parser_p_dl)
         parser_p_dl.set_defaults(func=self.philips_dl)
 
@@ -278,17 +287,12 @@ class spec2nii:
 
         self.outputDir = args.outdir
 
-        if args.nifti1:
-            nifti_mrs.NIfTI_MRS = nifti_mrs.get_mrs_class(nifti=1)
-        else:
-            nifti_mrs.NIfTI_MRS = nifti_mrs.get_mrs_class(nifti=2)
-
         args.func(args)
 
         if self.imageOut:
             self.implement_overrides(args)
             self.validate_output()
-            self.write_output(args.json)
+            self.write_output(args.json, args.nifti1)
             self.validate_write(args.verbose)
             if args.verbose:
                 print(f'Please cite {cite_str}.')
@@ -318,10 +322,20 @@ class spec2nii:
 
     def validate_output(self):
         """Run NIfTI MRS validation on output."""
+        import nifti_mrs.validator as validate
+        # Currently this repeats the validation before the save.
+        # But useful here to do exception handling
         for f_out, nifti_mrs_img in zip(self.fileoutNames, self.imageOut):
-            nifti_mrs_img.validate()
+            try:
+                validate.validate_nifti_mrs(nifti_mrs_img)
+            except (
+                    validate.headerExtensionError,
+                    validate.niftiDataError,
+                    validate.niftiHeaderError) as exc:
 
-    def write_output(self, write_json=False):
+                raise Spec2niiError(f'Generated file {f_out} failed validation.') from exc
+
+    def write_output(self, write_json=False, nifti1=False):
         """Write any NIfTI MRS objects stored.
         If write_json is true also write meta-data as sidecar.
         """
@@ -329,7 +343,20 @@ class spec2nii:
 
         for f_out, nifti_mrs_img in zip(self.fileoutNames, self.imageOut):
             out = self.outputDir / (f_out + '.nii.gz')
-            nifti_mrs_img.save(out)
+
+            if nifti1:
+                # If nifti1 is requested just remake the file.
+                # This is more than a bit hacky, but avoids passing the option to every end-point.
+                from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
+                gen_nifti_mrs_hdr_ext(
+                    nifti_mrs_img[:],
+                    nifti_mrs_img.dwelltime,
+                    nifti_mrs_img.hdr_ext,
+                    nifti_mrs_img.getAffine('voxel', 'world'),
+                    nifti_version=1)\
+                    .save(out)
+            else:
+                nifti_mrs_img.save(out)
 
             if write_json:
                 out_json = self.outputDir / (f_out + '.json')
@@ -448,15 +475,13 @@ class spec2nii:
         # philips specific imports
         from spec2nii.Philips.philips import read_sdat_spar_pair
 
-        self.imageOut = read_sdat_spar_pair(args.sdat, args.spar, args.shape, args.tags)
-
-        # name of output
-        if args.fileout:
-            mainStr = args.fileout
-        else:
-            mainStr = args.sdat.stem
-
-        self.fileoutNames.append(mainStr)
+        self.imageOut, self.fileoutNames = read_sdat_spar_pair(
+            args.sdat,
+            args.spar,
+            args.shape,
+            args.tags,
+            args.fileout,
+            args.special)
 
     # Philips data/list (+SPAR) handler
     def philips_dl(self, args):
@@ -468,7 +493,7 @@ class spec2nii:
         #              'tags': (args.tag5, args.tag6, args.tag7)}
 
         # self.imageOut, file_names = read_data_list_pair(args.data, args.list, args.spar, overrides)
-        self.imageOut, file_names = read_data_list_pair(args.data, args.list, args.spar)
+        self.imageOut, file_names = read_data_list_pair(args.data, args.list, args.aux, args.special)
 
         # name of output
         if args.fileout:
@@ -525,16 +550,8 @@ class spec2nii:
     # Bruker 2dseq files with FG_COMPLEX
     def bruker(self, args):
         from spec2nii.bruker import read_bruker
-        from warnings import warn
-        from brukerapi.exceptions import MissingProperty
-        warn('Bruker conversion must currently be run with numpy<1.20.0')
 
-        try:
-            self.imageOut, self.fileoutNames = read_bruker(args)
-        except MissingProperty:
-            raise Spec2niiError(
-                'Bruker conversion must currently be run with numpy<1.20.0. '
-                'The underlying brukerapi package requires updating for ongoing compatibility.')
+        self.imageOut, self.fileoutNames = read_bruker(args)
 
     # Varian parser
     def varian(self, args):
