@@ -20,6 +20,9 @@ svs_path_spar = philips_path / 'P1' / 'SV_PRESS_sh_6_2_raw_act.SPAR'
 svs_edit_path_sdat = philips_path / 'HERCULES_spar_sdat' / 'HERCULES_Example_noID.sdat'
 svs_edit_path_spar = philips_path / 'HERCULES_spar_sdat' / 'HERCULES_Example_noID.spar'
 
+hyper_path_sdat = philips_path / 'hyper' / 'HBCD_HYPER_r5712_Export_WIP_HYPER_5_2_raw_act.SDAT'
+hyper_path_spar = philips_path / 'hyper' / 'HBCD_HYPER_r5712_Export_WIP_HYPER_5_2_raw_act.SPAR'
+
 
 def test_svs(tmp_path):
 
@@ -68,4 +71,40 @@ def test_svs_edit(tmp_path):
     assert hdr_ext['ResonantNucleus'][0] == '1H'
     assert hdr_ext['OriginalFile'][0] == svs_edit_path_sdat.name
     assert hdr_ext['dim_5'] == 'DIM_EDIT'
+    assert hdr_ext['dim_6'] == 'DIM_DYN'
+
+
+def test_svs_hyper(tmp_path):
+
+    subprocess.check_call(['spec2nii', 'philips',
+                           '-f', 'svs',
+                           '-o', tmp_path,
+                           '-j',
+                           str(hyper_path_sdat),
+                           str(hyper_path_spar)])
+
+    img_1 = read_nifti_mrs(tmp_path / 'svs_hyper_short_te.nii.gz')
+    img_2 = read_nifti_mrs(tmp_path / 'svs_hyper_edited.nii.gz')
+
+    assert img_1.shape == (1, 1, 1, 2048, 32)
+    assert np.iscomplexobj(img_1.dataobj)
+    assert 1 / img_1.header['pixdim'][4] == 2000.0
+
+    assert img_2.shape == (1, 1, 1, 2048, 4, 56)
+    assert np.iscomplexobj(img_2.dataobj)
+    assert 1 / img_2.header['pixdim'][4] == 2000.0
+
+    hdr_ext_codes = img_1.header.extensions.get_codes()
+    hdr_ext = json.loads(img_1.header.extensions[hdr_ext_codes.index(44)].get_content())
+
+    assert hdr_ext['SpectrometerFrequency'][0] == 127.74876
+    assert hdr_ext['ResonantNucleus'][0] == '1H'
+    assert hdr_ext['OriginalFile'][0] == hyper_path_sdat.name
+    assert hdr_ext['dim_5'] == 'DIM_DYN'
+
+    hdr_ext_codes = img_2.header.extensions.get_codes()
+    hdr_ext = json.loads(img_2.header.extensions[hdr_ext_codes.index(44)].get_content())
+
+    assert hdr_ext['dim_5'] == 'DIM_EDIT'
+    assert hdr_ext['dim_5_header'] == {'EditCondition': ['A', 'B', 'C', 'D']} 
     assert hdr_ext['dim_6'] == 'DIM_DYN'

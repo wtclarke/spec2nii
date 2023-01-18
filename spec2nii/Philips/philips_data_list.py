@@ -236,7 +236,7 @@ def _read_list(list_file):
                         r'(\d+)\s+\d+\s+\d+\s+number_of_([a-z0-9_]+)\s+:\s+(\d+)',
                         line)
                     if matched[2] not in num_dict:
-                        num_dict[matched[2]] = np.zeros((n_mixes), dtype=np.int)
+                        num_dict[matched[2]] = np.zeros((n_mixes), dtype=int)
                     num_dict[matched[2]][int(matched[1])] = int(matched[3])
                 elif '_range' in line:
                     matched = re.search(
@@ -244,7 +244,7 @@ def _read_list(list_file):
                         line,
                         flags=re.IGNORECASE)
                     if matched[3] not in coord_dict:
-                        coord_dict[matched[3]] = np.zeros((n_mixes, n_echoes, 2), dtype=np.int)
+                        coord_dict[matched[3]] = np.zeros((n_mixes, n_echoes, 2), dtype=int)
                     coord_dict[matched[3]][int(matched[1]), int(matched[2]), 0] = int(matched[4])
                     coord_dict[matched[3]][int(matched[1]), int(matched[2]), 1] = int(matched[5])
                 elif '_oversample_factor' in line:

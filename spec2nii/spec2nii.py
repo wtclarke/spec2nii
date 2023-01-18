@@ -493,7 +493,7 @@ class spec2nii:
         #              'tags': (args.tag5, args.tag6, args.tag7)}
 
         # self.imageOut, file_names = read_data_list_pair(args.data, args.list, args.spar, overrides)
-        self.imageOut, file_names = read_data_list_pair(args.data, args.list, args.aux, args.special_case)
+        self.imageOut, file_names = read_data_list_pair(args.data, args.list, args.aux, args.special)
 
         # name of output
         if args.fileout:

@@ -75,7 +75,8 @@ def read_sdat_spar_pair(sdat_file, spar_file, shape=None, tags=None, fileout=Non
 
     # Special cases
     if spar_params['scan_id'].lower() == 'hyper'\
-            or special.lower() == 'hyper':
+            or (special is not None and
+                special.lower() == 'hyper'):
         return _special_case_hyper(data, dwelltime, meta, orientation.Q44, mainStr)
     else:
         # Normal case
