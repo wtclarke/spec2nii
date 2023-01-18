@@ -106,5 +106,5 @@ def test_svs_hyper(tmp_path):
     hdr_ext = json.loads(img_2.header.extensions[hdr_ext_codes.index(44)].get_content())
 
     assert hdr_ext['dim_5'] == 'DIM_EDIT'
-    assert hdr_ext['dim_5_header'] == {'EditCondition': ['A', 'B', 'C', 'D']} 
+    assert hdr_ext['dim_5_header'] == {'EditCondition': ['A', 'B', 'C', 'D']}
     assert hdr_ext['dim_6'] == 'DIM_DYN'

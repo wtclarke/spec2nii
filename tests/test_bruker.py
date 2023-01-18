@@ -62,7 +62,7 @@ def test_fid(tmp_path):
     # Img 9 - svs
     img = read_nifti_mrs(tmp_path / 'fid_FID_9.nii.gz')
 
-    assert img.shape == (1, 1, 1, 1980, 1)
+    assert img.shape == (1, 1, 1, 1980)
     assert np.iscomplexobj(img.dataobj)
     assert np.isclose(1 / img.header['pixdim'][4], 4401.41)
 
@@ -79,7 +79,7 @@ def test_fid(tmp_path):
     # Img 10 - svs
     img = read_nifti_mrs(tmp_path / 'fid_FID_10.nii.gz')
 
-    assert img.shape == (1, 1, 1, 1980, 1)
+    assert img.shape == (1, 1, 1, 1980)
     assert np.iscomplexobj(img.dataobj)
     assert np.isclose(1 / img.header['pixdim'][4], 4401.41)
 

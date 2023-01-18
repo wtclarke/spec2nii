@@ -60,5 +60,5 @@ def test_svs_hyper(tmp_path):
 
     assert hdr_ext['dim_5'] == 'DIM_COIL'
     assert hdr_ext['dim_6'] == 'DIM_EDIT'
-    assert hdr_ext['dim_6_header'] == {'EditCondition': ['A', 'B', 'C', 'D']} 
+    assert hdr_ext['dim_6_header'] == {'EditCondition': ['A', 'B', 'C', 'D']}
     assert hdr_ext['dim_7'] == 'DIM_DYN'
