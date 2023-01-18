@@ -6,6 +6,7 @@ This document contains the Spec2nii release history in reverse chronological ord
 - SPAR/SDAT pipeline now handles HYPER special case.
 - Data/list pipeline now handles HYPER special case.
 - Fixed issue with XA Twix PatientSex and TxOffset attributes.
+- Reenable Bruker conversion. 
 
 0.6.0 (Wednesday 11th January 2023)
 -----------------------------------
