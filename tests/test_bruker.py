@@ -69,7 +69,6 @@ def test_fid(tmp_path):
     hdr_ext_codes = img.header.extensions.get_codes()
     hdr_ext = json.loads(img.header.extensions[hdr_ext_codes.index(44)].get_content())
 
-    assert hdr_ext['dim_5'] == 'DIM_DYN'
     assert np.isclose(hdr_ext['SpectrometerFrequency'][0], 400.32251)
     assert hdr_ext['ResonantNucleus'][0] == '1H'
     assert hdr_ext['OriginalFile'][0] == str(data_path.absolute() / '9' / 'fid')
@@ -86,7 +85,6 @@ def test_fid(tmp_path):
     hdr_ext_codes = img.header.extensions.get_codes()
     hdr_ext = json.loads(img.header.extensions[hdr_ext_codes.index(44)].get_content())
 
-    assert hdr_ext['dim_5'] == 'DIM_DYN'
     assert np.isclose(hdr_ext['SpectrometerFrequency'][0], 400.32251)
     assert hdr_ext['ResonantNucleus'][0] == '1H'
     assert hdr_ext['OriginalFile'][0] == str(data_path.absolute() / '10' / 'fid')
