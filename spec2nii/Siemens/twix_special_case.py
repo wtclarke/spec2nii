@@ -10,7 +10,6 @@ def mgs_svs_ed_twix(twixObj, reord_data, meta_obj, dim_tags):
 
     MEGA/HURCULES sequence (2/4 editing case)
     """
-    breakpoint()
     seq_mode = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'alFree', '7')]
     pulse_length = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'alFree', '12')] / 1E6
     edit_pulse_1 = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'adFree', '8')]
