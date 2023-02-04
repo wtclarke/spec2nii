@@ -124,7 +124,7 @@ class spec2nii:
             "--special",
             type=str,
             default=None,
-            help="Identify special case sequence. Options: 'hyper'.")
+            help="Identify special case sequence. Options: 'hyper', 'hyper-ref'.")
         parser_philips = add_common_parameters(parser_philips)
         parser_philips.set_defaults(func=self.philips)
 

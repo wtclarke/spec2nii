@@ -74,7 +74,12 @@ def read_sdat_spar_pair(sdat_file, spar_file, shape=None, tags=None, fileout=Non
         mainStr = sdat_file.stem
 
     # Special cases
-    if spar_params['scan_id'].lower() == 'hyper'\
+    if (spar_params['scan_id'].lower() == 'hyper'
+        and '_ref' in sdat_file.stem)\
+        or (special is not None and
+            special.lower() == 'hyper-ref'):
+        return _special_case_hyper_ref(data, dwelltime, meta, orientation.Q44, mainStr)
+    elif spar_params['scan_id'].lower() == 'hyper'\
             or (special is not None and
                 special.lower() == 'hyper'):
         return _special_case_hyper(data, dwelltime, meta, orientation.Q44, mainStr)
@@ -289,12 +294,34 @@ def _vax_to_ieee_single_float(data):
 
 
 def _special_case_hyper(data, dwelltime, meta, orientation, fout_str):
+    """Special case handling for the HYPER sequence (main water suppressed component).
+
+    Data is split into short TE and editing (4 conditions) blocks.
+
+    :param data: Combined short TE and editing condition data
+    :type data: np.ndarray
+    :param dwelltime: Spectral dwelltime
+    :type dwelltime: float
+    :param meta: raw meta object extracted from data
+    :type meta: nifti_mrs.hdr_ext.Hdr_Ext
+    :param orientation: Orientation object
+    :type orientation: spec2nii.nifti_orientation.NIFTIOrient
+    :param fout_str: Base of output string
+    :type fout_str: str
+    :return: 2 x Nifti-MRS objects, one short TE, one editing
+    :rtype: tuple of nifti_mrs.nifti_mrs.NIFTI_MRS
+    :return: 2 x Output names
+    :rtype: tuple of str
+    """
     # Reorganise the data. This unfortunately makes hardcoded assumptions about the size of each part.
     data_short_te = data[:, :, :, :, :32]
     data_edited = data[:, :, :, :, 32:]
     data_edited = data_edited.T.reshape((56, 4, data.shape[3], 1, 1, 1)).T
 
     meta_short_te = meta.copy()
+    meta_short_te.set_standard_def("WaterSuppressed", True)
+    meta_short_te.set_standard_def("EchoTime", 0.035)
+
     meta_edited = meta.copy()
 
     edit_pulse_1 = 1.9
@@ -304,8 +331,8 @@ def _special_case_hyper(data, dwelltime, meta, orientation, fout_str):
     dim_header = {"EditCondition": ["A", "B", "C", "D"]}
     edit_pulse_val = {
         "A": {"PulseOffset": [edit_pulse_1, edit_pulse_2], "PulseDuration": 0.02},
-        "B": {"PulseOffset": [edit_pulse_off, edit_pulse_2], "PulseDuration": 0.02},
-        "C": {"PulseOffset": edit_pulse_1, "PulseDuration": 0.02},
+        "B": {"PulseOffset": [edit_pulse_1, edit_pulse_off], "PulseDuration": 0.02},
+        "C": {"PulseOffset": edit_pulse_2, "PulseDuration": 0.02},
         "D": {"PulseOffset": edit_pulse_off, "PulseDuration": 0.02}}
 
     meta_edited.set_dim_info(
@@ -316,7 +343,50 @@ def _special_case_hyper(data, dwelltime, meta, orientation, fout_str):
 
     meta_edited.set_dim_info(1, 'DIM_DYN')
     meta_edited.set_standard_def("EditPulse", edit_pulse_val)
+    meta_edited.set_standard_def("WaterSuppressed", True)
+    meta_edited.set_standard_def("EchoTime", 0.08)
 
     return [gen_nifti_mrs_hdr_ext(data_short_te, dwelltime, meta_short_te, orientation, no_conj=True),
             gen_nifti_mrs_hdr_ext(data_edited, dwelltime, meta_edited, orientation, no_conj=True)],\
            [fout_str + '_hyper_short_te', fout_str + '_hyper_edited']
+
+
+def _special_case_hyper_ref(data, dwelltime, meta, orientation, fout_str):
+    """Special case handling for the HYPER sequence (water reference component).
+
+    Contains 8 references (every 32 scans from index 0). Starts with TE = 80 and alternates to TE = 35.
+    Output two ntime x 4 (DIM_DYN) shape files to match main acqusition
+
+    :param data: Combined short TE and editing-TE data
+    :type data: numpy.ndarray
+    :param dwelltime: Spectral dwelltime
+    :type dwelltime: float
+    :param meta: raw meta object extracted from data
+    :type meta: nifti_mrs.hdr_ext.Hdr_Ext
+    :param orientation: Orientation object
+    :type orientation: spec2nii.nifti_orientation.NIFTIOrient
+    :param fout_str: Base of output string
+    :type fout_str: str
+    :return: 2 x Nifti-MRS objects, one short TE, one editing-TE
+    :rtype: tuple of nifti_mrs.nifti_mrs.NIFTI_MRS
+    :return: 2 x Output names
+    :rtype: tuple of str
+    """
+    # Reorganise the data. This unfortunately makes hardcoded assumptions about the size of each part.
+    data_ref = data[:, :, :, :, ::32]
+    data_edited = data_ref[:, :, :, :, 0::2]
+    data_short_te = data_ref[:, :, :, :, 1::2]
+
+    meta_short_te = meta.copy()
+    meta_short_te.set_dim_info(0, 'DIM_DYN')
+    meta_short_te.set_standard_def("WaterSuppressed", False)
+    meta_short_te.set_standard_def("EchoTime", 0.035)
+
+    meta_edited = meta.copy()
+    meta_edited.set_dim_info(0, 'DIM_DYN')
+    meta_edited.set_standard_def("WaterSuppressed", False)
+    meta_short_te.set_standard_def("EchoTime", 0.08)
+
+    return [gen_nifti_mrs_hdr_ext(data_short_te, dwelltime, meta_short_te, orientation, no_conj=True),
+            gen_nifti_mrs_hdr_ext(data_edited, dwelltime, meta_edited, orientation, no_conj=True)],\
+           [fout_str + '_hyper_ref_short_te', fout_str + '_hyper_ref_edited']

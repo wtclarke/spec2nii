@@ -21,7 +21,8 @@ xa30_path = siemens_path / 'XAData' / 'XA30/meas_MID00479_FID106847_svs_se_135sw
 ve_fid = siemens_path / 'fid' / 'meas_MID00070_FID27084_fid_13C_360dyn_hyper_TR1000.dat'
 
 # Special cased data
-hercules_xa30 = siemens_path / 'HERCULES' / 'Siemens_TIEMO_HERC.dat'
+hercules_ve = siemens_path / 'HERCULES' / 'Siemens_TIEMO_HERC.dat'
+hercules_xa30 = siemens_path / 'HERCULES' / 'meas_MID02595_FID60346_HERC.dat'
 
 
 def test_VB(tmp_path):
@@ -159,15 +160,36 @@ def test_VE_fid(tmp_path):
     assert hdr_ext['dim_6'] == 'DIM_DYN'
 
 
-def test_XA30_HERCULES(tmp_path):
+def test_VE_HERCULES(tmp_path):
 
     subprocess.check_call(['spec2nii', 'twix',
                            '-e', 'image',
-                           '-f', 'hercules_xa30',
+                           '-f', 'hercules_ve',
+                           '-o', tmp_path,
+                           '-j', str(hercules_ve)])
+
+    img_t = read_nifti_mrs(tmp_path / 'hercules_ve.nii.gz')
+
+    hdr_ext_codes = img_t.header.extensions.get_codes()
+    hdr_ext = json.loads(img_t.header.extensions[hdr_ext_codes.index(44)].get_content())
+
+    assert img_t.shape == (1, 1, 1, 2080, 32, 4, 56)
+    assert np.iscomplexobj(img_t.dataobj)
+
+    assert hdr_ext['dim_5'] == 'DIM_COIL'
+    assert hdr_ext['dim_6'] == 'DIM_EDIT'
+    assert hdr_ext['dim_7'] == 'DIM_DYN'
+
+
+def test_XA_HERCULES(tmp_path):
+
+    subprocess.check_call(['spec2nii', 'twix',
+                           '-e', 'image',
+                           '-f', 'hercules_xa',
                            '-o', tmp_path,
                            '-j', str(hercules_xa30)])
 
-    img_t = read_nifti_mrs(tmp_path / 'hercules_xa30.nii.gz')
+    img_t = read_nifti_mrs(tmp_path / 'hercules_xa.nii.gz')
 
     hdr_ext_codes = img_t.header.extensions.get_codes()
     hdr_ext = json.loads(img_t.header.extensions[hdr_ext_codes.index(44)].get_content())
