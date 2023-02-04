@@ -6,22 +6,11 @@ Will Clarke, University of Oxford, 2022
 
 
 def mgs_svs_ed_twix(twixObj, reord_data, meta_obj, dim_tags):
-    """_summary_
+    """Special case handling for the mgs_svs_ed (VX) and smm_svs_herc (XA) sequence
 
-    _extended_summary_
-
-    :param twixObj: _description_
-    :type twixObj: _type_
-    :param reord_data: _description_
-    :type reord_data: _type_
-    :param meta_obj: _description_
-    :type meta_obj: _type_
-    :param dim_tags: _description_
-    :type dim_tags: _type_
-    :return: _description_
-    :rtype: _type_
+    MEGA/HURCULES sequence (2/4 editing case)
     """
-
+    breakpoint()
     seq_mode = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'alFree', '7')]
     pulse_length = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'alFree', '12')] / 1E6
     edit_pulse_1 = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'adFree', '8')]

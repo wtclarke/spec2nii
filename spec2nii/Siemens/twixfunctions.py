@@ -261,7 +261,9 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
     reord_data = np.moveaxis(squeezedData, original, new)
 
     # Special-cased sequences
-    if twixObj['hdr']['Meas'][('tSequenceString')] in ('mgs_svs_ed', ):
+    if twixObj['hdr']['Meas'][('tSequenceString')] in ('mgs_svs_ed', )\
+            or (xa_or_vx(twixObj['hdr']) == 'xa'
+                and 'smm_svs_herc' in twixObj['hdr']['Meas'][('tSequenceFileName')]):
         from spec2nii.Siemens.twix_special_case import mgs_svs_ed_twix
         reord_data, meta_obj, dim_tags = mgs_svs_ed_twix(twixObj, reord_data, meta_obj, dim_tags)
 

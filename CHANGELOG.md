@@ -1,7 +1,12 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
-0.6.1 (Wednesday 18 January 2023)
----------------------------------
+0.6.2 (Saturday 4th February 2023)
+----------------------------------
+- Handle HYPER references in SPAR/SDAT pipeline
+- Handle HURCULES/HERMES (smm_svs_herc) sequence in XA twix format.
+
+0.6.1 (Wednesday 18th January 2023)
+-----------------------------------
 - Fixed conjugation issue introduced by new nifti-mrs package dependency
 - SPAR/SDAT pipeline now handles HYPER special case.
 - Data/list pipeline now handles HYPER special case.
