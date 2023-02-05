@@ -415,9 +415,9 @@ class spec2nii:
         path_in = Path(args.file)
         if path_in.is_dir():
             # Look for typical dicom file extensions
-            files_in = sorted(path_in.glob('*.IMA')) + \
-                sorted(path_in.glob('*.ima')) + \
-                sorted(path_in.glob('*.dcm'))
+            files_in = sorted(path_in.rglob('*.IMA')) + \
+                sorted(path_in.rglob('*.ima')) + \
+                sorted(path_in.rglob('*.dcm'))
 
             # If none found look for all files
             if len(files_in) == 0:

@@ -1,9 +1,11 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
-0.6.2 (Saturday 4th February 2023)
+0.6.2 (Sunday 5th February 2023)
 ----------------------------------
 - Handle HYPER references in SPAR/SDAT pipeline
 - Handle HURCULES/HERMES (smm_svs_herc) sequence in XA twix format.
+- Changed behaviour of Siemens DICOM `spec2nii dicom` to recursively glob directory argument.
+- Better error output when encountering MR Image SOPClassUID.
 
 0.6.1 (Wednesday 18th January 2023)
 -----------------------------------
