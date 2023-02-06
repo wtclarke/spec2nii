@@ -178,7 +178,7 @@ class Pfile:
 
         psd = self.hdr.rhi_psdname.decode('utf-8').lower()
 
-        if psd == 'probe-p':
+        if psd in ('probe-p', 'probe-s'):
             mapper = PfileMapper
         elif psd in ('oslaser', 'slaser_cni'):
             mapper = PfileMapperSlaser
