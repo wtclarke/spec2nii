@@ -1,5 +1,9 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.6.3 (Monday 6th February 2023)
+--------------------------------
+- Added handling for GE presscsi and probe-s sequences.
+
 0.6.2 (Sunday 5th February 2023)
 ----------------------------------
 - Handle HYPER references in SPAR/SDAT pipeline
