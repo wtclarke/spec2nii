@@ -91,7 +91,7 @@ def _process_svs_pfile(pfile):
     '''
     psd = pfile.hdr.rhi_psdname.decode('utf-8').lower()
 
-    if psd == 'probe-p':
+    if psd in ('probe-p', 'probe-s'):
         data, meta, dwelltime, fname_suffix = _process_probe_p(pfile)
     elif psd in ('oslaser', 'slaser_cni'):
         data, meta, dwelltime, fname_suffix = _process_oslaser(pfile)
@@ -206,9 +206,10 @@ def _process_mrsi_pfile(pfile):
     '''
     psd = pfile.hdr.rhi_psdname.decode('utf-8').lower()
 
-    if psd not in ('probe-p', 'probe-sl', 'slaser_cni'):
+    known_formats = ('probe-p', 'probe-sl', 'slaser_cni', 'presscsi')
+    if psd not in known_formats:
         raise UnsupportedPulseSequenceError(
-            f'Unrecognised sequence {psd}, psdname must be "probe-p", "probe-sl", or "slaser_cni".')
+            f"Unrecognised sequence {psd}, psdname must be in: {','.join(known_formats)}.")
 
     warn('The interpretation of pfile CSI data is poorly tested; rotations or transpositions of the'
          ' CSI grid could be present. Spec2nii currently lacks a complete set of CSI test data.'
