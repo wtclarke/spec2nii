@@ -1,5 +1,9 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.6.4 (Tuesday 7th February 2023)
+---------------------------------
+- Added first pass at new `spec2nii auto` feature with automatic conversion for some formats.
+
 0.6.3 (Monday 6th February 2023)
 --------------------------------
 - Added handling for GE presscsi and probe-s sequences.

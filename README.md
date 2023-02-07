@@ -68,6 +68,9 @@ By default, spec2nii generates NIfTI files using the NIfTI-2 header format. Use 
 
 Manual overrides can be provided for incorrectly interpreted required header fields, namely SpectrometerFrequency, ResonantNucleus and dwell-time, by using the `--override_frequency`, `--override_nucleus`, and `--override_dwelltime` command line options.
 
+### Automatic detection
+`spec2nii auto FILE` will attempt an automatic conversion of the following formats: Twix, RDA, SPAR/SDAT, GE p-file, DICOM. Note that many features of the individual converters are not implemented in this automatic pathway. This feature should be regarded as somewhat experimental. For finer-grained control see the specific subcommands listed below.
+
 ### Twix
 Call `spec2nii twix -v FILE` to view a list of contained MDH flags. -m can be used to specify which multi-raid file to convert if used on VE data.
 
