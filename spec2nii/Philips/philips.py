@@ -205,7 +205,10 @@ def spar_to_nmrs_hdrext(spar_dict):
     # # 5.3 Sequence information
     # 'SequenceName'
     # 'ProtocolName'
-    set_standard_def('ProtocolName', spar_dict, 'scan_id')
+    try:
+        obj.set_standard_def('ProtocolName', spar_dict['scan_id'])
+    except AttributeError:
+        pass
     # # 5.4 Sequence information
     # 'PatientPosition'
     try:
