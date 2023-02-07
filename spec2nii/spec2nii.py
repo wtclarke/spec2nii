@@ -1,20 +1,5 @@
 """ spec2nii - tool for conversion of various MRS data formats to NIFTI format.
 
-spec2nii converts the following formats to NIFTI files.
-Supporting SVS:
-    Siemens "Twix" .dat format
-    Siemens DICOM
-    Philips SPAR/SDAT files
-    GE p-files
-    UIH DICOM
-    LCModel RAW
-    jMRUI text
-    Plain text
-
-Supporting CSI/MRSI:
-    Siemens DICOM
-    UIH DICOM
-
 This module contains the main class to be called as a script (through the main function).
 
 Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
@@ -65,6 +50,12 @@ class spec2nii:
             subparser.add_argument('--verbose', action='store_true')
             return subparser
 
+        # Auto subcommand - heuristic ID of file type
+        parser_auto = subparsers.add_parser('auto', help='Attempt automatic identification and conversion.')
+        parser_auto.add_argument('file', help='file to convert', type=Path)
+        parser_auto = add_common_parameters(parser_auto)
+        parser_auto.set_defaults(func=self.auto)
+
         # Handle twix subcommand
         parser_twix = subparsers.add_parser('twix', help='Convert from Siemens .dat twix format.')
         parser_twix.add_argument('file', help='file to convert', type=Path)
@@ -91,10 +82,10 @@ class spec2nii:
         parser_dicom.set_defaults(func=self.dicom)
 
         # Handle rda subcommand
-        parser_dicom = subparsers.add_parser('rda', help='Convert from Siemens spectroscopy .rda format.')
-        parser_dicom.add_argument('file', help='file to convert', type=Path)
-        parser_dicom = add_common_parameters(parser_dicom)
-        parser_dicom.set_defaults(func=self.rda)
+        parser_rda = subparsers.add_parser('rda', help='Convert from Siemens spectroscopy .rda format.')
+        parser_rda.add_argument('file', help='file to convert', type=Path)
+        parser_rda = add_common_parameters(parser_rda)
+        parser_rda.set_defaults(func=self.rda)
 
         # Handle UIH DICOM subcommand
         parser_uih_dicom = subparsers.add_parser('uih', help='Convert from UIH DICOM format.')
@@ -124,7 +115,7 @@ class spec2nii:
             "--special",
             type=str,
             default=None,
-            help="Identify special case sequence. Options: 'hyper'.")
+            help="Identify special case sequence. Options: 'hyper', 'hyper-ref'.")
         parser_philips = add_common_parameters(parser_philips)
         parser_philips.set_defaults(func=self.philips)
 
@@ -376,6 +367,94 @@ class spec2nii:
             else:
                 raise self.NIfTIMRSWriteError(f'Output {out.name} in {out.parent} not found!')
 
+    # Attempt automatic file type identification
+    def auto(self, args):
+        """Attempt automatic file type identification and conversion
+
+        Currently handles: Twix, RDA, SPAR/SDAT, GE pfile, DICOM
+        """
+        from warnings import warn
+        warn('Automatic conversion is an experimental feature. Please verify the output carefully.')
+
+        # Twix format - ID by extension
+        if args.file.suffix.lower() == '.dat':
+            print("Attempting conversion as Siemens Twix (.dat), evalinfo = 'image'")
+            setattr(args, 'evalinfo', 'image')
+            setattr(args, 'quiet', False)
+            setattr(args, 'view', False)
+            for idx in range(5, 8):
+                setattr(args, f'dim{idx}', None)
+                setattr(args, f'tag{idx}', None)
+            setattr(args, 'remove_os', False)
+            self.twix(args)
+
+        # Siemens RDA format - ID by extension
+        elif args.file.suffix.lower() == '.rda':
+            print('Attempting conversion as Siemens RDA (.rda)')
+            self.rda(args)
+
+        # Philips SPAR/SDAT format - ID by extension(s)
+        elif args.file.suffix.lower() in ('.spar', '.sdat'):
+            print('Attempting conversion as Philips SPAR/SDAT pair')
+            if args.file.with_suffix('.SPAR').is_file()\
+                    and args.file.with_suffix('.SDAT').is_file():
+                setattr(args, 'spar', args.file.with_suffix('.SPAR'))
+                setattr(args, 'sdat', args.file.with_suffix('.SDAT'))
+            else:
+                raise Spec2niiError(
+                    'Unable to find both files in SPAR/SDAT pair.'
+                    'Please use manual selection of subcomands. '
+                    'e.g. spec2nii philips ...')
+            setattr(args, 'tags', ["DIM_DYN", None, None])
+            setattr(args, 'shape', None)
+            setattr(args, 'special', None)
+            self.philips(args)
+
+        # Philips DATA/LIST - Reject bcause of unknown aux file format.
+        elif args.file.suffix.lower() in ('.data', '.list'):
+            raise Spec2niiError(
+                'Automatic conversion not setup for data/list conversion. '
+                'Please use manual selection of subcomand. '
+                'e.g. spec2nii philips_dl ...')
+
+        # GE pfile (.7) format - ID by extension
+        elif args.file.suffix.lower() == '.7':
+            self.ge(args)
+
+        # If no matches assume DICOM - ID by loading file
+        else:
+            import pydicom as pdcm
+            try:
+                if args.file.is_dir():
+                    files_in = \
+                        sorted(args.file.rglob('*.IMA')) + \
+                        sorted(args.file.rglob('*.ima')) + \
+                        sorted(args.file.rglob('*.dcm'))
+                    file = pdcm.read_file(files_in[0])
+                else:
+                    file = pdcm.read_file(args.file)
+
+                manufacturer = file.Manufacturer
+                setattr(args, 'tag', None)
+                if manufacturer.lower() == 'siemens':
+                    print('Attempting conversion as Siemens DICOM.')
+                    setattr(args, 'voi', False)
+                    self.dicom(args)
+                elif manufacturer.lower() == 'uih':
+                    print('Attempting conversion as UIH DICOM.')
+                    self.uih_dicom(args)
+                elif manufacturer.lower() == 'philips medical systems':
+                    print('Attempting conversion as Philips DICOM.')
+                    self.philips_dicom(args)
+                else:
+                    raise Spec2niiError(f'Unknown DICOM manufacturer {manufacturer}.')
+            # No sucessful ID as DICOM - fail at automatic load.
+            except pdcm.errors.InvalidDicomError:
+                raise Spec2niiError(
+                    'Unable to automatically identify file type. '
+                    'Please use manual selection of subcomands. '
+                    'e.g. spec2nii twix ..., spec2nii philips ...')
+
     # Start of the specific format handling functions.
     # Siemens twix (.dat) format
     def twix(self, args):
@@ -415,9 +494,9 @@ class spec2nii:
         path_in = Path(args.file)
         if path_in.is_dir():
             # Look for typical dicom file extensions
-            files_in = sorted(path_in.glob('*.IMA')) + \
-                sorted(path_in.glob('*.ima')) + \
-                sorted(path_in.glob('*.dcm'))
+            files_in = sorted(path_in.rglob('*.IMA')) + \
+                sorted(path_in.rglob('*.ima')) + \
+                sorted(path_in.rglob('*.dcm'))
 
             # If none found look for all files
             if len(files_in) == 0:

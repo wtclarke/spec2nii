@@ -45,11 +45,19 @@ def xa_or_vx(img):
     elif img.dcm_data.SOPClassUID == '1.2.840.10008.5.1.4.1.1.4.2':
         return 'xa'
     else:
-        raise IncompatibleSOPClassUID(
-            'spec2nii does not recognise this SOPClassUID '
-            f'{img.dcm_data.SOPClassUID}. This data was collected on a'
-            f' {img.dcm_data.SoftwareVersions} baseline scanner.'
-            ' spec2nii is tested on VA-VE, and XA20 and XA30 DICOM files.')
+        if img.dcm_data.SOPClassUID == '1.2.840.10008.5.1.4.1.1.4':
+            raise IncompatibleSOPClassUID(
+                f'spec2nii detected SOPClassUID {img.dcm_data.SOPClassUID}.'
+                ' This normaly contains MR imaging (not spectroscopy) data.'
+                ' This data was collected on a'
+                f' {img.dcm_data.SoftwareVersions} baseline scanner.'
+                ' spec2nii is tested on VA-VE, XA20, and XA30 DICOM files.')
+        else:
+            raise IncompatibleSOPClassUID(
+                'spec2nii does not recognise this SOPClassUID '
+                f'{img.dcm_data.SOPClassUID} as MRS data. This data was collected on a'
+                f' {img.dcm_data.SoftwareVersions} baseline scanner.'
+                ' spec2nii is tested on VA-VE, XA20, and XA30 DICOM files.')
 
 
 def svs_or_CSI(img):
@@ -89,7 +97,16 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
 
         img = nibabel.nicom.dicomwrappers.wrapper_from_file(fn)
 
-        mrs_type = svs_or_CSI(img)
+        try:
+            mrs_type = svs_or_CSI(img)
+        except IncompatibleSOPClassUID as exc:
+            if len(files_in) == 1:
+                raise exc
+            else:
+                print(f'Skipping {fn}.')
+                print('Raised IncompatibleSOPClassUID error. Moving to next file.')
+                print(f'Message: {str(exc)}\n')
+                continue
 
         if mrs_type == 'SVS':
             specDataCmplx, orientation, dwelltime, meta_obj = process_siemens_svs(img, verbose=verbose)

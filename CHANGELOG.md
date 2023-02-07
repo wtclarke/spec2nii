@@ -1,7 +1,22 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
-0.6.1 (Wednesday 18 January 2023)
+0.6.4 (Tuesday 7th February 2023)
 ---------------------------------
+- Added first pass at new `spec2nii auto` feature with automatic conversion for some formats.
+
+0.6.3 (Monday 6th February 2023)
+--------------------------------
+- Added handling for GE presscsi and probe-s sequences.
+
+0.6.2 (Sunday 5th February 2023)
+----------------------------------
+- Handle HYPER references in SPAR/SDAT pipeline
+- Handle HURCULES/HERMES (smm_svs_herc) sequence in XA twix format.
+- Changed behaviour of Siemens DICOM `spec2nii dicom` to recursively glob directory argument.
+- Better error output when encountering MR Image SOPClassUID.
+
+0.6.1 (Wednesday 18th January 2023)
+-----------------------------------
 - Fixed conjugation issue introduced by new nifti-mrs package dependency
 - SPAR/SDAT pipeline now handles HYPER special case.
 - Data/list pipeline now handles HYPER special case.
