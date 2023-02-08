@@ -48,6 +48,7 @@ def test_svs(tmp_path):
     assert hdr_ext['SpectrometerFrequency'][0] == 127.759464
     assert hdr_ext['ResonantNucleus'][0] == '1H'
     assert hdr_ext['OriginalFile'][0] == svs_path_sdat.name
+    assert hdr_ext['SoftwareVersions'] == '5.5.2 ; .5.2 ;'
 
 
 def test_svs_edit(tmp_path):
