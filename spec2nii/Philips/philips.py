@@ -172,13 +172,13 @@ def spar_to_nmrs_hdrext(spar_dict):
         spar_dict["nucleus"])
 
     def set_standard_def(nifti_mrs_key, location, key, cast=None):
-        try:
+        if key in location\
+                and location[key] is not None:
             if cast is not None:
-                obj.set_standard_def(nifti_mrs_key, cast(getattr(location, key)))
+                obj.set_standard_def(nifti_mrs_key, cast(location[key]))
             else:
-                obj.set_standard_def(nifti_mrs_key, getattr(location, key))
-        except AttributeError:
-            pass
+                obj.set_standard_def(nifti_mrs_key, location[key])
+
     # # 5.1 MRS specific Tags
     # 'EchoTime'
     obj.set_standard_def('EchoTime', float(spar_dict['echo_time']) * 1E-3)

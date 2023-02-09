@@ -123,13 +123,12 @@ def extractRdaMetadata(hdr):
 
     # Standard defined metadata
     def set_standard_def(nifti_mrs_key, location, key, cast=None):
-        try:
+        if key in location\
+                and location[key] is not None:
             if cast is not None:
-                obj.set_standard_def(nifti_mrs_key, cast(getattr(location, key)))
+                obj.set_standard_def(nifti_mrs_key, cast(location[key]))
             else:
-                obj.set_standard_def(nifti_mrs_key, getattr(location, key))
-        except AttributeError:
-            pass
+                obj.set_standard_def(nifti_mrs_key, location[key])
 
     # # 5.1 MRS specific Tags
     # 'EchoTime'
