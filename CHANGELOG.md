@@ -1,5 +1,9 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.6.6 (Thursday 9th March 2023)
+-------------------------------
+- Added in ability to generate empty NIfTI-MRS for twix-pathway MRSI scans.
+
 0.6.5 (Wednesday 8th February 2023)
 -----------------------------------
 - Fixed bug in philips and rda metadata translation functions.

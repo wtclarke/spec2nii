@@ -83,17 +83,16 @@ def is_xa_product(hdr):
     return xa_or_vx(hdr) == 'xa' and is_product()
 
 
-def process_twix(twixObj, base_name_out, name_in, dataKey, dim_overrides, quiet=False, verbose=False, remove_os=False):
-    """Process a twix file. Identify type of MRS and then pass to the relevant function."""
-    if seq_name(twixObj.hdr) == 'fid':
+def id_sequence_type(twixhdr):
+    if seq_name(twixhdr) == 'fid':
         n_voxels = 0
-    elif twixObj.hdr.Meas.lFinalMatrixSizePhase \
-            and twixObj.hdr.Meas.lFinalMatrixSizeRead:
-        n_voxels = twixObj.hdr.Meas.lFinalMatrixSizeSlice \
-            * twixObj.hdr.Meas.lFinalMatrixSizePhase \
-            * twixObj.hdr.Meas.lFinalMatrixSizeRead
-    elif twixObj.hdr.Meas.lFinalMatrixSizeSlice:
-        n_voxels = twixObj.hdr.Meas.lFinalMatrixSizeSlice
+    elif twixhdr.Meas.lFinalMatrixSizePhase \
+            and twixhdr.Meas.lFinalMatrixSizeRead:
+        n_voxels = twixhdr.Meas.lFinalMatrixSizeSlice \
+            * twixhdr.Meas.lFinalMatrixSizePhase \
+            * twixhdr.Meas.lFinalMatrixSizeRead
+    elif twixhdr.Meas.lFinalMatrixSizeSlice:
+        n_voxels = twixhdr.Meas.lFinalMatrixSizeSlice
     else:
         # If lFinalMatrixSize{Slice,Phase,Read} are all empty
         # Either unlocalised or unusually filled in headers.
@@ -102,8 +101,19 @@ def process_twix(twixObj, base_name_out, name_in, dataKey, dim_overrides, quiet=
         n_voxels = 1
 
     if n_voxels > 1:
-        return process_mrsi(twixObj, base_name_out, name_in, dataKey, quiet=quiet, verbose=verbose)
+        return 'mrsi'
     elif n_voxels == 0:
+        return 'fid'
+    elif n_voxels == 1:
+        return 'svs'
+
+
+def process_twix(twixObj, base_name_out, name_in, dataKey, dim_overrides, quiet=False, verbose=False, remove_os=False):
+    """Process a twix file. Identify type of MRS and then pass to the relevant function."""
+    
+    if id_sequence_type(twixObj.hdr) == 'mrsi':
+        return process_mrsi(twixObj, base_name_out, name_in, dataKey, quiet=quiet, verbose=verbose)
+    elif id_sequence_type(twixObj.hdr) == 'fid':
         return process_fid(
             twixObj,
             base_name_out,
@@ -113,7 +123,7 @@ def process_twix(twixObj, base_name_out, name_in, dataKey, dim_overrides, quiet=
             remove_os,
             quiet=quiet,
             verbose=verbose)
-    else:
+    elif id_sequence_type(twixObj.hdr) == 'svs':
         return process_svs(
             twixObj,
             base_name_out,
@@ -125,9 +135,77 @@ def process_twix(twixObj, base_name_out, name_in, dataKey, dim_overrides, quiet=
             verbose=verbose)
 
 
-def process_mrsi(twixObj, base_name_out, name_in, dataKey, quiet=False, verbose=False):
+def process_mrsi(twixObj, base_name_out, name_in, dataKey, remove_os=True, quiet=False, verbose=False):
     """Identify correct MRSI pathway, either simple internal reconstruction or to ismrmrd"""
-    raise NotImplementedError('MRSI pathway not yet implemented.')
+
+    if not quiet:
+        print('Generating empty NIfTI-MRS file for MRSI input.')
+    if verbose:
+        print('Spec2nii is not a reconstruction program.')
+        print(
+            'Insufficient information is stored in the twix/.dat header to carry out '
+            'generalised reconstruction of arbitrary k,t-space data.')
+        print(
+            'This routine generates an empty file, '
+            'so that data reconstructed through another '
+            'pathway can be inserted into it.')
+
+    # Data size
+    data_size = []
+    if twixObj.hdr.Meas.lFinalMatrixSizePhase:
+        data_size.append(int(twixObj.hdr.Meas.lFinalMatrixSizePhase))
+    else:
+        data_size.append(int(1))
+    if twixObj.hdr.Meas.lFinalMatrixSizeRead:
+        data_size.append(int(twixObj.hdr.Meas.lFinalMatrixSizeRead))
+    else:
+        data_size.append(int(1))
+    if twixObj.hdr.Meas.lFinalMatrixSizeSlice:
+        data_size.append(int(twixObj.hdr.Meas.lFinalMatrixSizeSlice))
+    else:
+        data_size.append(int(1))
+
+    data_size.append(int(twixObj.hdr.Meas.lVectorSize))
+
+    # Perform Orientation calculations
+    # 1) Calculate dicom like imageOrientationPatient, imagePositionPatient, pixelSpacing and slicethickness
+    orient = twix2DCMOrientation(twixObj['hdr'], verbose=verbose)
+    imageOrientationPatient, imagePositionPatient, pixelSpacing, slicethickness, dim_swapped = orient
+
+    # 2) In the style of dcm2niix calculate the affine matrix
+    orientation = dcm_to_nifti_orientation(imageOrientationPatient,
+                                           imagePositionPatient,
+                                           np.append(pixelSpacing, slicethickness),
+                                           data_size[:3],
+                                           half_shift=True,
+                                           verbose=verbose)
+
+    # Account for the first two dimensions being swapped if main orientation is Transverse
+    # See CSIOrientations function for logic
+    if dim_swapped:
+        data_size = [data_size[1], data_size[0]] + data_size[2:]
+    data = np.zeros(data_size, dtype=complex)
+
+    # Extract dwellTime
+    dwellTime = twixObj['hdr']['MeasYaps'][('sRXSPEC', 'alDwellTime', '0')] / 1E9
+    if remove_os:
+        dwellTime *= 2
+
+    # Extract metadata
+    meta_obj = extractTwixMetadata(twixObj['hdr'], basename(twixObj[dataKey].filename))
+
+    # Identify what those indices are
+    # If cha is one: loop over 3rd and higher dims and make 2D images
+    # If cha isn't present one: loop over 2nd and higher dims and make 1D images
+    # Don't write here, just fill up class property lists for later writing
+    if base_name_out:
+        out_str = base_name_out
+    else:
+        out_str = name_in.split('.')[0]
+
+    out_str += '_empty'
+
+    return [gen_nifti_mrs_hdr_ext(data, dwellTime, meta_obj, orientation.Q44), ], [out_str, ]
 
 
 def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_os, quiet=False, verbose=False):
@@ -155,7 +233,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
     # Perform Orientation calculations
     # 1) Calculate dicom like imageOrientationPatient,imagePositionPatient,pixelSpacing and slicethickness
     orient = twix2DCMOrientation(twixObj['hdr'], force_svs=True, verbose=verbose)
-    imageOrientationPatient, imagePositionPatient, pixelSpacing, slicethickness = orient
+    imageOrientationPatient, imagePositionPatient, pixelSpacing, slicethickness, _ = orient
 
     # 2) In the style of dcm2niix calculate the affine matrix
     orientation = dcm_to_nifti_orientation(imageOrientationPatient,
@@ -357,7 +435,7 @@ def process_fid(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
     # Perform Orientation calculations
     # 1) Calculate dicom like imageOrientationPatient,imagePositionPatient,pixelSpacing and slicethickness
     orient = twix2DCMOrientation(twixObj['hdr'], force_svs=True, verbose=verbose)
-    imageOrientationPatient, imagePositionPatient, pixelSpacing, slicethickness = orient
+    imageOrientationPatient, imagePositionPatient, pixelSpacing, slicethickness, _ = orient
 
     # 2) In the style of dcm2niix calculate the affine matrix
     orientation = dcm_to_nifti_orientation(imageOrientationPatient,
@@ -560,32 +638,35 @@ def twix2DCMOrientation(mapVBVDHdr, force_svs=False, verbose=False):
     # Orientation information
     # Added the force_svs because in some sequences there are slice objects initialised
     # and recorded but this seems sporadic behaviour.
-    if ('sSpecPara', 'sVoI', 'sNormal', 'dSag') in mapVBVDHdr['MeasYaps']:
-        NormaldSag = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'sNormal', 'dSag')]
-    elif ('sSliceArray', 'asSlice', '0', 'sNormal', 'dSag') in mapVBVDHdr['MeasYaps']\
+    if ('sSliceArray', 'asSlice', '0', 'sNormal', 'dSag') in mapVBVDHdr['MeasYaps']\
             and not force_svs:
         # This is for slice-selective spectroscopy
         NormaldSag = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'sNormal', 'dSag')]
+    elif ('sSpecPara', 'sVoI', 'sNormal', 'dSag') in mapVBVDHdr['MeasYaps']:
+        NormaldSag = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'sNormal', 'dSag')]
     else:
         NormaldSag = 0.0
 
-    if ('sSpecPara', 'sVoI', 'sNormal', 'dCor') in mapVBVDHdr['MeasYaps']:
-        NormaldCor = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'sNormal', 'dCor')]
-    elif ('sSliceArray', 'asSlice', '0', 'sNormal', 'dCor') in mapVBVDHdr['MeasYaps']\
+    if ('sSliceArray', 'asSlice', '0', 'sNormal', 'dCor') in mapVBVDHdr['MeasYaps']\
             and not force_svs:
         NormaldCor = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'sNormal', 'dCor')]
+    elif ('sSpecPara', 'sVoI', 'sNormal', 'dCor') in mapVBVDHdr['MeasYaps']:
+        NormaldCor = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'sNormal', 'dCor')]
     else:
         NormaldCor = 0.0
 
-    if ('sSpecPara', 'sVoI', 'sNormal', 'dTra') in mapVBVDHdr['MeasYaps']:
-        NormaldTra = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'sNormal', 'dTra')]
-    elif ('sSliceArray', 'asSlice', '0', 'sNormal', 'dTra') in mapVBVDHdr['MeasYaps']\
+    if ('sSliceArray', 'asSlice', '0', 'sNormal', 'dTra') in mapVBVDHdr['MeasYaps']\
             and not force_svs:
         NormaldTra = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'sNormal', 'dTra')]
+    elif ('sSpecPara', 'sVoI', 'sNormal', 'dTra') in mapVBVDHdr['MeasYaps']:
+        NormaldTra = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'sNormal', 'dTra')]
     else:
         NormaldTra = 0.0
 
-    if ('sSpecPara', 'sVoI', 'dInPlaneRot') in mapVBVDHdr['MeasYaps']:
+    if ('sSliceArray', 'asSlice', '0', 'dInPlaneRot') in mapVBVDHdr['MeasYaps']\
+            and not force_svs:
+        inplaneRotation = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'dInPlaneRot')]
+    elif ('sSpecPara', 'sVoI', 'dInPlaneRot') in mapVBVDHdr['MeasYaps']:
         inplaneRotation = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'dInPlaneRot')]
     else:
         inplaneRotation = 0.0
@@ -606,11 +687,6 @@ def twix2DCMOrientation(mapVBVDHdr, force_svs=False, verbose=False):
         RoFoV = 10000.0
         PeFoV = 10000.0
 
-    dColVec_vector, dRowVec_vector = GSL.calc_prs(TwixSliceNormal, inplaneRotation, verbose)
-
-    imageOrientationPatient = np.stack((dRowVec_vector, dColVec_vector), axis=0)
-
-    pixelSpacing = np.array([PeFoV, RoFoV])  # [RoFoV PeFoV];
     if ('sSliceArray', 'asSlice', '0', 'dThickness') in mapVBVDHdr['MeasYaps']\
             and not force_svs:
         sliceThickness = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'dThickness')]
@@ -620,17 +696,26 @@ def twix2DCMOrientation(mapVBVDHdr, force_svs=False, verbose=False):
         sliceThickness = 10000.0
 
     # Position info (including table position)
-    if ('sSpecPara', 'sVoI', 'sPosition', 'dSag') in mapVBVDHdr['MeasYaps']:
+    if ('sSliceArray', 'asSlice', '0', 'sPosition', 'dSag') in mapVBVDHdr['MeasYaps']\
+            and not force_svs:
+        PosdSag = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'sPosition', 'dSag')]
+    elif ('sSpecPara', 'sVoI', 'sPosition', 'dSag') in mapVBVDHdr['MeasYaps']:
         PosdSag = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'sPosition', 'dSag')]
     else:
         PosdSag = 0.0
 
-    if ('sSpecPara', 'sVoI', 'sPosition', 'dCor') in mapVBVDHdr['MeasYaps']:
+    if ('sSliceArray', 'asSlice', '0', 'sPosition', 'dCor') in mapVBVDHdr['MeasYaps']\
+            and not force_svs:
+        PosdCor = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'sPosition', 'dCor')]
+    elif ('sSpecPara', 'sVoI', 'sPosition', 'dCor') in mapVBVDHdr['MeasYaps']:
         PosdCor = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'sPosition', 'dCor')]
     else:
         PosdCor = 0.0
 
-    if ('sSpecPara', 'sVoI', 'sPosition', 'dTra') in mapVBVDHdr['MeasYaps']:
+    if ('sSliceArray', 'asSlice', '0', 'sPosition', 'dTra') in mapVBVDHdr['MeasYaps']\
+            and not force_svs:
+        PosdTra = mapVBVDHdr['MeasYaps'][('sSliceArray', 'asSlice', '0', 'sPosition', 'dTra')]
+    elif ('sSpecPara', 'sVoI', 'sPosition', 'dTra') in mapVBVDHdr['MeasYaps']:
         PosdTra = mapVBVDHdr['MeasYaps'][('sSpecPara', 'sVoI', 'sPosition', 'dTra')]
     else:
         PosdTra = 0.0
@@ -642,15 +727,93 @@ def twix2DCMOrientation(mapVBVDHdr, force_svs=False, verbose=False):
     if ('lScanRegionPosTra',) in mapVBVDHdr['MeasYaps']:
         PosdTra += mapVBVDHdr['MeasYaps'][('lScanRegionPosTra',)]
 
-    basePosition = np.array([PosdSag, PosdCor, PosdTra], dtype=float)
-    imagePositionPatient = basePosition
+    if id_sequence_type(mapVBVDHdr) == 'mrsi':
+        data_size_pe = 1
+        if mapVBVDHdr.Meas.lFinalMatrixSizePhase:
+            data_size_pe = mapVBVDHdr.Meas.lFinalMatrixSizePhase
+
+        data_size_ro = 1
+        if mapVBVDHdr.Meas.lFinalMatrixSizeRead:
+            data_size_ro = mapVBVDHdr.Meas.lFinalMatrixSizeRead
+
+        data_size_sl = 1
+        if mapVBVDHdr.Meas.lFinalMatrixSizeSlice:
+            data_size_sl = mapVBVDHdr.Meas.lFinalMatrixSizeSlice
+
+        base_pos_info = np.array([PosdSag, PosdCor, PosdTra], dtype=float)
+
+        imageOrientationPatient, imagePositionPatient, pixelSpacing, sliceThickness, dim_swapped = CSIOrientations(
+            TwixSliceNormal,
+            inplaneRotation,
+            PeFoV,
+            RoFoV,
+            sliceThickness,
+            data_size_pe,
+            data_size_ro,
+            data_size_sl,
+            base_pos_info,
+            verbose)
+
+    else:
+        dColVec_vector, dRowVec_vector = GSL.calc_prs(TwixSliceNormal, inplaneRotation, verbose)
+        imageOrientationPatient = np.stack((dRowVec_vector, dColVec_vector), axis=0)
+
+        pixelSpacing = np.array([PeFoV, RoFoV])  # [RoFoV PeFoV];
+
+        imagePositionPatient = np.array([PosdSag, PosdCor, PosdTra], dtype=float)
+
+        dim_swapped = False
+
     if verbose:
         print(f'imagePositionPatient is {imagePositionPatient.ravel()}')
         print(f'imageOrientationPatient is \n{imageOrientationPatient}')
         print(f'{imageOrientationPatient.ravel()}')
         print(f'pixelSpacing is {pixelSpacing}')
 
-    return imageOrientationPatient, imagePositionPatient, pixelSpacing, sliceThickness
+    return imageOrientationPatient, imagePositionPatient, pixelSpacing, sliceThickness, dim_swapped
+
+
+def CSIOrientations(slice_normal, ip_rot, fov_pe, fov_ro, fov_sl, n_pe, n_ro, n_sl, base_pos, verbose=False):
+    SAGITTAL   = 0
+    CORONAL    = 1
+    TRANSVERSE = 2
+    mo_case = GSL.class_ori(slice_normal[SAGITTAL], slice_normal[CORONAL], slice_normal[TRANSVERSE], False)
+    dColVec_vector, dRowVec_vector = GSL.calc_prs(slice_normal, ip_rot, verbose)
+    print('To achieve matching orientation to equivalent DICOM output:')
+
+    if n_sl > 1:
+        # 3D MRSI
+        base_pos -= slice_normal * (fov_sl / 2 - fov_sl / n_sl / 2)
+        fov_sl /= n_sl
+
+    # Sagital
+    if mo_case == 0:
+        print('Mirror along ROW/readout direction: VB = LIN, VE+ = SEG')
+        dRowVec_vector *= -1.0
+        pixelSpacing = np.array([fov_ro / n_ro, fov_pe / n_pe])
+        dColVec_vector, dRowVec_vector = dRowVec_vector, dColVec_vector
+        imagePositionPatient =\
+            base_pos - (dRowVec_vector * fov_pe / 2) - (dColVec_vector * fov_ro / 2)
+        dim_swapped = False
+    # Coronal
+    elif mo_case == 1:
+        pixelSpacing = np.array([fov_ro / n_ro, fov_pe / n_pe])
+        dColVec_vector, dRowVec_vector = dRowVec_vector, dColVec_vector
+        imagePositionPatient =\
+            base_pos - (dRowVec_vector * fov_pe / 2) - (dColVec_vector * fov_ro / 2)
+        dim_swapped = False
+    # Transverse
+    elif mo_case == 2:
+        print('Mirror along ROW/readout direction: VB = LIN, VE+ = SEG')
+        dRowVec_vector *= -1.0
+        pixelSpacing = np.array([fov_pe / n_pe, fov_ro / n_ro])
+        print('Swap 1st and 2nd diemensions. For VB swap LIN and PHS, for VE+ swap SEG and LIN dimensions')
+        dim_swapped = True
+        imagePositionPatient =\
+            base_pos - (dRowVec_vector * fov_ro / 2) - (dColVec_vector * fov_pe / 2)
+    imageOrientationPatient = np.stack((dRowVec_vector, dColVec_vector), axis=0)
+
+    return imageOrientationPatient, imagePositionPatient, pixelSpacing, fov_sl, dim_swapped
 
 
 def examineTwix(twixObj, fileName, mraid):
