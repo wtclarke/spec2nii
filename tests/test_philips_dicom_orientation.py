@@ -83,7 +83,8 @@ def test_svs_orientation(tmp_path):
                                '-vl', str(pos[0]), str(pos[1]), str(pos[2]),
                                '-xc', '0', '0', '-yc', '0', '0', '-zc', '0', '0',
                                '-hc', structural_data,
-                               tmp_path / 'svs.nii.gz', '-a', '50', '-cm', 'blue'])
+                               tmp_path / 'svs.nii.gz', '-ot', 'complex',
+                               '-a', '50', '-cm', 'blue'])
 
         fsl_ss = Image.open(tmp_path / f'svs_{idx}.png')
         width, height = fsl_ss.size

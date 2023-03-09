@@ -98,11 +98,12 @@ def test_VB(tmp_path):
         else:
             x, y, z = '95', '88', '95'
 
-        subprocess.check_call(['pythonw', '/Users/wclarke/opt/miniconda3/envs/fsl_mrs/bin/fsleyes',
+        subprocess.check_call(['fsleyes',
                                'render', '-of', op.join(tmp_path, f'csi_{idx}.png'),
                                '-vl', x, y, z,
                                '-hc', op.join(vb_path, 'T1.nii.gz'),
-                               op.join(tmp_path, name + '_d.nii.gz'), '-a', '60', '-cm', 'red'])
+                               op.join(tmp_path, name + '_d.nii.gz'), '-ot', 'complex',
+                               '-a', '60', '-cm', 'red'])
 
         fsl_ss = Image.open(op.join(tmp_path, f'csi_{idx}.png'))
         width, height = fsl_ss.size
@@ -142,11 +143,12 @@ def test_VE(tmp_path):
         # Make fsleyes rendering
         x, y, z = '57', '63', '37'
 
-        subprocess.check_call(['pythonw', '/Users/wclarke/opt/miniconda3/envs/fsl_mrs/bin/fsleyes',
+        subprocess.check_call(['fsleyes',
                                'render', '-of', op.join(tmp_path, f'csi_{idx}.png'),
                                '-vl', x, y, z,
                                '-hc', op.join(ve_path, 'T1.nii.gz'),
-                               op.join(tmp_path, name + '_d.nii.gz'), '-a', '60', '-cm', 'red'])
+                               op.join(tmp_path, name + '_d.nii.gz'), '-ot', 'complex',
+                               '-a', '60', '-cm', 'red'])
 
         fsl_ss = Image.open(op.join(tmp_path, f'csi_{idx}.png'))
         width, height = fsl_ss.size

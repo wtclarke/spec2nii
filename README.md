@@ -39,9 +39,9 @@ Miniconda can be installed by following the instructions on the [Conda website](
 ## Currently supported formats
 This table lists the currently supported formats. I have very limited experience with Philips and GE formats. Please get in touch if you are willing to help add to this list and/or supply validation data.
 
-| Format        | File extension | SVS | CSI | Automatic orientation |
+| Format        | File extension | SVS | MRSI| Automatic orientation |
 |---------------|----------------|-----|-----|-----------------------|
-| Siemens Twix  | .dat           | Yes | No  | Yes                   |
+| Siemens Twix  | .dat           | Yes | †   | Yes                   |
 | Siemens DICOM | .ima / .dcm    | Yes | Yes | Yes                   |
 | Siemens RDA   | .rda           | Yes | No  | Yes (WIP)             |
 | Philips       | .SPAR/.SDAT    | Yes | No  | Yes                   |
@@ -56,6 +56,8 @@ This table lists the currently supported formats. I have very limited experience
 | jMRUI         | .txt           | Yes | No  | No                    |
 | jMRUI         | .mrui          | Yes | No  | No                    |
 | ASCII         | .txt           | Yes | No  | No                    |
+
+† Partial handling - see section on Twix pathway for MRSI handling.
 
 ## Instructions
 spec2nii is called on the command line, and the conversion file type is specified with a subcommand.
@@ -78,6 +80,8 @@ Call with the -e flag to specify which MDH flag to convert. e.g.
 `spec2nii twix -e image FILE`
 
 Twix format loop variables (e.g. `Ave` or `ida`) can be assigned to specific NIfTI dimensions using the `-d{5,6,7}` command line options. NIfTI MRS dimension tags (e.g. `DIM_COIL`) can be specified using the `-t{5,6,7}` command line options.
+
+As `spec2nii` is __not__ a reconstruction program, it cannot convert MRSI data. Far too little information is held in the twix headers to reconstruct arbitrary k,t-space data. However, if passed a file containing MRSI data `spec2nii` will attempt to create an empty NIfTI-MRS file with the correct orientation information, data shape, and header information. This empty file can then have data inserted from an offline reconstruction routine.
 
 ### Siemens DICOM
 `spec2nii dicom DCM_FILE_or_DIR`
