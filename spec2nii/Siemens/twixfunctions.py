@@ -110,7 +110,7 @@ def id_sequence_type(twixhdr):
 
 def process_twix(twixObj, base_name_out, name_in, dataKey, dim_overrides, quiet=False, verbose=False, remove_os=False):
     """Process a twix file. Identify type of MRS and then pass to the relevant function."""
-    
+
     if id_sequence_type(twixObj.hdr) == 'mrsi':
         return process_mrsi(twixObj, base_name_out, name_in, dataKey, quiet=quiet, verbose=verbose)
     elif id_sequence_type(twixObj.hdr) == 'fid':
