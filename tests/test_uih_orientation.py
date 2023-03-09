@@ -61,7 +61,8 @@ def test_uih_svs(tmp_path):
                            '-of', tmp_path / 'svs.png',
                            '-vl', '245', '296', '10',
                            '-hc', data_base / 'mrs_data/2D_tra.nii.gz',
-                           tmp_path / 'svs.nii.gz', '-a', '50', '-cm', 'blue'])
+                           tmp_path / 'svs.nii.gz', '-ot', 'complex',
+                           '-a', '50', '-cm', 'blues'])
 
     fsl_render = flip_first_third(Image.open(tmp_path / 'svs.png'))
     screenshot = Image.open(screenshots['svs'])
@@ -90,7 +91,8 @@ def test_uih_2d_csi(tmp_path):
                            '-of', tmp_path / 'csi_2d.png',
                            '-vl', '245', '296', '9',
                            '-hc', data_base / 'mrs_data/2D_tra.nii.gz',
-                           tmp_path / 'csi_2d.nii.gz', '-a', '50', '-cm', 'blue', '-dr', '-0.9', '9.7'])
+                           tmp_path / 'csi_2d.nii.gz', '-ot', 'complex',
+                           '-a', '50', '-cm', 'blue', '-dr', '-0.9', '9.7'])
 
     fsl_render = flip_first_third(Image.open(tmp_path / 'csi_2d.png'))
     screenshot = Image.open(screenshots['csi_2d'])
@@ -119,7 +121,8 @@ def test_uih_3d_csi(tmp_path):
                            '-of', tmp_path / 'csi_3d.png',
                            '-vl', '245', '296', '9',
                            '-hc', data_base / 'mrs_3d/3d_tra.nii.gz',
-                           tmp_path / 'csi_3d.nii.gz', '-a', '50', '-cm', 'blue', '-dr', '-0.9', '9.7'])
+                           tmp_path / 'csi_3d.nii.gz', '-ot', 'complex',
+                           '-a', '50', '-cm', 'blue', '-dr', '-0.9', '9.7'])
 
     fsl_render = flip_first_third(Image.open(tmp_path / 'csi_3d.png'))
     screenshot = Image.open(screenshots['csi_3d'])

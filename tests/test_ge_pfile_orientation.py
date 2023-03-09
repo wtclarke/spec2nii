@@ -133,7 +133,8 @@ def test_svs_orientation(tmp_path):
                                '-xc', '0', '0', '-yc', '0', '0', '-zc', '0', '0',
                                '-hc', ge_path / 'from_dicom' / 'T1.nii.gz',
                                '-dr', '-211', '7400',
-                               tmp_path / 'svs.nii.gz', '-a', '50', '-cm', 'blue'])
+                               tmp_path / 'svs.nii.gz', '-ot', 'complex',
+                               '-a', '50', '-cm', 'blue'])
 
         fsl_ss = Image.open(tmp_path / f'svs_{idx}.png')
         fsl_ss_cropped = crop_and_flip_first_third(fsl_ss)
@@ -176,7 +177,8 @@ def test_mrsi_orientation(tmp_path):
                                '-hc', ge_path / 'from_dicom' / 'T1.nii.gz',
                                '-dr', '-211', '7400',
                                str(dcm), '-a', '50', '-cm', 'red',
-                               tmp_path / 'mrsi.nii.gz', '-a', '50', '-cm', 'blue'])
+                               tmp_path / 'mrsi.nii.gz', '-ot', 'complex',
+                               '-a', '50', '-cm', 'blue'])
 
         fsl_ss = Image.open(tmp_path / f'mrsi_{idx}.png')
         fsl_ss_cropped = crop_and_flip_first_third(fsl_ss)

@@ -93,12 +93,14 @@ def test_VB(tmp_path):
                                '-j', op.join(vb_path, f_d)])
 
         # Make fsleyes rendering
-        subprocess.check_call(['pythonw', '/Users/wclarke/opt/miniconda3/envs/fsl_mrs/bin/fsleyes',
+        subprocess.check_call(['fsleyes',
                                'render', '-of', op.join(tmp_path, f'svs_{idx}.png'),
                                '-vl', '95', '89', '96',
                                '-hc', op.join(vb_path, 'T1.nii.gz'),
-                               op.join(tmp_path, name + '_t.nii.gz'), '-a', '50', '-cm', 'red',
-                               op.join(tmp_path, name + '_d.nii.gz'), '-a', '50', '-cm', 'blue'])
+                               op.join(tmp_path, name + '_t.nii.gz'),
+                               '-ot', 'complex', '-a', '50', '-cm', 'red',
+                               op.join(tmp_path, name + '_d.nii.gz'),
+                               '-ot', 'complex', '-a', '50', '-cm', 'blue'])
 
         img_t = read_nifti_mrs(op.join(tmp_path, name + '_t.nii.gz'))
         img_d = read_nifti_mrs(op.join(tmp_path, name + '_d.nii.gz'))
@@ -148,12 +150,14 @@ def test_VE(tmp_path):
             x, y, z = '57', '48', '37'
         else:
             x, y, z = '53', '67', '56'
-        subprocess.check_call(['pythonw', '/Users/wclarke/opt/miniconda3/envs/fsl_mrs/bin/fsleyes',
+        subprocess.check_call(['fsleyes',
                                'render', '-of', op.join(tmp_path, f'svs_{idx}.png'),
                                '-vl', x, y, z,
                                '-hc', op.join(ve_path, 'T1.nii.gz'),
-                               op.join(tmp_path, name + '_t.nii.gz'), '-a', '50', '-cm', 'red',
-                               op.join(tmp_path, name + '_d.nii.gz'), '-a', '50', '-cm', 'blue'])
+                               op.join(tmp_path, name + '_t.nii.gz'),
+                               '-ot', 'complex', '-a', '50', '-cm', 'red',
+                               op.join(tmp_path, name + '_d.nii.gz'),
+                               '-ot', 'complex', '-a', '50', '-cm', 'blue'])
 
         img_t = read_nifti_mrs(op.join(tmp_path, name + '_t.nii.gz'))
         img_d = read_nifti_mrs(op.join(tmp_path, name + '_d.nii.gz'))
