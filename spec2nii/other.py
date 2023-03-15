@@ -6,7 +6,7 @@ Copyright (C) 2021 University of Oxford
 import json
 import pprint
 
-from nifti_mrs.nifti_mrs import NIFTI_MRS
+from nifti_mrs.nifti_mrs import NIFTI_MRS, NotNIFTI_MRS
 
 
 def dump_headers(args):
@@ -52,13 +52,31 @@ def insert_hdr_ext(args):
     :return: List of output names
     :rtype: [str,]
     """
-    # Load data
-    nifti_mrs_img = NIFTI_MRS(args.file)
 
     with open(args.json_file) as jf:
         new_hdr = json.load(jf)
 
-    nifti_mrs_img.hdr_ext = new_hdr
+    # Load data
+    try:
+        nifti_mrs_img = NIFTI_MRS(args.file)
+        nifti_mrs_img.hdr_ext = new_hdr
+
+    except NotNIFTI_MRS:
+        print(f'{args.file} is not compliant with the NIfTI-MRS standard, attempting to convert')
+        from fsl.data.image import Image
+        from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
+        from nifti_mrs.hdr_ext import Hdr_Ext
+
+        nimg = Image(args.file)
+        hdr_ext = Hdr_Ext.from_header_ext(new_hdr, dimensions=nimg.ndim)
+        nifti_mrs_img = gen_nifti_mrs_hdr_ext(
+            nimg[:],
+            nimg.header['pixdim'][4],
+            hdr_ext,
+            affine=nimg.getAffine('voxel', 'world'))
+
+    if args.dwelltime is not None:
+        nifti_mrs_img.dwelltime = args.dwelltime
 
     # Process output name.
     if args.fileout:
