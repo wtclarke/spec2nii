@@ -252,6 +252,8 @@ class spec2nii:
         parser_insert = subparsers.add_parser('insert', help='Insert json formatted file into existing NIfTI-MRS file.')
         parser_insert.add_argument('file', help='NIFTI-MRS file', type=Path)
         parser_insert.add_argument('json_file', help='JSON file to insert', type=Path)
+        parser_insert.add_argument("--dwelltime", type=float,
+                                   help="Specify a new dwelltime (1/bandwidth, pixdim[4]) value in seconds.")
         parser_insert.add_argument("-f", "--fileout", type=str,
                                    help="Output file base name (default = input file name)")
         parser_insert.add_argument("-o", "--outdir", type=Path,
