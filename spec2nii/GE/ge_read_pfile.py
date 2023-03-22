@@ -205,6 +205,9 @@ class Pfile:
         elif 'jpress_ac' in psd:
             # ARC : Added for Bergen jpress patch
             mapper = PfileMapperGaba
+        elif psd == 'jpress':
+            # wtc - Added for HURCULES data.
+            mapper = PfileMapperGaba
         else:
             raise UnknownPfile("No Pfile mapper for pulse sequence = %s" % psd)
 

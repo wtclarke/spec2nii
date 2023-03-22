@@ -1,5 +1,9 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.6.8 (WIP)
+---------------------------------
+- Added handling for the GE jpress sequence (for JH HURCULES sequence)
+
 0.6.7 (Wednesday 15th March 2023)
 ---------------------------------
 - `spec2nii insert` can now insert a compliant header object into a non-compliant NIfTI file to generate a new NIfTI-MRS file.
