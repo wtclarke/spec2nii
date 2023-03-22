@@ -305,9 +305,9 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
 
     # AG 03/22/2023 Moved the NIFTI/Out lists and if statement up to work with new Hyper function below.
 
-    # Now assemble data
+    # AG 03/22/2023 Create Lists for assembled data - Starts with XA reference..
     nifit_mrs_out = []
-    filename_out = []
+    filename_out  = []
     
     if xa_ref_scans is not None:
         # Pad with three singleton dimensions (x,y,z)
