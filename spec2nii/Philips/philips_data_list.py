@@ -280,7 +280,7 @@ def _special_case_hyper(data, meta):
         data_edited =  data_edited[..., :new_num_avgs]                                     # AG 03/22/2023 - Only Keep Complete Sets
         print('Correcting - Incomplete Averages {} --> {}    Corrected**'.format(old_num_avgs, new_num_avgs))
 
-    data_edited = data_edited.T.reshape((56, 4, data.shape[1], data.shape[0])).T
+    data_edited = data_edited.T.reshape((-1, 4, data.shape[1], data.shape[0])).T
 
     meta_short_te = meta.copy()
     meta_edited = meta.copy()
