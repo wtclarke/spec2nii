@@ -321,10 +321,10 @@ def _special_case_hyper(data, dwelltime, meta, orientation, fout_str):
     data_short_te = data[:, :, :, :, :32]
     data_edited = data[:, :, :, :, 32:]
 
-    if data_edited.shape[-1] % 4 != 0:                                                      # AG 03/22/2023 - Handle Incomplete Data
-        old_num_avgs = data_edited.shape[-1]                                                # AG 03/22/2023 - Old Number of Averages                                      
-        new_num_avgs = (data_edited.shape[-1] // 4) * 4                                     # AG 03/22/2023 - Total Complete Sets of 4 Subscans
-        data_edited = data_edited[..., :new_num_avgs]                                       # AG 03/22/2023 - Only Keep Complete Sets
+    if data_edited.shape[-1] % 4 != 0:                                                      # Handle Incomplete Data
+        old_num_avgs = data_edited.shape[-1]                                                # Old Number of Averages
+        new_num_avgs = (data_edited.shape[-1] // 4) * 4                                     # Complete Sets of 4
+        data_edited = data_edited[..., :new_num_avgs]                                       # Only Keep Complete Sets
         print('Correcting - Incomplete Averages {} --> {}    Corrected**'.format(old_num_avgs, new_num_avgs))
 
     data_edited = data_edited.T.reshape((-1, 4, data.shape[3], 1, 1, 1)).T
