@@ -312,11 +312,22 @@ def _special_case_hyper(data, dwelltime, meta, orientation, fout_str):
     :rtype: tuple of nifti_mrs.nifti_mrs.NIFTI_MRS
     :return: 2 x Output names
     :rtype: tuple of str
+
+    Notes:
+      - (AG 03/22/2023) Updated to handle incomplete data.
+
     """
     # Reorganise the data. This unfortunately makes hardcoded assumptions about the size of each part.
     data_short_te = data[:, :, :, :, :32]
-    data_edited = data[:, :, :, :, 32:]
-    data_edited = data_edited.T.reshape((56, 4, data.shape[3], 1, 1, 1)).T
+    data_edited   = data[:, :, :, :, 32:]
+
+    if data_edited.shape[-1] % 4 != 0:                                                      # AG 03/22/2023 - Handle Incomplete Data
+        old_num_avgs =  reord_data.shape[-1]                                                # AG 03/22/2023 - Old Number of Averages                                      
+        new_num_avgs = (data_edited.shape[-1] // 4) * 4                                     # AG 03/22/2023 - Total Complete Sets of 4 Subscans
+        data_edited  =  data_edited[..., :new_num_avgs]                                     # AG 03/22/2023 - Only Keep Complete Sets
+        print('Correcting - Incomplete Averages {} --> {}    Corrected**'.format(old_num_avgs, new_num_avgs))
+
+    data_edited   = data_edited.T.reshape((56, 4, data.shape[3], 1, 1, 1)).T
 
     meta_short_te = meta.copy()
     meta_short_te.set_standard_def("WaterSuppressed", True)

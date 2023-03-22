@@ -303,6 +303,28 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
     else:
         xa_ref_scans = None
 
+    # AG 03/22/2023 Moved this if statement up to work with new Hyper function below.
+    if xa_ref_scans is not None:
+        # Pad with three singleton dimensions (x,y,z)
+        newshape = (1, 1, 1) + xa_ref_scans.shape
+        if xa_ref_scans.ndim > 2:
+            ref_tags = ['DIM_COIL', 'DIM_DYN', None]
+        else:
+            ref_tags = ['DIM_COIL', None, None]
+
+        meta_obj_ref = extractTwixMetadata(twixObj['hdr'], basename(twixObj[dataKey].filename))
+        meta_obj_ref.set_standard_def('WaterSuppressed', True)
+
+        nifit_mrs_out.append(
+            assemble_nifti_mrs(
+                xa_ref_scans.reshape(newshape),
+                dwellTime,
+                orientation,
+                meta_obj_ref,
+                dim_tags=ref_tags))
+
+        filename_out.append(mainStr + '_ref')
+
     # Make list of tags (both default and user specified)
     dim_tags = []
     unknown_counter = 0
@@ -339,9 +361,42 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
     reord_data = np.moveaxis(squeezedData, original, new)
 
     # Special-cased sequences
-    if twixObj['hdr']['Meas'][('tSequenceString')] in ('mgs_svs_ed', )\
-            or (xa_or_vx(twixObj['hdr']) == 'xa'
-                and 'smm_svs_herc' in twixObj['hdr']['Meas'][('tSequenceFileName')]):
+    if twixObj['hdr']['Meas'][('tSequenceString')] in ('mgs_svs_ed', ):                                 # AG 03/22/2023 - Split if statement to Avoid Hyper and Herc Confusion
+        from spec2nii.Siemens.twix_special_case import mgs_svs_ed_twix
+        reord_data, meta_obj, dim_tags = mgs_svs_ed_twix(twixObj, reord_data, meta_obj, dim_tags)
+
+    # AG 03/22/2023 - New Hyper Function
+    elif 'smm_svs_herc_hyper' in twixObj['hdr']['Meas'][('tSequenceFileName')]:
+        from spec2nii.Siemens.twix_special_case import smm_svs_herc_hyper                               # AG 03/22/2023 - Hyper Data Handling
+        
+        hyp_names  = ['35ms Water Reference', '80ms Water Reference', '35ms PRESS', '80ms HERCULES']    # AG 03/22/2023 - Hyper Subscan Names
+        hyp_suffix = ['ref_short_te'        , 'ref_edited'          , 'short_te'  , 'edited'       ]    # AG 03/22/2023 - Hyper Suffixes
+
+        reord_list = []                                                                                 # AG 03/22/2023 - List of Reord Data 
+        meta_list  = []                                                                                 # AG 03/22/2023 - List of Meta Objects
+        dim_list   = []                                                                                 # AG 03/22/2023 - List of Dimensions
+
+        # Reording the Data & Adjusting the Header Appropriately
+        for ii in range(len(hyp_names)):                                                                # AG 03/22/2023 - Iterate over Subscans
+            print('{:3d} {:<20}'.format(ii, hyp_names[ii]), end='\r')
+            reord_data_, meta_obj_, dim_tags_ = smm_svs_herc_hyper(twixObj, reord_data, meta_obj, dim_tags, subseq=ii, subseq_name=hyp_names[ii])
+
+            reord_list.append(reord_data_)                                                              # AG 03/22/2023 - Append Current Scan Data
+            meta_list.append(  meta_obj_  )                                                             # AG 03/22/2023 - Append Current Scan Metadata
+            dim_list.append(   dim_tags_  )                                                             # AG 03/22/2023 - Append Current Scan Dimensions
+
+        # Assemble the Data
+        nifit_mrs_out = []                                                                              # AG 03/22/2023 -                                                                      
+        filename_out  = []                                                                              # AG 03/22/2023 -  
+        for ii in range(len(hyp_names)):
+            if reord_list[ii].ndim <= 4:                                                                # AG 03/22/2023 - 4 or less Dimensions in Data
+                newshape  = (1, 1, 1) + reord_list[ii].shape                                            # AG 03/22/2023 - Pad with three singleton dimensions (x,y,z)
+                nifit_mrs_out.append(assemble_nifti_mrs(reord_list[ii].reshape(newshape),dwellTime,orientation,meta_list[ii]))
+                filename_out.append( '{}_{}'.format(mainStr, hyp_suffix[ii]) )
+
+        return nifit_mrs_out, filename_out
+
+    elif (xa_or_vx(twixObj['hdr']) == 'xa' and 'smm_svs_herc' in twixObj['hdr']['Meas'][('tSequenceFileName')]):# AG 03/22/2023 - Split if statement to Avoid Hyper and Herc Confusion
         from spec2nii.Siemens.twix_special_case import mgs_svs_ed_twix
         reord_data, meta_obj, dim_tags = mgs_svs_ed_twix(twixObj, reord_data, meta_obj, dim_tags)
 
@@ -385,27 +440,6 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
                 out_name += f'_{indexStr}{ii :03d}'
 
             filename_out.append(out_name)
-
-    if xa_ref_scans is not None:
-        # Pad with three singleton dimensions (x,y,z)
-        newshape = (1, 1, 1) + xa_ref_scans.shape
-        if xa_ref_scans.ndim > 2:
-            ref_tags = ['DIM_COIL', 'DIM_DYN', None]
-        else:
-            ref_tags = ['DIM_COIL', None, None]
-
-        meta_obj_ref = extractTwixMetadata(twixObj['hdr'], basename(twixObj[dataKey].filename))
-        meta_obj_ref.set_standard_def('WaterSuppressed', True)
-
-        nifit_mrs_out.append(
-            assemble_nifti_mrs(
-                xa_ref_scans.reshape(newshape),
-                dwellTime,
-                orientation,
-                meta_obj_ref,
-                dim_tags=ref_tags))
-
-        filename_out.append(mainStr + '_ref')
 
     return nifit_mrs_out, filename_out
 
