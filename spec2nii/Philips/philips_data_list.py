@@ -266,19 +266,30 @@ def _read_list(list_file):
 
 # Special cases
 def _special_case_hyper(data, meta):
+    '''
+    Notes:
+      - (AG 03/22/2023) Updated to handle incomplete data.
+    '''
 
     data_short_te = data[:, :, :32]
     data_edited = data[:, :, 32:]
-    data_edited = data_edited.T.reshape((56, 4, data.shape[1], data.shape[0])).T
+
+    if data_edited.shape[-1] % 4 != 0:                                                      # Handle Incomplete Data
+        old_num_avgs = data_edited.shape[-1]                                                # Old Number of Averages
+        new_num_avgs = (data_edited.shape[-1] // 4) * 4                                     # Complete Sets of 4
+        data_edited = data_edited[..., :new_num_avgs]                                       # Only Keep Complete Sets
+        print('Correcting - Incomplete Averages {} --> {}    Corrected**'.format(old_num_avgs, new_num_avgs))
+
+    data_edited = data_edited.T.reshape((-1, 4, data.shape[1], data.shape[0])).T
 
     meta_short_te = meta.copy()
     meta_edited = meta.copy()
 
-    edit_pulse_1 = 1.9
-    edit_pulse_2 = 4.58
+    edit_pulse_1   = 1.9
+    edit_pulse_2   = 4.58
     edit_pulse_off = 4.18
-    dim_info = "HERCULES j-difference editing, four conditions"
-    dim_header = {"EditCondition": ["A", "B", "C", "D"]}
+    dim_info       = "HERCULES j-difference editing, four conditions"
+    dim_header     = {"EditCondition": ["A", "B", "C", "D"]}
     edit_pulse_val = {
         "A": {"PulseOffset": [edit_pulse_1, edit_pulse_2], "PulseDuration": 0.02},
         "B": {"PulseOffset": [edit_pulse_off, edit_pulse_2], "PulseDuration": 0.02},
