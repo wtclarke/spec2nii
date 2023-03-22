@@ -1,8 +1,10 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
-0.6.8 (WIP)
+0.6.8 (Wednesday 22nd March 2023)
 ---------------------------------
 - Added handling for the GE jpress sequence (for JH HURCULES sequence)
+- Added twix handling of the HYPER (smm_svs_herc_hyper) sequence (added by Aaron Gudmundson)
+- Better handling of partial acqusitions of Siemens and Philips HYPER sequence.
 
 0.6.7 (Wednesday 15th March 2023)
 ---------------------------------
