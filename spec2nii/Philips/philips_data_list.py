@@ -272,18 +272,18 @@ def _special_case_hyper(data, meta):
     '''
 
     data_short_te  = data[:, :, :32]
-    data_edited    = data[:, :, 32:]
+    data_edited = data[:, :, 32:]
 
     if data_edited.shape[-1] % 4 != 0:                                                      # AG 03/22/2023 - Handle Incomplete Data
-        old_num_avgs =  reord_data.shape[-1]                                                # AG 03/22/2023 - Old Number of Averages                                      
+        old_num_avgs =  data_edited.shape[-1]                                               # AG 03/22/2023 - Old Number of Averages                                      
         new_num_avgs = (data_edited.shape[-1] // 4) * 4                                     # AG 03/22/2023 - Total Complete Sets of 4 Subscans
-        data_edited  =  data_edited[..., :new_num_avgs]                                     # AG 03/22/2023 - Only Keep Complete Sets
+        data_edited =  data_edited[..., :new_num_avgs]                                     # AG 03/22/2023 - Only Keep Complete Sets
         print('Correcting - Incomplete Averages {} --> {}    Corrected**'.format(old_num_avgs, new_num_avgs))
 
-    data_edited    = data_edited.T.reshape((56, 4, data.shape[1], data.shape[0])).T
+    data_edited = data_edited.T.reshape((56, 4, data.shape[1], data.shape[0])).T
 
-    meta_short_te  = meta.copy()
-    meta_edited    = meta.copy()
+    meta_short_te = meta.copy()
+    meta_edited = meta.copy()
 
     edit_pulse_1   = 1.9
     edit_pulse_2   = 4.58
