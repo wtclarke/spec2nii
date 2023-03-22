@@ -303,7 +303,12 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
     else:
         xa_ref_scans = None
 
-    # AG 03/22/2023 Moved this if statement up to work with new Hyper function below.
+    # AG 03/22/2023 Moved the NIFTI/Out lists and if statement up to work with new Hyper function below.
+
+    # Now assemble data
+    nifit_mrs_out = []
+    filename_out = []
+    
     if xa_ref_scans is not None:
         # Pad with three singleton dimensions (x,y,z)
         newshape = (1, 1, 1) + xa_ref_scans.shape
@@ -385,9 +390,6 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
             meta_list.append(  meta_obj_  )                                                             # AG 03/22/2023 - Append Current Scan Metadata
             dim_list.append(   dim_tags_  )                                                             # AG 03/22/2023 - Append Current Scan Dimensions
 
-        # Assemble the Data
-        nifit_mrs_out = []                                                                              # AG 03/22/2023 -                                                                      
-        filename_out  = []                                                                              # AG 03/22/2023 -  
         for ii in range(len(hyp_names)):
             if reord_list[ii].ndim <= 4:                                                                # AG 03/22/2023 - 4 or less Dimensions in Data
                 newshape  = (1, 1, 1) + reord_list[ii].shape                                            # AG 03/22/2023 - Pad with three singleton dimensions (x,y,z)
@@ -405,9 +407,6 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
         for idx, dt in enumerate(dim_tags):
             meta_obj.set_dim_info(idx, dt)
 
-    # Now assemble data
-    nifit_mrs_out = []
-    filename_out = []
     if reord_data.ndim <= 4:
         # Pad with three singleton dimensions (x,y,z)
         newshape = (1, 1, 1) + reord_data.shape
