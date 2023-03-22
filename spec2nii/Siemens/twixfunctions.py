@@ -398,7 +398,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
 
         return nifit_mrs_out, filename_out
 
-    elif (xa_or_vx(twixObj['hdr']) == 'xa' and 'smm_svs_herc' in twixObj['hdr']['Meas'][('tSequenceFileName')]):# AG 03/22/2023 - Split if statement to Avoid Hyper and Herc Confusion
+    elif (xa_or_vx(twixObj['hdr']) == 'xa' and 'smm_svs_herc' in twixObj['hdr']['Meas'][('tSequenceFileName')]):  # AG 03/22/2023 - Split if statement to Avoid Hyper and Herc Confusion
         from spec2nii.Siemens.twix_special_case import mgs_svs_ed_twix
         reord_data, meta_obj, dim_tags = mgs_svs_ed_twix(twixObj, reord_data, meta_obj, dim_tags)
 
