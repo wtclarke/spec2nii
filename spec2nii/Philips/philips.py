@@ -325,7 +325,7 @@ def _special_case_hyper(data, dwelltime, meta, orientation, fout_str):
         old_num_avgs = data_edited.shape[-1]                                                # Old Number of Averages
         new_num_avgs = (data_edited.shape[-1] // 4) * 4                                     # Complete Sets of 4
         data_edited = data_edited[..., :new_num_avgs]                                       # Only Keep Complete Sets
-        print('Correcting - Incomplete Averages {} --> {}    Corrected**'.format(old_num_avgs, new_num_avgs))
+        print(f'Correcting - Incomplete Averages {old_num_avgs} --> {new_num_avgs}    Corrected**')
 
     data_edited = data_edited.T.reshape((-1, 4, data.shape[3], 1, 1, 1)).T
 
