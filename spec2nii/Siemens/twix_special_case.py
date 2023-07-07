@@ -44,7 +44,7 @@ def smm_svs_herc_hyper(twixObj, reord_data, meta_obj, dim_tags, subseq, subseq_n
     Contact: agudmun2@jhmi.edu
     """
 
-    print('{:3d} {:<20} - Starting   -'.format(subseq, subseq_name), end='\r')
+    print(f'{subseq:3d} {subseq_name:<20} - Starting   -', end='\r')
 
     short_TE        = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'alFree', '6')] / 1E6          # Short TE's Echo Time
     pulse_length    = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'alFree', '12')] / 1E6         # Pulse Duration
@@ -54,7 +54,7 @@ def smm_svs_herc_hyper(twixObj, reord_data, meta_obj, dim_tags, subseq, subseq_n
     edit_pulse_2    = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'adFree', '9')]                # 1.90 ppm
     edit_pulse_4    = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'adFree', '11')]               # 4.18 ppm
 
-    dim_info        = 'Hyper - {}'.format(subseq_name)                                          # Subscan Name
+    dim_info        = f'Hyper - {subseq_name}'                                                  # Subscan Name
 
     if subseq == 0:                                                                             # Short TE Water Ref
         reord_data = reord_data[:, :, 33::66]                                                   # Short TE Water Refs
@@ -84,10 +84,10 @@ def smm_svs_herc_hyper(twixObj, reord_data, meta_obj, dim_tags, subseq, subseq_n
             new_num_avgs = (reord_data.shape[-1] // 4) * 4                                      # New Total Averages
             reord_data   = reord_data[..., :new_num_avgs]                                       # Remove Incomplete
 
-            notestring   = '{:3d} {:<20}'.format(subseq, subseq_name)                           # Note Incomplete Data
-            notestring   = '{} - Correcting - Incomplete Averages'.format(notestring)           # Note Incomplete Data
-            notestring   = '{}  {} --> {}'.format(notestring, old_num_avgs, new_num_avgs)       # Note Incomplete Data
-            print('{} \t Corrected**'.format(notestring), end='\r')                             # Note Incomplete Data
+            notestring   = f'{subseq:3d} {subseq_name:<20}'                                     # Note Incomplete Data
+            notestring   = f'{notestring} - Correcting - Incomplete Averages'                   # Note Incomplete Data
+            notestring   = f'{notestring}  {old_num_avgs} --> {new_num_avgs}'                   # Note Incomplete Data
+            print(f'{notestring} \t Corrected**', end='\r')                                     # Note Incomplete Data
 
         dim_header       = {'EditCondition': ['A', 'B', 'C', 'D']}                              # 4 Subscans
         edit_pulse_val   = {'A': {'PulseOffset': [edit_pulse_1, edit_pulse_2], 'PulseDuration': pulse_length},
@@ -109,7 +109,7 @@ def smm_svs_herc_hyper(twixObj, reord_data, meta_obj, dim_tags, subseq, subseq_n
             else:
                 meta_obj.set_dim_info(idx, dt)                                                  # Set Dimension
 
-    print('{:3d} {:<20} - Completed  - Final Array Size: '.format(subseq, subseq_name), reord_data.shape)
+    print(f'{subseq:3d} {subseq_name:<20} - Completed  - Final Array Size: ', reord_data.shape)
 
     return reord_data, meta_obj, dim_tags
 

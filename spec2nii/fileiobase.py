@@ -9,7 +9,7 @@ If you find nmrglue useful in your research please cite the package as:
 
 J.J. Helmus, C.P. Jaroniec, Nmrglue: An open source Python package for the
 analysis of multidimensional NMR data, J. Biomol. NMR 2013, 55, 355-367,
-http://dx.doi.org/10.1007/s10858-013-9718-x.
+https://doi.org/10.1007/s10858-013-9718-x.
 ----------------
 
 Copyright Notice and Statement for the nmrglue Project
