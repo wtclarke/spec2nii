@@ -180,7 +180,7 @@ class Pfile:
 
         if psd in ('probe-p', 'probe-s'):
             mapper = PfileMapper
-        elif psd in ('oslaser', 'slaser_cni'):
+        elif psd in ('oslaser', 'slaser_cni', 'slaser'):
             mapper = PfileMapperSlaser
         elif psd == 'presscsi':
             mapper = PfileMapper
@@ -208,6 +208,9 @@ class Pfile:
         elif psd == 'jpress':
             # wtc - Added for HURCULES data.
             mapper = PfileMapperGaba
+        elif psd == 'fidall':
+            # WTC - added for JG's Hyperpolarised 13C data
+            mapper = PfileMapper
         else:
             raise UnknownPfile("No Pfile mapper for pulse sequence = %s" % psd)
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from setuptools import setup
+from setuptools import setup, find_packages
 import versioneer
 import yaml
 
@@ -23,12 +23,7 @@ setup(name='spec2nii',
       url='https://github.com/wtclarke/spec2nii',
       long_description=long_description,
       long_description_content_type="text/markdown",
-      packages=['spec2nii',
-                'spec2nii.Siemens',
-                'spec2nii.GSL',
-                'spec2nii.dcm2niiOrientation',
-                'spec2nii.Philips',
-                'spec2nii.GE'],
+      packages=find_packages(),
       install_requires=install_requires,
       classifiers=[
           "Programming Language :: Python :: 3",

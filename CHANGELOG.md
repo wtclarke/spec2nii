@@ -1,5 +1,12 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.6.9 (Friday 7th July 2023)
+----------------------------
+- Add handling for the `fidall` sequence in GE.
+- Add handling for the `slaser` sequence in GE.
+- Update to nifti-mrs-tools 1.0.0 API.
+- Minor code fixes contributed by the community.
+
 0.6.8 (Wednesday 22nd March 2023)
 ---------------------------------
 - Added handling for the GE jpress sequence (for JH HURCULES sequence)
