@@ -389,7 +389,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
 
         # Reording the Data & Adjusting the Header Appropriately
         for ii in range(len(hyp_names)):                                                    # Iterate over Subscans
-            print('{:3d} {:<20}'.format(ii, hyp_names[ii]), end='\r')
+            print(f'{ii:3d} {hyp_names[ii]:<20}', end='\r')
             reord_data_, meta_obj_, dim_tags_ = smm_svs_herc_hyper(twixObj,
                                                                    reord_data,
                                                                    meta_obj,
@@ -408,7 +408,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
                                                         dwellTime,
                                                         orientation,
                                                         meta_list[ii]))
-                filename_out.append('{}_{}'.format(mainStr, hyp_suffix[ii]))
+                filename_out.append(f'{mainStr}_{hyp_suffix[ii]}')
 
         return nifit_mrs_out, filename_out
 
