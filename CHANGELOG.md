@@ -1,5 +1,10 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.6.9 (WIP 2023)
+---------------------------------
+- Add handling for the `fidall` sequence in GE.
+- Add handling for the `slaser` sequence in GE.
+
 0.6.8 (Wednesday 22nd March 2023)
 ---------------------------------
 - Added handling for the GE jpress sequence (for JH HURCULES sequence)

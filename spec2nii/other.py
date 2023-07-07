@@ -68,7 +68,7 @@ def insert_hdr_ext(args):
         from nifti_mrs.hdr_ext import Hdr_Ext
 
         nimg = Image(args.file)
-        hdr_ext = Hdr_Ext.from_header_ext(new_hdr, dimensions=nimg.ndim)
+        hdr_ext = Hdr_Ext.from_header_ext(new_hdr)
         nifti_mrs_img = gen_nifti_mrs_hdr_ext(
             nimg[:],
             nimg.header['pixdim'][4],

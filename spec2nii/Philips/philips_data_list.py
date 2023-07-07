@@ -95,7 +95,7 @@ def read_data_list_pair(data_file, list_file, aux_file, special_case=None):
         if data_type == 'STD_0'\
                 and (special_case == 'hyper' or 'hyper' in meta['ProtocolName'].lower()):
             out_hyper, meta_hyper = _special_case_hyper(out_data, meta)
-            # Handle the main acqusition of the HYPER (short TE + editing) sequence
+            # Handle the main acquisition of the HYPER (short TE + editing) sequence
 
             # Insert spatial dimensions
             out_shortte = out_hyper[0].reshape((1, 1, 1) + out_hyper[0].shape)
@@ -118,6 +118,10 @@ def read_data_list_pair(data_file, list_file, aux_file, special_case=None):
         elif data_type == 'STD_1'\
                 and (special_case == 'hyper' or 'hyper' in meta['ProtocolName'].lower()):
             # Handle the water ref acqusition of the HYPER sequence
+
+            meta.set_dim_info(
+                0,
+                'DIM_COIL')
 
             meta.set_dim_info(
                 1,
@@ -285,6 +289,13 @@ def _special_case_hyper(data, meta):
     meta_short_te = meta.copy()
     meta_edited = meta.copy()
 
+    meta_short_te.set_dim_info(
+        0,
+        'DIM_COIL')
+    meta_short_te.set_dim_info(
+        1,
+        'DIM_DYN')
+
     edit_pulse_1   = 1.9
     edit_pulse_2   = 4.58
     edit_pulse_off = 4.18
@@ -295,6 +306,10 @@ def _special_case_hyper(data, meta):
         "B": {"PulseOffset": [edit_pulse_off, edit_pulse_2], "PulseDuration": 0.02},
         "C": {"PulseOffset": edit_pulse_1, "PulseDuration": 0.02},
         "D": {"PulseOffset": edit_pulse_off, "PulseDuration": 0.02}}
+
+    meta_edited.set_dim_info(
+        0,
+        'DIM_COIL')
 
     meta_edited.set_dim_info(
         1,

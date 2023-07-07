@@ -95,6 +95,8 @@ def _process_svs_pfile(pfile):
         data, meta, dwelltime, fname_suffix = _process_probe_p(pfile)
     elif psd in ('oslaser', 'slaser_cni'):
         data, meta, dwelltime, fname_suffix = _process_oslaser(pfile)
+    elif psd in ('slaser'):
+        data, meta, dwelltime, fname_suffix = _process_slaser(pfile)
     elif psd == 'gaba':
         data, meta, dwelltime, fname_suffix = _process_gaba(pfile)
     elif 'jpress_ac' in psd:  # Bergen patch
@@ -132,6 +134,12 @@ def _process_probe_p(pfile):
     meta = _populate_metadata(pfile, water_suppressed=True)
     meta_ref = _populate_metadata(pfile, water_suppressed=False)
 
+    meta.set_dim_info(0, 'DIM_COIL')
+    meta.set_dim_info(1, 'DIM_DYN')
+
+    meta_ref.set_dim_info(0, 'DIM_COIL')
+    meta_ref.set_dim_info(1, 'DIM_DYN')
+
     return [metab, water], [meta, meta_ref], dwelltime, ['', '_ref']
 
 
@@ -154,21 +162,44 @@ def _process_oslaser(pfile):
     data = []
     meta = []
     fname_suffix = []
-
     data.append(water[:, :, :, :, :, [0, 1, 4, 5]])
-    meta.append(_populate_metadata(pfile, water_suppressed=False))
+    meta.append(_populate_metadata(pfile, water_suppressed=False, data_dimensions=data[0].ndim))
     fname_suffix.append('_quant')
     data.append(water[:, :, :, :, :, [2, 3, 6, 7]])
-    meta.append(_populate_metadata(pfile, water_suppressed=False))
+    meta.append(_populate_metadata(pfile, water_suppressed=False, data_dimensions=data[1].ndim))
     fname_suffix.append('_ecc')
 
     data.append(metab)
-    meta.append(_populate_metadata(pfile, water_suppressed=True))
+    meta.append(_populate_metadata(pfile, water_suppressed=True, data_dimensions=metab.ndim))
     fname_suffix.append('')
 
     dwelltime = 1 / pfile.hdr.rhr_spectral_width
 
     return data, meta, dwelltime, fname_suffix
+
+
+def _process_slaser(pfile):
+    '''Extract metabolite and reference data from a slaser format pfile
+
+    This seems to be like a standard probe-p. Maybe slaser is the canonical vendor implementation.
+
+    :param Pfile pfile: Pfile object
+    :return: List numpy data arrays
+    :return: List of file name suffixes
+    '''
+
+    metab = pfile.map.raw_suppressed                    # typically (1,1,1,navg,ncoil,npts)
+    metab = np.transpose(metab, [0, 1, 2, 5, 4, 3])     # swap to (1,1,1,npts,ncoil,navg)
+
+    water = pfile.map.raw_unsuppressed                  # typically (1,1,1,navg,ncoil,npts)
+    water = np.transpose(water, [0, 1, 2, 5, 4, 3])     # swap to (1,1,1,npts,ncoil,navg)
+
+    dwelltime = 1 / pfile.hdr.rhr_spectral_width
+
+    meta = _populate_metadata(pfile, water_suppressed=True, data_dimensions=metab.ndim)
+    meta_ref = _populate_metadata(pfile, water_suppressed=False, data_dimensions=water.ndim)
+
+    return [metab, water], [meta, meta_ref], dwelltime, ['', '_ref']
 
 
 def _process_gaba(pfile):
@@ -231,6 +262,8 @@ def _process_mrsi_pfile(pfile):
 
     dwelltime = 1 / pfile.hdr.rhr_spectral_width
     meta = _populate_metadata(pfile)
+    meta.set_dim_info(0, 'DIM_COIL')
+
     orientation = NIFTIOrient(_calculate_affine_mrsi(pfile))
 
     return [gen_nifti_mrs_hdr_ext(data, dwelltime, meta, orientation.Q44, no_conj=True), ], ['', ]
@@ -277,8 +310,22 @@ def _calculate_affine(pfile):
     return affine
 
 
-def _populate_metadata(pfile, water_suppressed=True):
-    ''' Populate a nifti-mrs header extension with the requisite information'''
+def _populate_metadata(pfile, water_suppressed=True, data_dimensions=None):
+    """Populate a nifti-mrs header extension with metadata from the pfile
+
+    If (up to 7) data_dimensions are specified then default dimension tags
+    (coil, dyn, indirect) will be included. Otherwise manually specify
+    outside this function.
+
+    :param pfile: pfile object
+    :type pfile: pfile map object
+    :param water_suppressed: Set water suppression header field, defaults to True
+    :type water_suppressed: bool, optional
+    :param data_dimensions: If set to 5,6, or 7 will inlcude default dim tags for those diemnsions, defaults to None
+    :type data_dimensions: int, optional
+    :return: Header extension object
+    :rtype: nifti_mrs.hdr_ext
+    """
     hdr = pfile.hdr
     spec_frequency = float(pfile.hdr.rhr_rh_ps_mps_freq) / 1e7
 
@@ -304,7 +351,8 @@ def _populate_metadata(pfile, water_suppressed=True):
 
     meta = Hdr_Ext(
         spec_frequency,
-        nucleus)
+        nucleus,
+        dimensions=data_dimensions)
 
     # Standard defined metadata
     # # 5.1 MRS specific Tags
