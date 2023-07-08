@@ -23,7 +23,7 @@ setup(name='spec2nii',
       url='https://github.com/wtclarke/spec2nii',
       long_description=long_description,
       long_description_content_type="text/markdown",
-      packages=find_packages(),
+      packages=find_packages(exclude=["tests*"]),
       install_requires=install_requires,
       classifiers=[
           "Programming Language :: Python :: 3",
