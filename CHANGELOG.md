@@ -1,5 +1,9 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.6.10 (Monday 10th July 2023)
+------------------------------
+- Stop tests being vendered as a top-level package. Bug introduced in `0.6.9`.
+
 0.6.9 (Friday 7th July 2023)
 ----------------------------
 - Add handling for the `fidall` sequence in GE.
