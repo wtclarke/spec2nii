@@ -21,7 +21,8 @@ class NIFTIOrient:
 def calc_affine(angles, dimensions, shift):
 
     scalingMat = np.diag(dimensions)
-    rot = Rotation.from_euler('xyz', angles, degrees=True)
+    # Rotations appear to be intrinsic
+    rot = Rotation.from_euler('XYZ', angles, degrees=True)
     m33 = rot.as_matrix() @ scalingMat
     m44 = np.zeros((4, 4))
     m44[0:3, 0:3] = m33

@@ -1,8 +1,14 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.6.11 (WIP)
+------------------------------
+- Fixed a bug in Philips spar/sdat orientations - this will affect voxels with rotations in more than one axes.
+- Fixed a bug in Philips DICOM orientations - this will affect voxels with rotations in more than one axes.
+- Python 3.7 now in [end of life](https://devguide.python.org/versions/) status and is no longer supported.
+
 0.6.10 (Monday 10th July 2023)
 ------------------------------
-- Stop tests being vendered as a top-level package. Bug introduced in `0.6.9`.
+- Stop tests being vendored as a top-level package. Bug introduced in `0.6.9`.
 
 0.6.9 (Friday 7th July 2023)
 ----------------------------
