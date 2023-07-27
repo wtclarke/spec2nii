@@ -199,6 +199,9 @@ class Pfile:
         elif psd == 'gaba':
             # wtc - added for Nottingham MEGA-PRESS sequence.
             mapper = PfileMapperGaba
+        elif psd == 'hbcd':
+            # ATG - added HBCD - reuse GABA mapper
+            mapper = PfileMapperGaba
         elif psd == 'probe-sl':
             # wtc - added for CSI sequence from Manchester.
             mapper = PfileMapperProbeSL
@@ -1247,7 +1250,7 @@ class PfileMapperGaba(PfileMapper):
             if (dataframes + refframes) != nframes:
                 mult = 1
                 dataframes *= nex
-                refframes = nframes - dataframes
+                refframes = int(nframes - dataframes)
             else:
                 mult = 1.0 / nex
 
