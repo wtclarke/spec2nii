@@ -1,6 +1,6 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
-0.6.11 (WIP)
+0.6.11 (Friday 28th July 2023)
 ------------------------------
 - Fixed a bug in Philips spar/sdat orientations - this will affect voxels with rotations in more than one axes.
 - Fixed a bug in Philips DICOM orientations - this will affect voxels with rotations in more than one axes.
