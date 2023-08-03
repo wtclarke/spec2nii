@@ -85,7 +85,7 @@ def read_sdat_spar_pair(sdat_file, spar_file, shape=None, tags=None, fileout=Non
         return _special_case_hyper(data, dwelltime, meta, orientation.Q44, mainStr)
     else:
         # Normal case
-        return [gen_nifti_mrs_hdr_ext(data, dwelltime, meta, orientation.Q44, no_conj=True), ],\
+        return [gen_nifti_mrs_hdr_ext(data, dwelltime, meta, orientation.Q44, no_conj=True), ], \
                [mainStr, ]
 
 
@@ -358,7 +358,7 @@ def _special_case_hyper(data, dwelltime, meta, orientation, fout_str):
     meta_edited.set_standard_def("EchoTime", 0.08)
 
     return [gen_nifti_mrs_hdr_ext(data_short_te, dwelltime, meta_short_te, orientation, no_conj=True),
-            gen_nifti_mrs_hdr_ext(data_edited, dwelltime, meta_edited, orientation, no_conj=True)],\
+            gen_nifti_mrs_hdr_ext(data_edited, dwelltime, meta_edited, orientation, no_conj=True)], \
            [fout_str + '_hyper_short_te', fout_str + '_hyper_edited']
 
 
@@ -399,5 +399,5 @@ def _special_case_hyper_ref(data, dwelltime, meta, orientation, fout_str):
     meta_short_te.set_standard_def("EchoTime", 0.08)
 
     return [gen_nifti_mrs_hdr_ext(data_short_te, dwelltime, meta_short_te, orientation, no_conj=True),
-            gen_nifti_mrs_hdr_ext(data_edited, dwelltime, meta_edited, orientation, no_conj=True)],\
+            gen_nifti_mrs_hdr_ext(data_edited, dwelltime, meta_edited, orientation, no_conj=True)], \
            [fout_str + '_hyper_ref_short_te', fout_str + '_hyper_ref_edited']
