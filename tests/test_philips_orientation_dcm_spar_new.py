@@ -24,43 +24,61 @@ ssdir = base_dir / 'screenshots'
 data = {
     '0-0-0': {
         'spar': 'dbiex_40_2_raw_act.spar',
-        'dcm': '4002-iso_50-80-30_rot-0-0-0/'
+        'dcm_old': '4002-iso_50-80-30_rot-0-0-0/'
                'MRs.1.3.46.670589.11.24058.5.22.3.1.17592.20230724182705801384c0baf12-9ba8-4b65-8382-52ecbde14039.dcm',
+        'dcm_classic': 'classic/XX_0175',
+        'dcm_enhanced': 'enhanced/XX_0002',
         'slices': [75, 58, 110]},
     '30-0-0': {
         'spar': 'dbiex_41_2_raw_act.spar',
-        'dcm': '4102-iso_50-80-30_rot-30-0-0/MRs.1.3.46.670589.11.24058.5.22.3.1.17592.2023072418275589143.dcm',
+        'dcm_old': '4102-iso_50-80-30_rot-30-0-0/MRs.1.3.46.670589.11.24058.5.22.3.1.17592.2023072418275589143.dcm',
+        'dcm_classic': 'classic/XX_0177',
+        'dcm_enhanced': 'enhanced/XX_0004',
         'slices': [75, 54, 111]},
     '30-40-0': {
         'spar': 'dbiex_42_2_raw_act.spar',
-        'dcm': '4202-iso_50-80-30_rot-30-40-0/MRs.1.3.46.670589.11.24058.5.22.3.1.17592.2023072418281299148.dcm',
+        'dcm_old': '4202-iso_50-80-30_rot-30-40-0/MRs.1.3.46.670589.11.24058.5.22.3.1.17592.2023072418281299148.dcm',
+        'dcm_classic': 'classic/XX_0179',
+        'dcm_enhanced': 'enhanced/XX_0006',
         'slices': [75, 55, 114]},
     '30-40-20': {
         'spar': 'dbiex_43_2_raw_act.spar',
-        'dcm': '4302-iso_50-80-30_rot-30-40-20/MRs.1.3.46.670589.11.24058.5.22.3.1.17592.2023072418283012153.dcm',
+        'dcm_old': '4302-iso_50-80-30_rot-30-40-20/MRs.1.3.46.670589.11.24058.5.22.3.1.17592.2023072418283012153.dcm',
+        'dcm_classic': 'classic/XX_0181',
+        'dcm_enhanced': 'enhanced/XX_0008',
         'slices': [75, 54, 114]},
     '0-40-20': {
         'spar': 'dbiex_44_2_raw_act.spar',
-        'dcm': '4402-iso_50-80-30_rot-0-40-20/MRs.1.3.46.670589.11.24058.5.22.3.1.17592.2023072418284925158.dcm',
+        'dcm_old': '4402-iso_50-80-30_rot-0-40-20/MRs.1.3.46.670589.11.24058.5.22.3.1.17592.2023072418284925158.dcm',
+        'dcm_classic': 'classic/XX_0183',
+        'dcm_enhanced': 'enhanced/XX_0010',
         'slices': [75, 30, 114]},
     '30-0-20': {
         'spar': 'dbiex_45_2_raw_act.spar',
-        'dcm': '4502-iso_50-80-30_rot-30-0-20/MRs.1.3.46.670589.11.24058.5.22.3.1.17592.2023072418290724163.dcm',
+        'dcm_old': '4502-iso_50-80-30_rot-30-0-20/MRs.1.3.46.670589.11.24058.5.22.3.1.17592.2023072418290724163.dcm',
+        'dcm_classic': 'classic/XX_0185',
+        'dcm_enhanced': 'enhanced/XX_0012',
         'slices': [75, 31, 114]},
     '10-10-44': {
         'spar': 'dbiex_46_2_raw_act.spar',
-        'dcm': '4602-iso_50-80-30_rot-10-10-44/'
-               'MRs.1.3.46.670589.11.24058.5.22.3.1.17592.20230724182924311689fcc2be8-08ee-4f06-9b99-189fbc586a2a.dcm',
+        'dcm_old': '4602-iso_50-80-30_rot-10-10-44/'
+                   'MRs.1.3.46.670589.11.24058.5.22.3.1.17592.20230724182924311689fcc2be8-08ee-4f06-9b99-189fbc586a2a.dcm',
+        'dcm_classic': 'classic/XX_0187',
+        'dcm_enhanced': 'enhanced/XX_0014',
         'slices': [75, 31, 114]},
     '10-44-10': {
         'spar': 'dbiex_47_2_raw_act.spar',
-        'dcm': '4702-iso_50-80-30_rot-10-44-10/'
-               'MRs.1.3.46.670589.11.24058.5.22.3.1.17592.20230724182939481730a508d00-9382-4749-b98c-7e372f5ce8dc.dcm',
+        'dcm_old': '4702-iso_50-80-30_rot-10-44-10/'
+                   'MRs.1.3.46.670589.11.24058.5.22.3.1.17592.20230724182939481730a508d00-9382-4749-b98c-7e372f5ce8dc.dcm',
+        'dcm_classic': 'classic/XX_0189',
+        'dcm_enhanced': 'enhanced/XX_0016',
         'slices': [75, 54, 114]},
     '44-10-10': {
         'spar': 'dbiex_48_2_raw_act.spar',
-        'dcm': '4802-iso_50-80-30_rot-44-10-10/'
-               'MRs.1.3.46.670589.11.24058.5.22.3.1.17592.20230724182956501788cc0636e-c425-484d-859c-2ed8881598d6.dcm',
+        'dcm_old': '4802-iso_50-80-30_rot-44-10-10/'
+                   'MRs.1.3.46.670589.11.24058.5.22.3.1.17592.20230724182956501788cc0636e-c425-484d-859c-2ed8881598d6.dcm',
+        'dcm_classic': 'classic/XX_0191',
+        'dcm_enhanced': 'enhanced/XX_0018',
         'slices': [75, 54, 114]}
 }
 
@@ -92,10 +110,12 @@ def run_render(mode, rot, position, working_dir):
         '-hc', hide1, hide2,
         '-ds', 'world',
         base_dir / img,
-        working_dir / f'dcm_{rot}.nii.gz',
-        '-a', '50', '-cm', 'red',
+        working_dir / f'dcm_e_{rot}.nii.gz',
+        '-a', '30', '-cm', 'red',
+        working_dir / f'dcm_c_{rot}.nii.gz',
+        '-a', '30', '-cm', 'green',
         working_dir / f'spar_{rot}.nii.gz',
-        '-a', '50', '-cm', 'blue'])
+        '-a', '30', '-cm', 'blue'])
 
 
 def run_fsleyes(case, working_dir):
@@ -158,7 +178,8 @@ def test_dcm_spar_orientations(tmp_path):
         )
 
     for key in data:
-        dcm_call(data[key]['dcm'], f'dcm_{key}')
+        dcm_call(data[key]['dcm_enhanced'], f'dcm_e_{key}')
+        dcm_call(data[key]['dcm_classic'], f'dcm_c_{key}')
         ss_call(data[key]['spar'], f'spar_{key}')
 
     all_cases = []
