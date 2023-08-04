@@ -63,6 +63,7 @@ def smm_svs_herc_hyper(twixObj, reord_data, meta_obj, dim_tags, subseq, subseq_n
 
     elif subseq == 1:                                                                           # Long  TE Water Ref
         reord_data  = reord_data[:, :, 0::66]                                                   # Long  TE Water Refs
+        meta_obj.set_standard_def('EchoTime', 0.080)                                            # Echo Time
         meta_obj.set_standard_def('WaterSuppressed', False)                                     # Water Suppression
 
     elif subseq == 2:                                                                           # Short TE PRESS
@@ -71,6 +72,7 @@ def smm_svs_herc_hyper(twixObj, reord_data, meta_obj, dim_tags, subseq, subseq_n
         reord_data  = reord_data[:, :, 1:33]                                                    # Isolated PRESS
 
     elif subseq == 3:                                                                           # Long  TE HERCULES
+        meta_obj.set_standard_def('EchoTime', 0.080)                                            # Echo Time
         meta_obj.set_standard_def('WaterSuppressed', True)                                      # Water Suppression
 
         reord_mask       = np.ones(reord_data.shape[-1], dtype=bool)                            # Create a Mask
