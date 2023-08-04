@@ -103,11 +103,11 @@ def smm_svs_herc_hyper(twixObj, reord_data, meta_obj, dim_tags, subseq, subseq_n
 
         dim_tags.insert(len(orig_shape) - 3, 'DIM_EDIT')                                        # Update Dimensions
 
-        for idx, dt in enumerate(dim_tags):                                                     # Iterate Dimensions
-            if dt == 'DIM_EDIT':
-                meta_obj.set_dim_info(idx, dt, dim_info, dim_header)                            # Set Dimension
-            else:
-                meta_obj.set_dim_info(idx, dt)                                                  # Set Dimension
+    for idx, dt in enumerate(dim_tags):                                                         # Iterate Dimensions
+        if dt == 'DIM_EDIT':
+            meta_obj.set_dim_info(idx, dt, dim_info, dim_header)                                # Set Dimension
+        else:
+            meta_obj.set_dim_info(idx, dt)                                                      # Set Dimension
 
     print(f'{subseq:3d} {subseq_name:<20} - Completed  - Final Array Size: ', reord_data.shape)
 
