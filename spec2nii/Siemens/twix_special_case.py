@@ -60,20 +60,24 @@ def smm_svs_herc_hyper(twixObj, reord_data, meta_obj, dim_tags, subseq, subseq_n
         reord_data = reord_data[:, :, 33::66]                                                   # Short TE Water Refs
         meta_obj.set_standard_def('EchoTime', short_TE)                                         # Echo Time
         meta_obj.set_standard_def('WaterSuppressed', False)                                     # Water Suppression
+        meta_obj.set_standard_def('TxOffset', 0.0)                                              # Transmitter Frequency
 
     elif subseq == 1:                                                                           # Long  TE Water Ref
         reord_data  = reord_data[:, :, 0::66]                                                   # Long  TE Water Refs
         meta_obj.set_standard_def('EchoTime', 0.080)                                            # Echo Time
         meta_obj.set_standard_def('WaterSuppressed', False)                                     # Water Suppression
+        meta_obj.set_standard_def('TxOffset', 0.0)                                              # Transmitter Frequency
 
     elif subseq == 2:                                                                           # Short TE PRESS
         meta_obj.set_standard_def('EchoTime', short_TE)                                         # Echo Time
         meta_obj.set_standard_def('WaterSuppressed', True)                                      # Water Suppression
+        meta_obj.set_standard_def('TxOffset', -1.7)                                             # Transmitter Frequency
         reord_data  = reord_data[:, :, 1:33]                                                    # Isolated PRESS
 
     elif subseq == 3:                                                                           # Long  TE HERCULES
         meta_obj.set_standard_def('EchoTime', 0.080)                                            # Echo Time
         meta_obj.set_standard_def('WaterSuppressed', True)                                      # Water Suppression
+        meta_obj.set_standard_def('TxOffset', -1.7)                                             # Transmitter Frequency
 
         reord_mask       = np.ones(reord_data.shape[-1], dtype=bool)                            # Create a Mask
         reord_mask[::33] = False                                                                # Remove Water Refs
@@ -104,8 +108,6 @@ def smm_svs_herc_hyper(twixObj, reord_data, meta_obj, dim_tags, subseq, subseq_n
         reord_data  = reord_data.T.reshape(orig_shape[::-1]).T                                  # With Subscan Dim
 
         dim_tags.insert(len(orig_shape) - 3, 'DIM_EDIT')                                        # Update Dimensions
-
-    meta_obj.set_standard_def('TxOffset', 0.0)                                                  # Transmitter Frequency
 
     for idx, dt in enumerate(dim_tags):                                                         # Iterate Dimensions
         if dt == 'DIM_EDIT':
