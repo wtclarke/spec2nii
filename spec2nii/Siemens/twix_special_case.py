@@ -105,6 +105,8 @@ def smm_svs_herc_hyper(twixObj, reord_data, meta_obj, dim_tags, subseq, subseq_n
 
         dim_tags.insert(len(orig_shape) - 3, 'DIM_EDIT')                                        # Update Dimensions
 
+    meta_obj.set_standard_def('TxOffset', 0.0)                                                  # Transmitter Frequency
+
     for idx, dt in enumerate(dim_tags):                                                         # Iterate Dimensions
         if dt == 'DIM_EDIT':
             meta_obj.set_dim_info(idx, dt, dim_info, dim_header)                                # Set Dimension
