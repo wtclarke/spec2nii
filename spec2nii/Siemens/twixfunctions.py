@@ -383,10 +383,6 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
                       '80ms HERCULES']                                                      # Hyper Subscan Names
         hyp_suffix = ['ref_short_te', 'ref_edited', 'short_te', 'edited']                   # Hyper Suffixes
 
-        reord_list = []                                                                     # List of Reord Data
-        meta_list  = []                                                                     # List of Meta Objects
-        dim_list   = []                                                                     # List of Dimensions
-
         # Reording the Data & Adjusting the Header Appropriately
         for ii in range(len(hyp_names)):                                                    # Iterate over Subscans
             print(f'{ii:3d} {hyp_names[ii]:<20}', end='\r')
@@ -397,17 +393,12 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
                                                                    subseq=ii,
                                                                    subseq_name=hyp_names[ii])
 
-            reord_list.append(reord_data_)                                                  # Current Scan Data
-            meta_list.append(meta_obj_)                                                     # Current Scan Metadata
-            dim_list.append(dim_tags_)                                                      # Current Scan Dimensions
-
-        for ii in range(len(hyp_names)):
-            if reord_list[ii].ndim <= 4:                                                    # 4 or less Dims
-                newshape  = (1, 1, 1) + reord_list[ii].shape                                # Pad 3 singleton dims
-                nifit_mrs_out.append(assemble_nifti_mrs(reord_list[ii].reshape(newshape),
+            if reord_data_.ndim <= 4:                                                       # 4 or less Dims
+                newshape  = (1, 1, 1) + reord_data_.shape                                   # Pad 3 singleton dims
+                nifit_mrs_out.append(assemble_nifti_mrs(reord_data_.reshape(newshape),
                                                         dwellTime,
                                                         orientation,
-                                                        meta_list[ii]))
+                                                        meta_obj_))
                 filename_out.append(f'{mainStr}_{hyp_suffix[ii]}')
 
         return nifit_mrs_out, filename_out
