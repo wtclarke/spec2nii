@@ -46,8 +46,8 @@ This table lists the currently supported formats. I have very limited experience
 | Siemens RDA   | .rda           | Yes | No  | Yes (WIP)             |
 | Philips       | .SPAR/.SDAT    | Yes | No  | Yes                   |
 | Philips       | .data/.list    | Yes | No  | Yes                   |
-| Philips DICOM | .dcm           | Yes | No  | Yes (WIP)             |
-| GE            | .7 (pfile)     | Yes | Yes | Yes                   |
+| Philips DICOM | .dcm           | Yes | No  | Yes                   |
+| GE            | .7 (pfile)     | Yes | Yes | Yes  (WIP)            |
 | UIH DICOM     | .dcm           | Yes | Yes | Yes                   |
 | Bruker        | 2dseq          | Yes | Yes | Yes                   |
 | Bruker        | fid            | Yes | Yes | Yes (WIP)             |
@@ -107,7 +107,7 @@ NIfTI MRS dimension tags (e.g. `DIM_COIL`) can be specified using the `-t` comma
 
 Two optional arguments are available for the SPAR/SDAT pathway:
 - `-t/--tags` allows the user to specify the dimension tags for each of the higher dimensions (up to three).
-- `-s/--shape` allows the user to perform numpy style reshaping of multiple transients. By default (without specifying a shape) all transients will be listed in a single 5th dimension.
+- `-s/--shape` allows the user to perform Numpy style reshaping of multiple transients. By default (without specifying a shape) all transients will be listed in a single 5th dimension.
 
 ### Philips (data/list)
 Must be provided along side a matching SPAR file.
@@ -120,7 +120,7 @@ NIfTI MRS dimension tags (e.g. `DIM_COIL`) can be specified using the `-t` comma
 
 Generates separate reference file if present.
 
-**NOTE** Only enhanced DICOM is currently handled. Older 'classic' DICOM may work but is likely to need more testing with appropriate example data first.
+Both classic and enhanced DICOM is handled.
 
 ### Bruker (2dseq/fid)
 `spec2nii bruker -m 2DSEQ 2DSEQ_FILE_or_DIR`

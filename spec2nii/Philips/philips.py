@@ -366,7 +366,7 @@ def _special_case_hyper_ref(data, dwelltime, meta, orientation, fout_str):
     """Special case handling for the HYPER sequence (water reference component).
 
     Contains 8 references (every 32 scans from index 0). Starts with TE = 80 and alternates to TE = 35.
-    Output two ntime x 4 (DIM_DYN) shape files to match main acqusition
+    Output two ntime x 4 (DIM_DYN) shape files to match main acquisition
 
     :param data: Combined short TE and editing-TE data
     :type data: numpy.ndarray
