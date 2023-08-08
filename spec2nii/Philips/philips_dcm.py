@@ -275,29 +275,12 @@ def _enhanced_dcm_svs_to_orientation(img, verbose=False):
 
     Assumes the center of all slabs are aligned currently.'''
 
-    # affine3 = []
-    # voxsize = []
-    # for vl in img.dcm_data.VolumeLocalizationSequence:
-    #     affine3.append(vl.SlabOrientation)
-    #     voxsize.append(vl.SlabThickness)
-    # affine3 = np.asarray(affine3)
-    # voxsize = np.diag(np.asarray(voxsize))
-
-    # locSeq = img.dcm_data.VolumeLocalizationSequence
-    # if not np.allclose(locSeq[0].MidSlabPosition, locSeq[1].MidSlabPosition) \
-    #         or not np.allclose(locSeq[0].MidSlabPosition, locSeq[2].MidSlabPosition):
-    #     raise ValueError('Mid Slab Position must be the same for all three entries')
-
-    # pos3 = np.asarray(img.dcm_data.VolumeLocalizationSequence[0].MidSlabPosition)
-
-    # affine4 = np.eye(4)
-    # affine4[:3, :3] = affine3 @ voxsize
-    # affine4[:3, 3] = pos3
-
-    # Above didn't work. Drop back to original method.
-
     # Extract dicom parameters
     if _is_new_format(img):
+        # Enhanced DICOM
+
+        '''
+        # Code before July 2023 when testing using JH data revealed problems.
         imageOrientationPatient = img.dcm_data.PerFrameFunctionalGroupsSequence[0]\
             .PlaneOrientationSequence[0].ImageOrientationPatient
         imageOrientationPatient = np.asarray(imageOrientationPatient).reshape(2, 3)
@@ -308,7 +291,27 @@ def _enhanced_dcm_svs_to_orientation(img, verbose=False):
                  float(img.dcm_data.PerFrameFunctionalGroupsSequence[0].PixelMeasuresSequence[0].PixelSpacing[1]),
                  float(img.dcm_data.PerFrameFunctionalGroupsSequence[0].PixelMeasuresSequence[0].SliceThickness)]
         xyzMM = np.asarray(xyzMM)
+        '''
+
+        locSeq = img.dcm_data.VolumeLocalizationSequence
+        imageOrientationPatient = np.concatenate((locSeq[0].SlabOrientation, locSeq[1].SlabOrientation))
+        imageOrientationPatient = np.asarray(imageOrientationPatient).reshape(2, 3)
+        imageOrientationPatient *= -1
+        imagePositionPatient = np.asarray(locSeq[0].MidSlabPosition)
+        xyzMM = np.asarray(
+            [locSeq[1].SlabThickness,
+             locSeq[0].SlabThickness,
+             locSeq[2].SlabThickness])
+
+        return dcm_to_nifti_orientation(
+            imageOrientationPatient,
+            imagePositionPatient,
+            xyzMM,
+            (1, 1, 1),
+            half_shift=False,
+            verbose=verbose)
     else:
+        # Classic DICOM
         import warnings
         warnings.warn('The orientation and position code for old format Philips DICOM is untested.\
                        Please provide example data to improve the handling of this format.')
@@ -325,31 +328,31 @@ def _enhanced_dcm_svs_to_orientation(img, verbose=False):
             shift_ap = float(section[0x02005, 0x105a].value)
             shift_hf = float(section[0x02005, 0x105b].value)
 
-            xyzMM = np.array([dim_lr, dim_ap, dim_hf])
+            # This matches the spar/sdat pathway in spec2nii.Philips.philips._philips_orientation
+            from spec2nii.nifti_orientation import NIFTIOrient, calc_affine
+            angles = [-angle_lr, -angle_ap, angle_hf]
+            dimensions = [dim_lr, dim_ap, dim_hf]
+            shift = [-shift_lr, -shift_ap, shift_hf]
 
-            from scipy.spatial.transform import Rotation
-            rot = Rotation.from_euler('xyz', [-angle_lr, -angle_ap, angle_hf], degrees=True)
-            # THIS NEEDS TESTING!!! CODE WILL PASS BUT I DON"T TRUST IT AT ALL.
-            imageOrientationPatient = rot.as_matrix()[:, :2].T
-            imagePositionPatient = [-shift_lr, -shift_ap, shift_hf]
+            return NIFTIOrient(calc_affine(angles, dimensions, shift))
 
         except KeyError:
             # Default orientation
-            print('No orientation infroamtion found in header. Tag (2005, 1085) missing. '
-                  'Default orientation will be used.')
+            print(
+                'No orientation information found in header. Tag (2005, 1085) missing. '
+                'Default orientation will be used.')
             imageOrientationPatient = [[1, 0, 0], [0, 1, 0]]
             imagePositionPatient = [0, 0, 0]
             xyzMM = [float(x) for x in img.dcm_data[0x0028, 0x0030].value] \
                 + [float(img.dcm_data[0x0018, 0x0050].value), ]
 
-    currNiftiOrientation = dcm_to_nifti_orientation(imageOrientationPatient,
-                                                    imagePositionPatient,
-                                                    xyzMM,
-                                                    (1, 1, 1),
-                                                    half_shift=False,
-                                                    verbose=verbose)
-
-    return currNiftiOrientation
+            return dcm_to_nifti_orientation(
+                imageOrientationPatient,
+                imagePositionPatient,
+                xyzMM,
+                (1, 1, 1),
+                half_shift=False,
+                verbose=verbose)
 
 
 def _extractDicomMetadata_old(dcmdata, water_suppressed=True):

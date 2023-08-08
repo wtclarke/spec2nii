@@ -1,4 +1,5 @@
-'''Orientation tests for Philips DICOM format conversion.
+'''OLD Orientation tests for Philips DICOM format conversion.
+This test has been superseded by the new test test_philips_orientation_dcm_spar_new.py
 
 Copyright William Clarke, University of Oxford 2021
 Subject to the BSD 3-Clause License.
@@ -68,11 +69,10 @@ def crop_and_flip_first_third_and_swap(img_in, swap='23'):
 
 @pytest.mark.orientation
 def test_svs_orientation(tmp_path):
-
     sub_images = []
     for idx, (d_path, p_path, pos) in enumerate(zip(data_path, screenshot_path, t1_pos)):
         subprocess.check_call(['spec2nii', 'philips_dcm',
-                               '-f', 'svs',
+                               '-f', f'svs_{idx}',
                                '-o', tmp_path,
                                '-j',
                                str(d_path)])
@@ -83,7 +83,7 @@ def test_svs_orientation(tmp_path):
                                '-vl', str(pos[0]), str(pos[1]), str(pos[2]),
                                '-xc', '0', '0', '-yc', '0', '0', '-zc', '0', '0',
                                '-hc', structural_data,
-                               tmp_path / 'svs.nii.gz', '-ot', 'complex',
+                               tmp_path / f'svs_{idx}.nii.gz', '-ot', 'complex',
                                '-a', '50', '-cm', 'blue'])
 
         fsl_ss = Image.open(tmp_path / f'svs_{idx}.png')
@@ -106,9 +106,9 @@ def test_svs_orientation(tmp_path):
     draw = ImageDraw.Draw(final_img)
     for idx, si in enumerate(sub_images):
         c = idx % 2
-        r = int(idx / 3)
-        final_img.paste(si, (si.width * r, si.height * c))
-        draw.text((10 + si.width * r, 10 + si.height * c), f'P{idx + 1}', (255, 0, 0))
+        r = int(idx / 2)
+        final_img.paste(si, (si.width * c, si.height * r))
+        draw.text((10 + si.width * c, 10 + si.height * r), f'P{idx + 1}', (255, 0, 0))
 
     final_img.save(output_path / 'philips_dicom_svs.png')
     print(tmp_path)

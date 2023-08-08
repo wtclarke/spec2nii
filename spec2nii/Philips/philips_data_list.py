@@ -14,9 +14,9 @@ from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
 
 from spec2nii.Philips.philips import read_spar, spar_to_nmrs_hdrext, _philips_orientation
 from spec2nii.Philips.philips_dcm import \
-    _enhanced_dcm_svs_to_orientation,\
-    _is_new_format,\
-    _extractDicomMetadata_new,\
+    _enhanced_dcm_svs_to_orientation, \
+    _is_new_format, \
+    _extractDicomMetadata_new, \
     _extractDicomMetadata_old
 from spec2nii.nifti_orientation import NIFTIOrient
 
@@ -320,5 +320,5 @@ def _special_case_hyper(data, meta):
     meta_edited.set_dim_info(2, 'DIM_DYN')
     meta_edited.set_standard_def("EditPulse", edit_pulse_val)
 
-    return [data_short_te, data_edited],\
+    return [data_short_te, data_edited], \
            [meta_short_te, meta_edited]

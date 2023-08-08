@@ -15,7 +15,7 @@ def dump_headers(args):
     :param args: Command line arguments
     """
     # Load file
-    nifti_mrs_img = NIFTI_MRS(args.file)
+    nifti_mrs_img = NIFTI_MRS(args.file, validate_on_creation=False)
 
     # Print NIfTI header
     print('NIfTI header: ')
@@ -31,7 +31,7 @@ def extract_hdr_ext(args):
 
     :param args: Command line arguments
     """
-    nifti_mrs_img = NIFTI_MRS(args.file)
+    nifti_mrs_img = NIFTI_MRS(args.file, validate_on_creation=False)
 
     if args.outdir:
         args.outdir.mkdir(exist_ok=True, parents=True)
@@ -58,7 +58,7 @@ def insert_hdr_ext(args):
 
     # Load data
     try:
-        nifti_mrs_img = NIFTI_MRS(args.file)
+        nifti_mrs_img = NIFTI_MRS(args.file, validate_on_creation=False)
         nifti_mrs_img.hdr_ext = new_hdr
 
     except NotNIFTI_MRS:
