@@ -128,7 +128,7 @@ class Pfile:
         self.read_header()
 
         if not self.is_ge_file:
-            raise UnknownPfile("Not a known GE Pfile - fname = %s" % fname)
+            raise UnknownPfile(f"Not a known GE Pfile - fname = {fname}")
 
         self.map_data()
 
@@ -215,7 +215,7 @@ class Pfile:
             # WTC - added for JG's Hyperpolarised 13C data
             mapper = PfileMapper
         else:
-            raise UnknownPfile("No Pfile mapper for pulse sequence = %s" % psd)
+            raise UnknownPfile(f"No Pfile mapper for pulse sequence = {psd}")
 
         return mapper
 
@@ -226,7 +226,7 @@ class Pfile:
         # determine version number of this header from revision of rdbm.h
         version = self._version(filelike)
         if version == 0:
-            raise UnknownPfile("Pfile not supported for version %s" % version)
+            raise UnknownPfile(f"Pfile not supported for version {version}")
 
         # Here we dynamically configure the ctypes structures into which the
         # binary file will be read, based on the revision number
@@ -270,7 +270,7 @@ class Pfile:
             filelike.close()
         except Exception:
             filelike.close()
-            raise UnknownPfile("Trouble reading file into header structure for version %s" % version)
+            raise UnknownPfile(f"Trouble reading file into header structure for version {version}")
 
         self.version = version
         self.hdr = hdr
@@ -338,7 +338,7 @@ class Pfile:
             self.endian = 'big'
             version = rev_big
         else:
-            raise UnknownPfile("Unknown header structure for revision %s" % rev_little)
+            raise UnknownPfile(f"Unknown header structure for revision {rev_little}")
 
         return version
 
