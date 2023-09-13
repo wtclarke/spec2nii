@@ -412,7 +412,7 @@ class spec2nii:
             setattr(args, 'special', None)
             self.philips(args)
 
-        # Philips DATA/LIST - Reject bcause of unknown aux file format.
+        # Philips DATA/LIST - Reject because of unknown aux file format.
         elif args.file.suffix.lower() in ('.data', '.list'):
             raise Spec2niiError(
                 'Automatic conversion not setup for data/list conversion. '
@@ -450,7 +450,7 @@ class spec2nii:
                     self.philips_dicom(args)
                 else:
                     raise Spec2niiError(f'Unknown DICOM manufacturer {manufacturer}.')
-            # No sucessful ID as DICOM - fail at automatic load.
+            # No successful ID as DICOM - fail at automatic load.
             except pdcm.errors.InvalidDicomError:
                 raise Spec2niiError(
                     'Unable to automatically identify file type. '

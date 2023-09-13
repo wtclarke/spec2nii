@@ -48,7 +48,7 @@ def xa_or_vx(img):
         if img.dcm_data.SOPClassUID == '1.2.840.10008.5.1.4.1.1.4':
             raise IncompatibleSOPClassUID(
                 f'spec2nii detected SOPClassUID {img.dcm_data.SOPClassUID}.'
-                ' This normaly contains MR imaging (not spectroscopy) data.'
+                ' This normally contains MR imaging (not spectroscopy) data.'
                 ' This data was collected on a'
                 f' {img.dcm_data.SoftwareVersions} baseline scanner.'
                 ' spec2nii is tested on VA-VE, XA20, and XA30 DICOM files.')
@@ -516,7 +516,7 @@ def extractDicomMetadata_vx(dcmdata):
             pass
 
     # # 5.1 MRS specific Tags
-    # 'EchoTime' - requires substantial extraction from the full protocol incase there are multiple
+    # 'EchoTime' - requires substantial extraction from the full protocol in case there are multiple
     # sub-values, e.g. summing the three TEs of a sLAASER sequence together.
     fullcsa = csar.get_csa_header(dcmdata.dcm_data, csa_type='series')
     xprot = parse_buffer(fullcsa['tags']['MrPhoenixProtocol']['items'][0])

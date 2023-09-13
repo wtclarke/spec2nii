@@ -27,7 +27,7 @@ This document contains the Spec2nii release history in reverse chronological ord
 ---------------------------------
 - Added handling for the GE jpress sequence (for JH HURCULES sequence)
 - Added twix handling of the HYPER (smm_svs_herc_hyper) sequence (added by Aaron Gudmundson)
-- Better handling of partial acqusitions of Siemens and Philips HYPER sequence.
+- Better handling of partial acquisitions of Siemens and Philips HYPER sequence.
 
 0.6.7 (Wednesday 15th March 2023)
 ---------------------------------
@@ -63,7 +63,7 @@ This document contains the Spec2nii release history in reverse chronological ord
 - SPAR/SDAT pipeline now handles HYPER special case.
 - Data/list pipeline now handles HYPER special case.
 - Fixed issue with XA Twix PatientSex and TxOffset attributes.
-- Reenable Bruker conversion. 
+- Re-enable Bruker conversion.
 
 0.6.0 (Wednesday 11th January 2023)
 -----------------------------------

@@ -825,7 +825,7 @@ def CSIOrientations(slice_normal, ip_rot, fov_pe, fov_ro, fov_sl, n_pe, n_ro, n_
         base_pos -= slice_normal * (fov_sl / 2 - fov_sl / n_sl / 2)
         fov_sl /= n_sl
 
-    # Sagital
+    # Sagittal
     if mo_case == 0:
         print('Mirror along ROW/readout direction: VB = LIN, VE+ = SEG')
         dRowVec_vector *= -1.0

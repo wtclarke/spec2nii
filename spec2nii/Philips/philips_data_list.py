@@ -117,7 +117,7 @@ def read_data_list_pair(data_file, list_file, aux_file, special_case=None):
 
         elif data_type == 'STD_1'\
                 and (special_case == 'hyper' or 'hyper' in meta['ProtocolName'].lower()):
-            # Handle the water ref acqusition of the HYPER sequence
+            # Handle the water ref acquisition of the HYPER sequence
 
             meta.set_dim_info(
                 0,
