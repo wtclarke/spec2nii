@@ -1,4 +1,4 @@
-"""Functions to handle sequences/situations that are special-cased
+"""Functions to hangle sequences/situations that are special-cased
 converted from twix/.dat data.
 
 Will Clarke, University of Oxford, 2022
@@ -33,7 +33,7 @@ def smm_svs_herc_hyper(twixObj, reord_data, meta_obj, dim_tags, subseq, subseq_n
         twixObj['hdr']['Phoenix'][('sWipMemBlock', 'adFree', '10')] = 3.67 ppm (unused here)
         twixObj['hdr']['Phoenix'][('sWipMemBlock', 'adFree', '11')] = 4.18 ppm
 
-    Sequence Mode Referred to Above is Carried Over from mgs_svs sequences:
+    Sequence Mode Referred to Above is Carried Over from mgs_svs sequenes:
         0 = MEGA PRESS
         1 = HERMES GABA GSH
         2 = HERMES GABA GSH EtOH
@@ -123,7 +123,7 @@ def smm_svs_herc_hyper(twixObj, reord_data, meta_obj, dim_tags, subseq, subseq_n
 def mgs_svs_ed_twix(twixObj, reord_data, meta_obj, dim_tags):
     """Special case handling for the mgs_svs_ed (VX) and smm_svs_herc (XA) sequence
 
-    MEGA/HERCULES sequence (2/4 editing case)
+    MEGA/HURCULES sequence (2/4 editing case)
     """
     seq_mode = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'alFree', '7')]
     pulse_length = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'alFree', '12')] / 1E6
