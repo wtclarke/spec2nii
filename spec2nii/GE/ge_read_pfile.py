@@ -584,8 +584,8 @@ class PfileMapper:
 
             # CSI has already been reordered if needed - so fov  calculated
             # with this CSI will not need reordering, need next power of 2:
-            xdim = int(pow(2, math.ceil(math.log(nvox[0], 2))))
-            ydim = int(pow(2, math.ceil(math.log(nvox[1], 2))))
+            xdim = int(pow(2, math.ceil(math.log2(nvox[0]))))
+            ydim = int(pow(2, math.ceil(math.log2(nvox[1]))))
 
             if (ydim > xdim):
                 fov_spatial_resolution = dfov / ydim
