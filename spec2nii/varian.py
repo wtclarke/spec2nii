@@ -73,6 +73,7 @@ These are available (as of 04/2011) online from
 import os
 import struct
 import inspect
+import operator
 from warnings import warn
 from functools import reduce
 
@@ -659,7 +660,7 @@ def order_data(data, torder):
 
     """
     # determine the shape of the on disk data matrix
-    ntraces = reduce(lambda x, y: x * y, data.shape[:-1])
+    ntraces = reduce(operator.mul, data.shape[:-1])
     nshape = (ntraces, data.shape[-1])
 
     # take care of flat files
@@ -1044,7 +1045,7 @@ def write_fid_lowmem(filename, dic, data, torder='f', repack=False, correct=True
         warn("data and np size mismatch")
         if correct:
             dic['np'] = int(data.shape[1] * 2)
-    nblocks = int(reduce(lambda x, y: x * y, data.shape[:-1]))
+    nblocks = int(reduce(operator.mul, data.shape[:-1]))
     if nblocks != dic["nblocks"]:
         warn("data and block size mismatch")
         if correct:
@@ -2067,7 +2068,7 @@ class fid_nd(fileiobase.data_nd):
                 s = "last dimension should have size %i" % (int(dic["np"] / 2))
                 raise ValueError(s)
             # product of all but last dim should be number of blocks
-            if reduce(lambda x, y: x * y, fshape[:-1]) != dic['nblocks']:
+            if reduce(operator.mul, fshape[:-1]) != dic['nblocks']:
                 s = "number of traces in file does not match fshape"
                 raise ValueError(s)
 
