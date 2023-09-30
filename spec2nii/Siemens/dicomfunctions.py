@@ -105,7 +105,7 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
             else:
                 print(f'Skipping {fn}.')
                 print('Raised IncompatibleSOPClassUID error. Moving to next file.')
-                print(f'Message: {str(exc)}\n')
+                print(f'Message: {exc}\n')
                 continue
 
         if mrs_type == 'SVS':
