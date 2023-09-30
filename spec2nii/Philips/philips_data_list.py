@@ -80,10 +80,11 @@ def read_data_list_pair(data_file, list_file, aux_file, special_case=None):
 
         meta = base_meta.copy()
 
-        kept_ind = []
-        for ii, sha in zip(indices, data.shape[1:]):
-            if sha > 1:
-                kept_ind.append(ii)
+        kept_ind = [
+            ii
+            for ii, sha in zip(indices, data.shape[1:])
+            if sha > 1
+        ]
 
         out_data = data.squeeze()
         if len(kept_ind) > 3:
