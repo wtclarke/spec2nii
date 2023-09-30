@@ -163,12 +163,12 @@ def run_case(case, working_dir):
 @pytest.mark.orientation
 def test_dcm_spar_orientations(tmp_path):
     def dcm_call(x, name):
-        input = base_dir / x
+        dcm = base_dir / x
         run(
             ['spec2nii', 'philips_dcm',
              '-o', tmp_path,
              '-f', name,
-             input]
+             dcm]
         )
 
     def ss_call(x, name):

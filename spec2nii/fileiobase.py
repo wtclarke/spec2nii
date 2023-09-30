@@ -421,7 +421,7 @@ def uc_from_freqscale(scale, obs, unit='ppm'):
     size = len(scale)
 
     if unit in ('ppm', 'hz', 'khz'):
-        complex = False
+        cplex = False
 
         min = scale.min()
         max = scale.max()
@@ -445,7 +445,7 @@ def uc_from_freqscale(scale, obs, unit='ppm'):
         mesg = f'{unit} is not a supported unit.'
         raise ValueError(mesg)
 
-    return unit_conversion(size, complex, sw, obs, car)
+    return unit_conversion(size, cplex, sw, obs, car)
 
 
 def open_towrite(filename, overwrite=False, mode='wb'):
