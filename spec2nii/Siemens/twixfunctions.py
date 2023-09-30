@@ -155,15 +155,15 @@ def process_mrsi(twixObj, base_name_out, name_in, dataKey, remove_os=True, quiet
     if twixObj.hdr.Meas.lFinalMatrixSizePhase:
         data_size.append(int(twixObj.hdr.Meas.lFinalMatrixSizePhase))
     else:
-        data_size.append(int(1))
+        data_size.append(1)
     if twixObj.hdr.Meas.lFinalMatrixSizeRead:
         data_size.append(int(twixObj.hdr.Meas.lFinalMatrixSizeRead))
     else:
-        data_size.append(int(1))
+        data_size.append(1)
     if twixObj.hdr.Meas.lFinalMatrixSizeSlice:
         data_size.append(int(twixObj.hdr.Meas.lFinalMatrixSizeSlice))
     else:
-        data_size.append(int(1))
+        data_size.append(1)
 
     data_size.append(int(twixObj.hdr.Meas.lVectorSize))
 
