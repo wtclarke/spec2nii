@@ -185,10 +185,11 @@ def unpackHeader(header):
     def tidy(x):
         return x.lower().replace(',', '')
 
-    tidy_header = dict()
-    tidy_header['centralFrequency'] = None
-    tidy_header['bandwidth'] = None
-    tidy_header['echotime'] = None
+    tidy_header = {
+        'centralFrequency': None,
+        'bandwidth': None,
+        'echotime': None,
+    }
     for line in header:
         if line.lower().find('hzpppm') > 0:
             tidy_header['centralFrequency'] = float(tidy(line).split()[-1]) * 1E6
