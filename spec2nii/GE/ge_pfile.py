@@ -95,9 +95,9 @@ def _process_svs_pfile(pfile):
         data, meta, dwelltime, fname_suffix = _process_probe_p(pfile)
     elif psd in ('oslaser', 'slaser_cni'):
         data, meta, dwelltime, fname_suffix = _process_oslaser(pfile)
-    elif psd in ('slaser'):
+    elif psd == 'slaser':
         data, meta, dwelltime, fname_suffix = _process_slaser(pfile)
-    elif psd in ['gaba', 'hbcd']:
+    elif psd in ('gaba', 'hbcd'):
         data, meta, dwelltime, fname_suffix = _process_gaba(pfile)
     elif 'jpress_ac' in psd:  # Bergen patch
         data, meta, dwelltime, fname_suffix = _process_gaba(pfile)
