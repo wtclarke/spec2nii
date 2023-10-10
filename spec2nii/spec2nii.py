@@ -47,8 +47,12 @@ class spec2nii:
                                    help="Override SpectrometerFrequency field with input(s). Input in MHz.")
             subparser.add_argument("--override_dwelltime", type=float,
                                    help="Override dwell time field with input. Input in seconds.")
+            subparser.add_argument(
+                '--anon',
+                action='store_true',
+                help="Create file without sensitive metadata. For greater control use spec2nii anon.")
             subparser.add_argument('--verbose', action='store_true')
-            subparser.add_argument('--anon', action='store_true')
+
             return subparser
 
         # Auto subcommand - heuristic ID of file type
