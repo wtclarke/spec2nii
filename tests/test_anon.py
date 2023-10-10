@@ -52,3 +52,26 @@ def test_anon(tmp_path):
     assert 'PatientName' not in hdr_ext_a
     assert 'PatientSex' not in hdr_ext_a
     assert 'RepetitionTime' not in hdr_ext_a
+
+
+def test_inline_anon(tmp_path):
+    # Convert twix
+    subprocess.check_call(['spec2nii', 'twix',
+                           '-e', 'image',
+                           '-f', 'original',
+                           '-o', tmp_path,
+                           '-j', str(data_path),
+                           '--anon',
+                           '--verbose'])
+
+    img_o = read_nifti_mrs(tmp_path / 'original.nii.gz')
+
+    hdr_ext_codes = img_o.header.extensions.get_codes()
+    hdr_ext_o = json.loads(img_o.header.extensions[hdr_ext_codes.index(44)].get_content())
+
+    assert 'SpectrometerFrequency' in hdr_ext_o
+    assert 'ResonantNucleus' in hdr_ext_o
+    assert 'dim_5' in hdr_ext_o
+    assert 'OriginalFile' not in hdr_ext_o
+    assert 'PatientName' not in hdr_ext_o
+    assert 'PatientDoB' not in hdr_ext_o

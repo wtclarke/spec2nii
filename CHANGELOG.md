@@ -1,5 +1,9 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.7.1 (WIP)
+--------------------------------
+- The --anon flag can be passed with any call to anonymise after writing files.
+
 0.7.0 (Saturday 5th August 2023)
 --------------------------------
 - Fixed a bug in Philips Classic DICOM orientations (supplementing the fixes to Enhanced DICOM in `0.6.11`)

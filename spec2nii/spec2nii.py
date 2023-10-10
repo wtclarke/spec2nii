@@ -47,7 +47,12 @@ class spec2nii:
                                    help="Override SpectrometerFrequency field with input(s). Input in MHz.")
             subparser.add_argument("--override_dwelltime", type=float,
                                    help="Override dwell time field with input. Input in seconds.")
+            subparser.add_argument(
+                '--anon',
+                action='store_true',
+                help="Create file without sensitive metadata. For greater control use spec2nii anon.")
             subparser.add_argument('--verbose', action='store_true')
+
             return subparser
 
         # Auto subcommand - heuristic ID of file type
@@ -234,7 +239,8 @@ class spec2nii:
                                  nifti1=False,
                                  override_nucleus=None,
                                  override_frequency=None,
-                                 override_dwelltime=None)
+                                 override_dwelltime=None,
+                                 anon=False)
 
         parser_dump = subparsers.add_parser('dump', help='Dump contents of headers from existing NIfTI-MRS file.')
         parser_dump.add_argument('file', help='NIfTI-MRS file', type=Path)
@@ -264,7 +270,8 @@ class spec2nii:
                                    override_nucleus=None,
                                    override_frequency=None,
                                    override_dwelltime=None,
-                                   verbose=False)
+                                   verbose=False,
+                                   anon=False)
 
         if len(sys.argv) == 1:
             parser.print_usage(sys.stderr)
@@ -284,6 +291,12 @@ class spec2nii:
 
         if self.imageOut:
             self.implement_overrides(args)
+
+            if args.anon:
+                from spec2nii.anonymise import anon_nifti_mrs
+                for idx, nifti_mrs_img in enumerate(self.imageOut):
+                    self.imageOut[idx] = anon_nifti_mrs(nifti_mrs_img, verbose=args.verbose)
+
             self.validate_output()
             self.write_output(args.json, args.nifti1)
             self.validate_write(args.verbose)
@@ -641,8 +654,8 @@ class spec2nii:
 
     # Anonymise function
     def anon(self, args):
-        from spec2nii.anonymise import anon_nifti_mrs
-        self.imageOut, self.fileoutNames = anon_nifti_mrs(args)
+        from spec2nii.anonymise import anon_file
+        self.imageOut, self.fileoutNames = anon_file(args)
 
     # Dump function
     @staticmethod
