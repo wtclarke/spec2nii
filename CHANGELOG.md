@@ -1,5 +1,9 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.7.1 (WIP)
+---------------------------------
+- Fixed issue with RDA files having latin1 encoding. Thanks to gaunab on github. Fixes Issue #96.
+
 0.7.0 (Saturday 5th August 2023)
 --------------------------------
 - Fixed a bug in Philips Classic DICOM orientations (supplementing the fixes to Enhanced DICOM in `0.6.11`)

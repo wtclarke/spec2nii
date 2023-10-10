@@ -44,18 +44,33 @@ def convert_rda(rda_path, fname_out, verbose):
 
     with open(rda_path, 'rb') as fp:
         for line in fp:
-            if hdr_st.search(line.decode()):
-                pass
-                # print('header found')
-            elif hdr_end.search(line.decode()):
-                # print('header end')
-                break
-            else:
-                match = hdr_val.search(line.decode())
-                if len(match.groups()) < 2:
-                    hdr[match[1]] = None
+            try:
+                if hdr_st.search(line.decode()):
+                    pass
+                    # print('header found')
+                elif hdr_end.search(line.decode()):
+                    # print('header end')
+                    break
                 else:
-                    hdr[match[1]] = match[2]
+                    match = hdr_val.search(line.decode())
+                    if len(match.groups()) < 2:
+                        hdr[match[1]] = None
+                    else:
+                        hdr[match[1]] = match[2]
+            except UnicodeDecodeError:
+                print('Trying latin-1 encoding.')
+                if hdr_st.search(line.decode('latin-1')):
+                    pass
+                    # print('header found')
+                elif hdr_end.search(line.decode('latin-1')):
+                    # print('header end')
+                    break
+                else:
+                    match = hdr_val.search(line.decode('latin-1'))
+                    if len(match.groups()) < 2:
+                        hdr[match[1]] = None
+                    else:
+                        hdr[match[1]] = match[2]
         if verbose:
             print(hdr)
 
