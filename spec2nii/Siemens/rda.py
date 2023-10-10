@@ -20,7 +20,7 @@ class MRSINotHandledError(Exception):
 
 
 def _locale_float(x):
-    """Handle locale specific flaoting point representations in header
+    """Handle locale specific floating point representations in header
 
     :param x: Header value as string with either . or , decimal separator
     :type x: str

@@ -15,8 +15,8 @@ def smm_svs_herc_hyper(twixObj, reord_data, meta_obj, dim_tags, subseq, subseq_n
       a water reference for each.
 
     Data is organized into 4 blocks:
-      1. Short TE Reference : 35ms Unsupressed Water
-      2. Long  TE Reference : 80ms Unsupressed Water
+      1. Short TE Reference : 35ms Unsuppressed Water
+      2. Long  TE Reference : 80ms Unsuppressed Water
       3. Short TE Unedited  : 35ms Water Suppressed PRESS
       4. Long  TE Edited    : 80ms Water Suppressed HERCULES
 
