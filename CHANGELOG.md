@@ -3,6 +3,7 @@ This document contains the Spec2nii release history in reverse chronological ord
 0.7.1 (WIP)
 --------------------------------
 - The --anon flag can be passed with any call to anonymise after writing files.
+- The Siemens enhanced dicom filetype pathway now handles CSI data.
 
 0.7.0 (Saturday 5th August 2023)
 --------------------------------
