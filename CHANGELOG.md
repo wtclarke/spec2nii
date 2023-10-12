@@ -4,6 +4,7 @@ This document contains the Spec2nii release history in reverse chronological ord
 --------------------------------
 - The --anon flag can be passed with any call to anonymise after writing files.
 - The Siemens enhanced dicom filetype pathway now handles CSI data.
+- Fixed issue with RDA files having latin1 encoding. Thanks to gaunab on github. Fixes Issue #96.
 
 0.7.0 (Saturday 5th August 2023)
 --------------------------------
