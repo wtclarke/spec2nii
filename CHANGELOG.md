@@ -1,10 +1,11 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
-0.7.1 (WIP)
---------------------------------
+0.7.1 (Tuesday 7th November 2023)
+---------------------------------
 - The --anon flag can be passed with any call to anonymise after writing files.
 - The Siemens enhanced dicom filetype pathway now handles CSI data.
 - Fixed issue with RDA files having latin1 encoding. Thanks to gaunab on github. Fixes Issue #96.
+- Now support GE p-files up to version 30.0.
 
 0.7.0 (Saturday 5th August 2023)
 --------------------------------
