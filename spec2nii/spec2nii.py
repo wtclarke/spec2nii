@@ -676,7 +676,7 @@ class spec2nii:
 
 
 # Register the duecredit citation for spec2nii
-@due.dcite(Doi('10.1002/mrm.29418'), description='Multi-format in vivo MR spectroscopy conversion to NIFTI')
+@due.dcite(Doi('10.1002/mrm.29418'), description='Multi-format in vivo MR spectroscopy conversion to NIFTI', version=spec2nii_ver)
 def main(*args):
     spec2nii(*args)
     return 0
