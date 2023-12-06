@@ -11,7 +11,6 @@ import sys
 import os.path as op
 from pathlib import Path
 import json
-
 from nibabel.nifti2 import Nifti2Image
 from spec2nii import __version__ as spec2nii_ver
 # There are case specific imports below
