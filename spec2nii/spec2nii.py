@@ -291,6 +291,8 @@ class spec2nii:
         if self.imageOut:
             self.implement_overrides(args)
 
+            self.insert_spectralwidth()
+
             if args.anon:
                 from spec2nii.anonymise import anon_nifti_mrs
                 for idx, nifti_mrs_img in enumerate(self.imageOut):
@@ -324,6 +326,14 @@ class spec2nii:
                 new_ext = Nifti1Extension(44, json_s.encode('UTF-8'))
                 nifti_mrs_img.header.extensions.clear()
                 nifti_mrs_img.header.extensions.append(new_ext)
+
+    def insert_spectralwidth(self):
+        """Ensure that the correct spectral width is inserted into the header extension"""
+        for nifti_mrs_img in self.imageOut:
+            if 'SpectralWidth' in nifti_mrs_img.hdr_ext:
+                nifti_mrs_img.hdr_ext['SpectralWidth'] = 1 / nifti_mrs_img.dwelltime
+            else:
+                nifti_mrs_img.add_hdr_field('SpectralWidth', 1 / nifti_mrs_img.dwelltime)
 
     def validate_output(self):
         """Run NIfTI MRS validation on output."""
