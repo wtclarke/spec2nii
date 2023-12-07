@@ -91,6 +91,7 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
     reference = []
     str_suffix = []
     mainStr = ''
+    first_mrs_dcm_found = False
     for idx, fn in enumerate(files_in):
         if verbose:
             print(f'Converting dicom file {fn}')
@@ -129,7 +130,8 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         reference.append(ref_ind)
         str_suffix.append(str_suf)
 
-        if idx == 0:
+        if not first_mrs_dcm_found:
+            first_mrs_dcm_found = True
             if fname_out:
                 mainStr = fname_out
             elif 'SeriesDescription' in img.dcm_data:
