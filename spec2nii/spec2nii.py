@@ -13,6 +13,7 @@ from pathlib import Path
 import json
 from nibabel.nifti2 import Nifti2Image
 from spec2nii import __version__ as spec2nii_ver
+from numpy import isclose
 # There are case specific imports below
 
 
@@ -330,8 +331,13 @@ class spec2nii:
     def insert_spectralwidth(self):
         """Ensure that the correct spectral width is inserted into the header extension"""
         for nifti_mrs_img in self.imageOut:
-            if 'SpectralWidth' in nifti_mrs_img.hdr_ext:
-                nifti_mrs_img.hdr_ext['SpectralWidth'] = 1 / nifti_mrs_img.dwelltime
+            if 'SpectralWidth' in nifti_mrs_img.hdr_ext\
+                    and not isclose(
+                        nifti_mrs_img.hdr_ext['SpectralWidth'],
+                        1 / nifti_mrs_img.dwelltime,
+                        atol=1E-2):
+                nifti_mrs_img.remove_hdr_field('SpectralWidth')
+                nifti_mrs_img.add_hdr_field('SpectralWidth', 1 / nifti_mrs_img.dwelltime)
             else:
                 nifti_mrs_img.add_hdr_field('SpectralWidth', 1 / nifti_mrs_img.dwelltime)
 
