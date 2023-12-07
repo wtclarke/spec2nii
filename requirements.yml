@@ -6,4 +6,4 @@ dependencies:
  - scipy
  - brukerapi>=0.1.8
  - pandas
- - nifti-mrs>=1.0.2
+ - nifti-mrs>=1.1.1
