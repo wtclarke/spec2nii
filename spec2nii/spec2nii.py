@@ -108,8 +108,10 @@ class spec2nii:
             "-t", "--tags",
             type=str,
             nargs='+',
-            default=["DIM_DYN", None, None],
-            help="Specify NIfTI MRS tags used for higher (5th-7th) dimensions.")
+            default=[None, None, None],
+            help="Specify NIfTI MRS tags used for higher (5th-7th) dimensions. "
+                 "Defaults to DIM_DYN if more than one spectrum is present. "
+                 "Can be used to create singleton higher dimensions.")
         parser_philips.add_argument(
             "-s", "--shape",
             type=int,

@@ -11,11 +11,15 @@ import json
 import numpy as np
 
 from .io_for_tests import read_nifti_mrs
+from nifti_mrs.nifti_mrs import NIFTI_MRS
 
 # Data paths
 philips_path = Path(__file__).parent / 'spec2nii_test_data' / 'philips'
 svs_path_sdat = philips_path / 'P1' / 'SV_PRESS_sh_6_2_raw_act.SDAT'
 svs_path_spar = philips_path / 'P1' / 'SV_PRESS_sh_6_2_raw_act.SPAR'
+
+svs_ma_path_sdat = philips_path / 'spar_multi_avg' / 'multi_avg.sdat'
+svs_ma_path_spar = philips_path / 'spar_multi_avg' / 'multi_avg.spar'
 
 svs_edit_path_sdat = philips_path / 'HERCULES_spar_sdat' / 'HERCULES_Example_noID.sdat'
 svs_edit_path_spar = philips_path / 'HERCULES_spar_sdat' / 'HERCULES_Example_noID.spar'
@@ -49,6 +53,66 @@ def test_svs(tmp_path):
     assert hdr_ext['ResonantNucleus'][0] == '1H'
     assert hdr_ext['OriginalFile'][0] == svs_path_sdat.name
     assert hdr_ext['SoftwareVersions'] == '5.5.2 ; .5.2 ;'
+
+    # Check no hanging singleton dimension
+    nmrs_obj = NIFTI_MRS(tmp_path / 'svs.nii.gz')
+    assert nmrs_obj.shape == (1, 1, 1, 2048)
+
+    subprocess.check_call([
+        'spec2nii', 'philips',
+        '-t', 'DIM_DYN',
+        '-f', 'svs_singleton',
+        '-o', tmp_path,
+        '-j',
+        str(svs_path_sdat),
+        str(svs_path_spar)])
+
+    img_t = read_nifti_mrs(tmp_path / 'svs_singleton.nii.gz')
+    assert img_t.shape == (1, 1, 1, 2048)
+
+    nmrs_obj = NIFTI_MRS(tmp_path / 'svs_singleton.nii.gz')
+    assert nmrs_obj.shape == (1, 1, 1, 2048, 1)
+
+    hdr_ext_codes = img_t.header.extensions.get_codes()
+    hdr_ext = json.loads(img_t.header.extensions[hdr_ext_codes.index(44)].get_content())
+    assert hdr_ext['dim_5'] == 'DIM_DYN'
+
+
+def test_multiavg_svs(tmp_path):
+
+    subprocess.check_call(['spec2nii', 'philips',
+                           '-f', 'svs',
+                           '-o', tmp_path,
+                           '-j',
+                           str(svs_ma_path_sdat),
+                           str(svs_ma_path_spar)])
+
+    img_t = read_nifti_mrs(tmp_path / 'svs.nii.gz')
+
+    assert img_t.shape == (1, 1, 1, 2048, 10)
+    assert np.iscomplexobj(img_t.dataobj)
+
+    hdr_ext_codes = img_t.header.extensions.get_codes()
+    hdr_ext = json.loads(img_t.header.extensions[hdr_ext_codes.index(44)].get_content())
+
+    assert hdr_ext['dim_5'] == 'DIM_DYN'
+
+    # Check override tags
+    subprocess.check_call([
+        'spec2nii', 'philips',
+        '-t', 'DIM_USER_0',
+        '-f', 'svs_2',
+        '-o', tmp_path,
+        '-j',
+        str(svs_ma_path_sdat),
+        str(svs_ma_path_spar)])
+
+    img_t = read_nifti_mrs(tmp_path / 'svs_2.nii.gz')
+    assert img_t.shape == (1, 1, 1, 2048, 10)
+
+    hdr_ext_codes = img_t.header.extensions.get_codes()
+    hdr_ext = json.loads(img_t.header.extensions[hdr_ext_codes.index(44)].get_content())
+    assert hdr_ext['dim_5'] == 'DIM_USER_0'
 
 
 def test_svs_edit(tmp_path):
