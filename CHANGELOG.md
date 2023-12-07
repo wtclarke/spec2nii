@@ -1,9 +1,10 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
-0.7.2 (WIP)
----------------------------------
+0.7.2 (Thursday 7th December 2023)
+----------------------------------
 - SpectralWidth now added to header extension automatically to match bids specification.
 - NIfTI-MRS V0.8 now generated.
+- Better handling of philips spar/sdat tags and singleton dimensions.
 
 0.7.1 (Tuesday 7th November 2023)
 ---------------------------------
