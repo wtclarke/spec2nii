@@ -1,5 +1,10 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.7.3 (WIP)
+-----------
+- Siemens .rda format now had corrected and validated orientations (tested on VE11 baseline).
+-
+
 0.7.2 (Thursday 7th December 2023)
 ----------------------------------
 - SpectralWidth now added to header extension automatically to match bids specification.

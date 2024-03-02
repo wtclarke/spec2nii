@@ -91,9 +91,9 @@ def convert_rda(rda_path, fname_out, verbose):
         ' Please contribute test data if you can!')
 
     imagePositionPatient = np.asarray([
-        _locale_float(hdr['PositionVector[0]']),
-        _locale_float(hdr['PositionVector[1]']),
-        _locale_float(hdr['PositionVector[2]'])])
+        _locale_float(hdr['VOIPositionSag']),
+        _locale_float(hdr['VOIPositionCor']),
+        _locale_float(hdr['VOIPositionTra'])])
 
     imageOrientationPatient = np.asarray([
         [_locale_float(hdr['RowVector[0]']), _locale_float(hdr['ColumnVector[0]'])],
@@ -137,13 +137,14 @@ def extractRdaMetadata(hdr):
         hdr['Nucleus'])
 
     # Standard defined metadata
-    def set_standard_def(nifti_mrs_key, location, key, cast=None):
-        if key in location\
-                and location[key] is not None:
+    def set_standard_def(nifti_mrs_key, key, cast=None):
+        if key in hdr\
+                and hdr[key] is not None\
+                and hdr[key]:
             if cast is not None:
-                obj.set_standard_def(nifti_mrs_key, cast(location[key]))
+                obj.set_standard_def(nifti_mrs_key, cast(hdr[key]))
             else:
-                obj.set_standard_def(nifti_mrs_key, location[key])
+                obj.set_standard_def(nifti_mrs_key, hdr[key])
 
     # # 5.1 MRS specific Tags
     # 'EchoTime'
@@ -180,22 +181,22 @@ def extractRdaMetadata(hdr):
 
     # # 5.3 Sequence information
     # 'SequenceName'
-    obj.set_standard_def('SequenceName', hdr['SequenceName'])
+    set_standard_def('SequenceName', 'SequenceName')
     # 'ProtocolName'
-    obj.set_standard_def('ProtocolName', hdr['ProtocolName'])
+    set_standard_def('ProtocolName', 'ProtocolName')
     # # 5.4 Sequence information
     # 'PatientPosition'
-    obj.set_standard_def('PatientPosition', hdr['PatientPosition'])
+    set_standard_def('PatientPosition', 'PatientPosition')
     # 'PatientName'
-    obj.set_standard_def('PatientName', hdr['PatientName'])
+    set_standard_def('PatientName', 'PatientName')
     # 'PatientID'
-    obj.set_standard_def('PatientID', hdr['PatientID'])
+    set_standard_def('PatientID', 'PatientID')
     # 'PatientWeight'
-    obj.set_standard_def('PatientWeight', _locale_float(hdr['PatientWeight']))
+    set_standard_def('PatientWeight', 'PatientWeight', cast=_locale_float)
     # 'PatientDoB'
-    obj.set_standard_def('PatientDoB', hdr['PatientBirthDate'])
+    set_standard_def('PatientDoB', 'PatientBirthDate')
     # 'PatientSex'
-    obj.set_standard_def('PatientSex', hdr['PatientSex'])
+    set_standard_def('PatientSex', 'PatientSex')
 
     # # 5.5 Provenance and conversion metadata
     obj.set_standard_def('ConversionMethod', f'spec2nii v{spec2nii_ver}')
