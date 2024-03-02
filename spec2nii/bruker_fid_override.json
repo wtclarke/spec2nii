@@ -87,6 +87,13 @@
         ]
       },
       {
+        "cmd": "int(2 * #PVM_SpecMatrix.tuple[0])",
+        "conditions": [
+          "#ACQ_sw_version=='<PV-360.1.1>'",
+          "#PULPROG[1:-1]=='mt_MEGA_sLASER_V35.ppg'"
+        ]
+      },
+      {
         "cmd": "#ACQ_jobs[0][0]",
         "conditions": [
           ["#ACQ_sw_version",
@@ -126,6 +133,13 @@
           "#GO_block_size!='Standard_KBlock_Format'",
           "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']",
           "#PULPROG[1:-1]!='EPSI.ppg'"
+        ]
+      },
+      {
+        "cmd": "int(2 * #PVM_SpecMatrix.tuple[0])",
+        "conditions": [
+          "#ACQ_sw_version=='<PV-360.1.1>'",
+          "#PULPROG[1:-1]=='mt_MEGA_sLASER_V35.ppg'"
         ]
       },
       {
@@ -243,7 +257,9 @@
               "RfProfile.ppg",
               "fmap_fq.ppg",
               "ste_laser_dIR_WSTM.ppg",
-              "mt_sLASER.ppg"
+              "mt_sLASER.ppg",
+              "mt_MEGA_sLASER_V35.ppg",
+              "cl_STELASER_PA360_b.ppg"
             ]
           ],
           "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
@@ -430,7 +446,19 @@
       },
       {
         "cmd": [
-          "#PVM_SpecMatrix.tuple[0]",
+          "#ACQ_size.tuple[0] * 2",
+          "#NR"
+        ],
+        "conditions": [["#PULPROG[1:-1]",
+            [
+                "cl_STELASER_PA360_b.ppg"
+            ]],
+          "@scheme_id=='SPECTROSCOPY'"
+        ]
+      },
+      {
+        "cmd": [
+          "#PVM_SpecMatrix.tuple[0] * 1",
           "#NR"
         ],
         "conditions": [["#PULPROG[1:-1]",
@@ -624,6 +652,18 @@
         ],
         "conditions": [
           "@scheme_id=='EPI'"
+        ]
+      },
+      {
+        "cmd": [
+          "#ACQ_size.tuple[0] * 2",
+          "#NR"
+        ],
+        "conditions": [["#PULPROG[1:-1]",
+            [
+                "cl_STELASER_PA360_b.ppg"
+            ]],
+          "@scheme_id=='SPECTROSCOPY'"
         ]
       },
       {
