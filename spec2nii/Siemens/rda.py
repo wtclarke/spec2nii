@@ -4,7 +4,6 @@ Copyright (C) 2022 University of Oxford
 """
 import re
 from datetime import datetime
-import warnings
 
 import numpy as np
 
