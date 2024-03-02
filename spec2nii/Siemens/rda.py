@@ -101,10 +101,16 @@ def convert_rda(rda_path, fname_out, verbose):
         data_cmplx = data_cmplx.reshape((1, 1, 1) + data_cmplx.shape)
         data_shape = (1, 1, 1)
 
-        imagePositionPatient = np.asarray([
-            _locale_float(hdr['VOIPositionSag']),
-            _locale_float(hdr['VOIPositionCor']),
-            _locale_float(hdr['VOIPositionTra'])])
+        try:
+            imagePositionPatient = np.asarray([
+                _locale_float(hdr['VOIPositionSag']),
+                _locale_float(hdr['VOIPositionCor']),
+                _locale_float(hdr['VOIPositionTra'])])
+        except KeyError:
+            imagePositionPatient = np.asarray([
+                _locale_float(hdr['PositionVector[0]']),
+                _locale_float(hdr['PositionVector[1]']),
+                _locale_float(hdr['PositionVector[2]'])])
 
         half_shift = False
 
