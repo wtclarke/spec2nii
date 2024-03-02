@@ -91,8 +91,7 @@ NIfTI MRS dimension tags (e.g. `DIM_COIL`) can be specified using the `-t` comma
 ### Siemens RDA
 `spec2nii rda RDA_FILE`
 
-Only supports SVS currently. Please contact the developers with examples for MRSI capability.
-Orientation calculation is a WIP, test data for different voxel orientations would be greatly appreciated!
+Compatible with CSI and SVS data. Validated to be the same data and orientation information as DICOM output on VE baselines.
 
 ### UIH DICOM
 `spec2nii uih DCM_FILE_or_DIR`
