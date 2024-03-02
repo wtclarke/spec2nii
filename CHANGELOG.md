@@ -3,7 +3,7 @@ This document contains the Spec2nii release history in reverse chronological ord
 0.7.3 (WIP)
 -----------
 - Siemens .rda format now had corrected and validated orientations (tested on VE11 baseline).
--
+- Siemens .rda format now handles MRSI/CSI data and matches DICOM output. Validated on VE11 baseline data.
 
 0.7.2 (Thursday 7th December 2023)
 ----------------------------------

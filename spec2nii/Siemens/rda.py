@@ -76,24 +76,40 @@ def convert_rda(rda_path, fname_out, verbose):
 
         data = np.fromfile(fp)
 
+    data_cmplx = data[0::2] + 1j * data[1::2]
+
+    # MRSI
     if (int(hdr['CSIMatrixSize[0]'])
             * int(hdr['CSIMatrixSize[1]'])
             * int(hdr['CSIMatrixSize[2]']))\
             > 1:
-        raise MRSINotHandledError('MRSI is currently not handled in the RDA format. Test data needed.')
+        data_cmplx = data_cmplx.reshape((
+            int(hdr['CSIMatrixSize[2]']),
+            int(hdr['CSIMatrixSize[1]']),
+            int(hdr['CSIMatrixSize[0]']),
+            int(hdr['VectorSize'])))
+        data_cmplx = np.moveaxis(data_cmplx, (0, 1, 2), (2, 1, 0))
+        data_shape = data_cmplx.shape[:3]
 
-    data_cmplx = data[0::2] + 1j * data[1::2]
-    data_cmplx = data_cmplx.reshape((1, 1, 1) + data_cmplx.shape)
+        imagePositionPatient = np.asarray([
+            _locale_float(hdr['PositionVector[0]']),
+            _locale_float(hdr['PositionVector[1]']),
+            _locale_float(hdr['PositionVector[2]'])])
+
+        half_shift = True
+    # SVS
+    else:
+        data_cmplx = data_cmplx.reshape((1, 1, 1) + data_cmplx.shape)
+        data_shape = (1, 1, 1)
+
+        imagePositionPatient = np.asarray([
+            _locale_float(hdr['VOIPositionSag']),
+            _locale_float(hdr['VOIPositionCor']),
+            _locale_float(hdr['VOIPositionTra'])])
+
+        half_shift = False
+
     dwelltime = _locale_float(hdr['DwellTime']) / 1E6
-
-    warnings.warn(
-        'The orientation calculations for rda data is mostly untested.'
-        ' Please contribute test data if you can!')
-
-    imagePositionPatient = np.asarray([
-        _locale_float(hdr['VOIPositionSag']),
-        _locale_float(hdr['VOIPositionCor']),
-        _locale_float(hdr['VOIPositionTra'])])
 
     imageOrientationPatient = np.asarray([
         [_locale_float(hdr['RowVector[0]']), _locale_float(hdr['ColumnVector[0]'])],
@@ -108,8 +124,9 @@ def convert_rda(rda_path, fname_out, verbose):
     currNiftiOrientation = dcm_to_nifti_orientation(imageOrientationPatient,
                                                     imagePositionPatient,
                                                     xyzMM,
-                                                    (1, 1, 1),
-                                                    verbose=verbose)
+                                                    data_shape,
+                                                    verbose=verbose,
+                                                    half_shift=half_shift)
 
     meta = extractRdaMetadata(hdr)
     meta.set_standard_def('OriginalFile', [rda_path.name])
