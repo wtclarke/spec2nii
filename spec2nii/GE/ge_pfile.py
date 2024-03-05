@@ -1,4 +1,4 @@
-'''spec2nii module containing functions specific to interpreting the GE pfile format
+"""spec2nii module containing functions specific to interpreting the GE pfile format
 
 Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
 Copyright (C) 2020 University of Oxford
@@ -33,7 +33,7 @@ I therefore include their BSD statement here.
 
     For portions of this code, copyright and license information differs from
     the above. In these cases, copyright and/or license information is inline.
-'''
+"""
 
 # Python modules
 from datetime import datetime
@@ -83,12 +83,12 @@ def read_pfile(filename, fname_out):
 
 
 def _process_svs_pfile(pfile):
-    '''Handle SVS data
+    """Handle SVS data
 
     :param Pfile pfile: Pfile object
     :return: List of NIFTI MRS data objects
     :return: List of file name suffixes
-    '''
+    """
     psd = pfile.hdr.rhi_psdname.decode('utf-8').lower()
 
     if psd in ('probe-p', 'probe-s'):
@@ -116,12 +116,12 @@ def _process_svs_pfile(pfile):
 
 
 def _process_probe_p(pfile):
-    '''Extract metabolite and reference data from a prob_p format pfile
+    """Extract metabolite and reference data from a prob_p format pfile
 
     :param Pfile pfile: Pfile object
     :return: List numpy data arrays
     :return: List of file name suffixes
-    '''
+    """
 
     metab = pfile.map.raw_suppressed                    # typically (1,1,1,navg,ncoil,npts)
     metab = np.transpose(metab, [0, 1, 2, 5, 4, 3])     # swap to (1,1,1,npts,ncoil,navg)
@@ -144,7 +144,7 @@ def _process_probe_p(pfile):
 
 
 def _process_oslaser(pfile):
-    '''Extract metabolite and reference data from a oslaser format pfile
+    """Extract metabolite and reference data from a oslaser format pfile
 
     I think this is like the CMRR sLASER sequence with 2 ecc and 2 water scaling
     scans at the start and end of each acquisition.
@@ -152,7 +152,7 @@ def _process_oslaser(pfile):
     :param Pfile pfile: Pfile object
     :return: List numpy data arrays
     :return: List of file name suffixes
-    '''
+    """
 
     water = pfile.map.raw_unsuppressed                  # typically (1,1,1,navg,ncoil,npts)
     metab = pfile.map.raw_suppressed
@@ -179,14 +179,14 @@ def _process_oslaser(pfile):
 
 
 def _process_slaser(pfile):
-    '''Extract metabolite and reference data from a slaser format pfile
+    """Extract metabolite and reference data from a slaser format pfile
 
     This seems to be like a standard probe-p. Maybe slaser is the canonical vendor implementation.
 
     :param Pfile pfile: Pfile object
     :return: List numpy data arrays
     :return: List of file name suffixes
-    '''
+    """
 
     metab = pfile.map.raw_suppressed                    # typically (1,1,1,navg,ncoil,npts)
     metab = np.transpose(metab, [0, 1, 2, 5, 4, 3])     # swap to (1,1,1,npts,ncoil,navg)
@@ -203,12 +203,12 @@ def _process_slaser(pfile):
 
 
 def _process_gaba(pfile):
-    '''Extract metabolite and reference data from a gaba (MPRESS) format pfile
+    """Extract metabolite and reference data from a gaba (MPRESS) format pfile
 
     :param Pfile pfile: Pfile object
     :return: List numpy data arrays
     :return: List of file name suffixes
-    '''
+    """
 
     # Note that custom mapper sorts dimensions already
     metab = pfile.map.raw_suppressed
@@ -231,12 +231,12 @@ def _process_gaba(pfile):
 
 
 def _process_mrsi_pfile(pfile):
-    '''Handle MRSI data
+    """Handle MRSI data
 
     :param Pfile pfile: Pfile object
     :return: List of NIFTI MRS data objects
     :return: List of file name suffixes
-    '''
+    """
     psd = pfile.hdr.rhi_psdname.decode('utf-8').lower()
 
     known_formats = ('probe-p', 'probe-sl', 'slaser_cni', 'presscsi')
@@ -270,7 +270,7 @@ def _process_mrsi_pfile(pfile):
 
 
 def _calculate_affine_mrsi(pfile):
-    '''Calculate the 4x4 affine matrix for mrsi'''
+    """Calculate the 4x4 affine matrix for mrsi"""
 
     dcos = pfile.map.get_dcos.T
     dcos[dcos == 0.0] = 0.0             # remove -0.0 values
@@ -292,7 +292,7 @@ def _calculate_affine_mrsi(pfile):
 
 
 def _calculate_affine(pfile):
-    '''Calculate the 4x4 affine matrix'''
+    """Calculate the 4x4 affine matrix"""
 
     dcos = pfile.map.get_dcos.T
     dcos[dcos == 0.0] = 0.0             # remove -0.0 values

@@ -1,4 +1,4 @@
-'''Reader for GE p-files.
+"""Reader for GE p-files.
 
 This code is taken from the VESPA project https://scion.duhs.duke.edu/vespa/project.
 I therefore include their BSD statement here.
@@ -60,7 +60,7 @@ and as such we have included their BSD statement in this file.
     ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-'''
+"""
 # Python modules
 import math
 import sys
@@ -1200,7 +1200,7 @@ class PfileMapperGaba(PfileMapper):
         sequence.
 
         This is currently  a reimplementation of the Gannert/Osprey GELoad.m
-        function. Therefore the logic is unlike the other mappers.
+        function. Therefore, the logic is unlike the other mappers.
         The suppressed and unsuppressed data can be fetched from the raw_suppressed
         and raw_unsuppressed property.
         """
@@ -1297,7 +1297,7 @@ class PfileMapperGaba(PfileMapper):
             self.raw_suppressed = self.raw_data[:, :, :, :, Y2, :] * Y1 * mult
 
             # Up to this point we have simply replicated the logic of the GELoad function.
-            # Now reorganise dimensions to give a editing dimension.
+            # Now reorganise dimensions to give an editing dimension.
             # This means that this is done in a not particularly clear order, but it enables testing against
             # the matlab code.
 

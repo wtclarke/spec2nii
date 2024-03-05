@@ -1,4 +1,4 @@
-'''List of GE p-file offsets.
+"""List of GE p-file offsets.
 
 This code is taken from the VESPA project https://scion.duhs.duke.edu/vespa/project.
 I therefore include their BSD statement here.
@@ -60,7 +60,7 @@ and as such we have included their BSD statement in this file.
     ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-'''
+"""
 
 import ctypes as ct
 import numpy as np
