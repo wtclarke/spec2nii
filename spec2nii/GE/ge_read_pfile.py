@@ -1215,7 +1215,9 @@ class PfileMapperGaba(PfileMapper):
         refframes = self.hdr.rhi_user19
 
         nreceivers = self.get_num_coils
-        dataWordSize    = self.hdr.rhr_rh_point_size
+        dataWordSize = self.hdr.rhr_rh_point_size
+
+        cv24 = self.hdr.rhi_user24  # MM: CV24 is a control variable (CV) that defines several advanced options not stored in the other CVs
 
         # Check if single voxel
         numVoxels = self.get_num_voxels
@@ -1281,7 +1283,10 @@ class PfileMapperGaba(PfileMapper):
             X1, X2 = np.meshgrid(np.arange(refframes), np.arange(nechoes))
             X1 = X1.T.ravel()
             X2 = X2.T.ravel()
-            Y1 = (-1)**(noadd * X1)
+            if cv24 >= 16384:  # Do not apply any phase cycling correction when the receiver phase toggle in sLASER has been set
+                Y1 = np.ones_like(X1)
+            else:
+                Y1 = (-1) ** (noadd * X1)
             Y1 = np.moveaxis(np.broadcast_to(Y1, (1, 1, 1, npoints, nreceivers, Y1.size)), -1, -2)
             Y2 = (1 + (totalframes / nechoes) * X2 + X1).astype(int)
 
@@ -1290,7 +1295,10 @@ class PfileMapperGaba(PfileMapper):
             X1, X2 = np.meshgrid(np.arange(dataframes), np.arange(nechoes))
             X1 = X1.T.ravel()
             X2 = X2.T.ravel()
-            Y1 = (-1)**(noadd * X1)
+            if cv24 >= 16384:  # Do not apply any phase cycling correction when the receiver phase toggle in sLASER has been set
+                Y1 = np.ones_like(X1)
+            else:
+                Y1 = (-1) ** (noadd * X1)
             Y1 = np.moveaxis(np.broadcast_to(Y1, (1, 1, 1, npoints, nreceivers, Y1.size)), -1, -2)
             Y2 = (1 + refframes + (totalframes / nechoes) * X2 + X1).astype(int)
 
