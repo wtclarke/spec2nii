@@ -321,7 +321,7 @@ def _populate_metadata(pfile, water_suppressed=True, data_dimensions=None):
     :type pfile: pfile map object
     :param water_suppressed: Set water suppression header field, defaults to True
     :type water_suppressed: bool, optional
-    :param data_dimensions: If set to 5,6, or 7 will inlcude default dim tags for those diemnsions, defaults to None
+    :param data_dimensions: If set to 5,6, or 7 will include default dim tags for those dimensions, defaults to None
     :type data_dimensions: int, optional
     :return: Header extension object
     :rtype: nifti_mrs.hdr_ext

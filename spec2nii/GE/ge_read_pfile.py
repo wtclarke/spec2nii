@@ -209,7 +209,7 @@ class Pfile:
             # ARC : Added for Bergen jpress patch
             mapper = PfileMapperGaba
         elif psd == 'jpress':
-            # wtc - Added for HURCULES data.
+            # wtc - Added for J-edited data.
             mapper = PfileMapperGaba
         elif psd == 'fidall':
             # WTC - added for JG's Hyperpolarised 13C data
@@ -711,7 +711,7 @@ class PfileMapper:
 
     @property
     def get_frequency_offset(self):
-        """ Returns the spectral frquency offset """
+        """ Returns the spectral frequency offset """
         if self.version > 9:
             return 0.0
         else:
@@ -825,8 +825,8 @@ class PfileMapper:
     def get_num_kspace_points(self):
         """
         Determine the number of sampled k-space points in the data set.
-        This may differ from the number of voxels in the rectalinear grid,
-        for example if elliptical or another non rectangular acquisition
+        This may differ from the number of voxels in the rectilinear grid,
+        for example if elliptical or another non-rectangular acquisition
         sampling strategy was employed.  GE product sequences pad the
         reduced k-space data with zeros so the number of k-space points
         is the same as the number of voxels, but that may not be true for
@@ -1079,7 +1079,7 @@ class PfileMapper:
         self.raw_data = data
 
         #  Modify the data loading behavior.  For single voxel multi-acq data
-        #  this means return the averaged (suppresssed data, if applicable).
+        #  this means return the averaged (suppressed data, if applicable).
 
         numUnsuppressed = self.get_number_unsuppressed_acquisitions
         numSuppressed   = self.get_number_suppressed_acquisitions
@@ -1186,10 +1186,10 @@ class PfileMapperGaba(PfileMapper):
 
         Without some more knowledgeable input I can't currently square the logic
         of BJS's mapper classes with the logic from Gannet/Osprey etc.
-        Therefore this is really a hack that uses the PfileMapper orientation logic
+        Therefore, this is really a hack that uses the PfileMapper orientation logic
         but otherwise uses the logic from Gannet/Osprey.
 
-        Thus most work is done in the overloaded read_data method and functions like
+        Thus, most work is done in the overloaded read_data method and functions like
         get_num_voxels_in_vol are currently meaningless. I would like to square both
         methods in the future.
         """
@@ -1199,7 +1199,7 @@ class PfileMapperGaba(PfileMapper):
         """Function that contains all the data loading logic for the 'gaba'
         sequence.
 
-        This is currently  a reimplementation of the Gannert/Osprey GELoad.m
+        This is currently a reimplementation of the Gannet/Osprey GELoad.m
         function. Therefore, the logic is unlike the other mappers.
         The suppressed and unsuppressed data can be fetched from the raw_suppressed
         and raw_unsuppressed property.
@@ -1316,9 +1316,9 @@ class PfileMapperGaba(PfileMapper):
                 reorg_unsuppressed.append(self.raw_unsuppressed[:, :, :, :, ne::nechoes, :])
 
             reorg_suppressed = np.stack(reorg_suppressed, axis=-1)
-            # Rearange axes to (x, y, z, t, coils, dynamics, edit)
+            # Rearrange axes to (x, y, z, t, coils, dynamics, edit)
             self.raw_suppressed = np.moveaxis(reorg_suppressed, (4, 5), (5, 4))
 
             reorg_unsuppressed = np.stack(reorg_unsuppressed, axis=-1)
-            # Rearange axes to (x, y, z, t, coils, dynamics, edit)
+            # Rearrange axes to (x, y, z, t, coils, dynamics, edit)
             self.raw_unsuppressed = np.moveaxis(reorg_unsuppressed, (4, 5), (5, 4))
