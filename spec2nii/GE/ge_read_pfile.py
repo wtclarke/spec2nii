@@ -177,12 +177,15 @@ class Pfile:
             return None
 
         psd = self.hdr.rhi_psdname.decode('utf-8').lower()
+        numecho = self.hdr.rhi_numecho
 
         if psd in ('probe-p', 'probe-s'):
             mapper = PfileMapper
-        elif psd in ('oslaser', 'slaser_cni', 'slaser'):
-            mapper = PfileMapperSlaser
-        elif psd == 'presscsi':
+        elif psd in ('oslaser', 'slaser_cni', 'slaser') and numecho == 1:
+            mapper = PfileMapperSlaser  # MM: If non-edited data, use PfileMapperSlaser
+        elif psd in 'oslaser' and numecho > 1:
+            mapper = PfileMapperGaba  # MM: If edited data, use PfileMapperGaba
+        elif psd in 'presscsi':
             mapper = PfileMapper
         elif psd == 'fidcsi':
             # bjs - added for Pom's fidcsi 13C data

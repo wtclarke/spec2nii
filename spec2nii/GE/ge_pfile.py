@@ -90,18 +90,17 @@ def _process_svs_pfile(pfile):
     :return: List of file name suffixes
     """
     psd = pfile.hdr.rhi_psdname.decode('utf-8').lower()
+    numecho = pfile.hdr.rhi_numecho
 
     if psd in ('probe-p', 'probe-s'):
         data, meta, dwelltime, fname_suffix = _process_probe_p(pfile)
-    elif psd in ('oslaser', 'slaser_cni'):
+    elif psd in ('oslaser', 'slaser_cni') and numecho == 1:  # MM: If non-edited data, use _process_oslaser
         data, meta, dwelltime, fname_suffix = _process_oslaser(pfile)
-    elif psd == 'slaser':
+    elif psd in 'oslaser' and numecho > 1:  # MM: If edited data, use _process_gaba
+        data, meta, dwelltime, fname_suffix = _process_gaba(pfile)
+    elif psd in 'slaser':
         data, meta, dwelltime, fname_suffix = _process_slaser(pfile)
-    elif psd in ('gaba', 'hbcd'):
-        data, meta, dwelltime, fname_suffix = _process_gaba(pfile)
-    elif 'jpress_ac' in psd:  # Bergen patch
-        data, meta, dwelltime, fname_suffix = _process_gaba(pfile)
-    elif psd == 'jpress':
+    elif psd in ('jpress', 'jpress_ac', 'gaba', 'hbcd'):
         data, meta, dwelltime, fname_suffix = _process_gaba(pfile)
     else:
         raise UnsupportedPulseSequenceError(f'Unrecognised sequence {psd}.')
