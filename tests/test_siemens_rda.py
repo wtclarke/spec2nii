@@ -17,6 +17,7 @@ siemens_path = Path(__file__).parent / 'spec2nii_test_data' / 'Siemens'
 
 xa20_svs_path = siemens_path / 'XAData' / 'XA20/rda/spct_002.MR.MRI-LAB Test_Dir.5.1.114540.rda'
 xa31_locale_svs_path = siemens_path / 'XAData' / 'XA31/rda/locale_XA31.rda'
+xa50_path = siemens_path / 'XAData' / 'XA50' / 'Phantom_20240129.MR.10.1.155227.rda'
 
 latin1_encoding = siemens_path / 'rda' / 'latin1.rda'
 
@@ -144,6 +145,25 @@ def test_xa31_locale_svs(tmp_path):
     hdr_ext['ResonantNucleus'] = ['1H', ]
 
     assert img_t.shape == (1, 1, 1, 1024)
+    assert np.iscomplexobj(img_t.dataobj)
+
+
+def test_xa50_svs(tmp_path):
+
+    subprocess.run([
+        'spec2nii', 'rda',
+        '-f', 'xa50_svs',
+        '-o', tmp_path,
+        '-j', xa50_path])
+
+    img_t = read_nifti_mrs(tmp_path / 'xa50_svs.nii.gz')
+
+    hdr_ext_codes = img_t.header.extensions.get_codes()
+    hdr_ext = json.loads(img_t.header.extensions[hdr_ext_codes.index(44)].get_content())
+
+    hdr_ext['ResonantNucleus'] = ['1H', ]
+
+    assert img_t.shape == (1, 1, 1, 2048)
     assert np.iscomplexobj(img_t.dataobj)
 
 
