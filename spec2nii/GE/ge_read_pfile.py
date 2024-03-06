@@ -1283,7 +1283,8 @@ class PfileMapperGaba(PfileMapper):
             X1, X2 = np.meshgrid(np.arange(refframes), np.arange(nechoes))
             X1 = X1.T.ravel()
             X2 = X2.T.ravel()
-            if cv24 >= 16384:  # Do not apply any phase cycling correction when the receiver phase toggle in sLASER has been set
+            # Do not apply any phase cycling correction when the receiver phase toggle in sLASER has been set
+            if cv24 >= 16384:
                 Y1 = np.ones_like(X1)
             else:
                 Y1 = (-1) ** (noadd * X1)
@@ -1295,7 +1296,8 @@ class PfileMapperGaba(PfileMapper):
             X1, X2 = np.meshgrid(np.arange(dataframes), np.arange(nechoes))
             X1 = X1.T.ravel()
             X2 = X2.T.ravel()
-            if cv24 >= 16384:  # Do not apply any phase cycling correction when the receiver phase toggle in sLASER has been set
+            # Do not apply any phase cycling correction when the receiver phase toggle in sLASER has been set
+            if cv24 >= 16384:
                 Y1 = np.ones_like(X1)
             else:
                 Y1 = (-1) ** (noadd * X1)
