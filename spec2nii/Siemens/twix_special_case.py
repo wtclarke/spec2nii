@@ -142,24 +142,24 @@ def mgs_svs_ed_twix(twixObj, reord_data, meta_obj, dim_tags):
             "OFF": {"PulseOffset": edit_pulse_off, "PulseDuration": pulse_length}}
     elif seq_mode == 1.0:
         # HERMES GABA GSH (3 edit, 1 ctrl condition)
-        edit_cases = 3
+        edit_cases = 4
         dim_info = "HERMES j-difference editing, GABA GSH, four conditions"
         dim_header = {"EditCondition": ["A", "B", "C", "D"]}
         edit_pulse_val = {
             "A": {"PulseOffset": edit_pulse_1, "PulseDuration": 0.02},
-            "B": {"PulseOffset": None, "PulseDuration": None},
-            "C": {"PulseOffset": edit_pulse_off, "PulseDuration": 0.02},
-            "D": {"PulseOffset": [edit_pulse_1, edit_pulse_off], "PulseDuration": 0.02}}
+            "B": {"PulseOffset": edit_pulse_off, "PulseDuration": 0.02},
+            "C": {"PulseOffset": edit_pulse_2, "PulseDuration": 0.02},
+            "D": {"PulseOffset": [edit_pulse_1, edit_pulse_2], "PulseDuration": 0.02}}
     elif seq_mode == 2.0:
         # HERMES GABA GSH EtOH (3 edit, 1 ctrl condition)
         edit_cases = 4
         dim_info = "HERMES j-difference editing, GABA GSH EtOH, four conditions"
         dim_header = {"EditCondition": ["A", "B", "C", "D"]}
         edit_pulse_val = {
-            "A": {"PulseOffset": [edit_pulse_1, edit_pulse_2], "PulseDuration": 0.02},
-            "B": {"PulseOffset": [edit_pulse_3, edit_pulse_2], "PulseDuration": None},
-            "C": {"PulseOffset": [edit_pulse_1, edit_pulse_3], "PulseDuration": 0.02},
-            "D": {"PulseOffset": None, "PulseDuration": None}}
+            "A": {"PulseOffset": [edit_pulse_1, edit_pulse_3], "PulseDuration": 0.02},
+            "B": {"PulseOffset": edit_pulse_off, "PulseDuration": 0.02},
+            "C": {"PulseOffset": [edit_pulse_2, edit_pulse_3], "PulseDuration": 0.02},
+            "D": {"PulseOffset": [edit_pulse_1, edit_pulse_2], "PulseDuration": 0.02}}
     elif seq_mode == 3.0:
         # HERCULES (4 edit conditions)
         edit_cases = 4
@@ -170,16 +170,17 @@ def mgs_svs_ed_twix(twixObj, reord_data, meta_obj, dim_tags):
             "B": {"PulseOffset": [edit_pulse_off, edit_pulse_2], "PulseDuration": 0.02},
             "C": {"PulseOffset": edit_pulse_1, "PulseDuration": 0.02},
             "D": {"PulseOffset": edit_pulse_off, "PulseDuration": 0.02}}
-    elif seq_mode == 3.0:
+    elif seq_mode == 4.0:
+        # This is possibly only a condition for smm_svs_herc as not present in VE11c version.
         # HERMES GABA LAC (3 edit 1 ctrl conditions)
         edit_cases = 4
         dim_info = "HERMES j-difference editing, GABA LAC, four conditions"
         dim_header = {"EditCondition": ["A", "B", "C", "D"]}
         edit_pulse_val = {
             "A": {"PulseOffset": edit_pulse_1, "PulseDuration": 0.02},
-            "B": {"PulseOffset": None, "PulseDuration": None},
-            "C": {"PulseOffset": edit_pulse_off, "PulseDuration": 0.02},
-            "D": {"PulseOffset": [edit_pulse_1, edit_pulse_off], "PulseDuration": 0.02}}
+            "B": {"PulseOffset": edit_pulse_off, "PulseDuration": 0.02},
+            "C": {"PulseOffset": edit_pulse_2, "PulseDuration": 0.02},
+            "D": {"PulseOffset": [edit_pulse_1, edit_pulse_2], "PulseDuration": 0.02}}
     else:
         raise ValueError('Unknown sequence mode in mgs_svs_ed sequence.')
 
