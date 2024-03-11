@@ -1305,21 +1305,23 @@ class PfileMapperGaba(PfileMapper):
 
             self.raw_suppressed = self.raw_data[:, :, :, :, Y2, :] * Y1 * mult
 
-            # Up to this point we have simply replicated the logic of the GELoad function.
-            # Now reorganise dimensions to give an editing dimension.
-            # This means that this is done in a not particularly clear order, but it enables testing against
-            # the matlab code.
+        # Up to this point we have simply replicated the logic of the GELoad function.
+        # Now reorganise dimensions to give an editing dimension.
+        # This means that this is done in a not particularly clear order, but it enables testing against
+        # the matlab code.
+        reorg_suppressed = []
+        reorg_unsuppressed = []
+        if nechoes == 1:
+            nechoes = 2
 
-            reorg_suppressed = []
-            reorg_unsuppressed = []
-            for ne in range(nechoes):
-                reorg_suppressed.append(self.raw_suppressed[:, :, :, :, ne::nechoes, :])
-                reorg_unsuppressed.append(self.raw_unsuppressed[:, :, :, :, ne::nechoes, :])
+        for ne in range(nechoes):
+            reorg_suppressed.append(self.raw_suppressed[:, :, :, :, ne::nechoes, :])
+            reorg_unsuppressed.append(self.raw_unsuppressed[:, :, :, :, ne::nechoes, :])
 
-            reorg_suppressed = np.stack(reorg_suppressed, axis=-1)
-            # Rearrange axes to (x, y, z, t, coils, dynamics, edit)
-            self.raw_suppressed = np.moveaxis(reorg_suppressed, (4, 5), (5, 4))
+        reorg_suppressed = np.stack(reorg_suppressed, axis=-1)
+        # Rearrange axes to (x, y, z, t, coils, dynamics, edit)
+        self.raw_suppressed = np.moveaxis(reorg_suppressed, (4, 5), (5, 4))
 
-            reorg_unsuppressed = np.stack(reorg_unsuppressed, axis=-1)
-            # Rearrange axes to (x, y, z, t, coils, dynamics, edit)
-            self.raw_unsuppressed = np.moveaxis(reorg_unsuppressed, (4, 5), (5, 4))
+        reorg_unsuppressed = np.stack(reorg_unsuppressed, axis=-1)
+        # Rearrange axes to (x, y, z, t, coils, dynamics, edit)
+        self.raw_unsuppressed = np.moveaxis(reorg_unsuppressed, (4, 5), (5, 4))
