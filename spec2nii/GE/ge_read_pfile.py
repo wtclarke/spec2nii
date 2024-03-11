@@ -1247,18 +1247,17 @@ class PfileMapperGaba(PfileMapper):
         tempData = tempData.view(np.complex64)
 
         if nechoes == 1:
-            tempData = tempData.reshape((1, 1, 1, nreceivers, totalframes, npoints))
-            self.raw_data = np.swapaxes(tempData, -1, -3)
-
-            if (dataframes + refframes) != nframes:
+            if int(dataframes + refframes) != nframes:
                 mult = 1
                 dataframes *= nex
                 refframes = int(nframes - dataframes)
             else:
                 mult = 1 / nex
 
-            self.raw_unsuppressed = self.raw_data[:, :, :, :, 1:(refframes + 1), :]
-            self.raw_suppressed   = self.raw_data[:, :, :, :, (refframes + 1):, :]
+            tempData = tempData.reshape((1, 1, 1, nreceivers, totalframes, npoints))
+            self.raw_data = np.swapaxes(tempData, -1, -3)
+            self.raw_unsuppressed = self.raw_data[:, :, :, :, 1:(refframes + 1), :] * mult
+            self.raw_suppressed = self.raw_data[:, :, :, :, (refframes + 1):, :] * mult / 2
 
         else:
             if int(dataframes + refframes) != nframes:
@@ -1268,7 +1267,11 @@ class PfileMapperGaba(PfileMapper):
                 dataframes *= nex
                 refframes = nframes - dataframes
             else:
-                mult = nex / 2
+                # MM: Change mult to match latest code in Gannet (2020)
+                # Previous factors:
+                #   mult: 1 (RTN 2017), nex / 2 (RTN 2016)
+                #   multw: 1 / nex (RTN 2017), 1 (RTN 2016)
+                mult = 1 / nex
                 multw = 1
                 noadd = 0
 
