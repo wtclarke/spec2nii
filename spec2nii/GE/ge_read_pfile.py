@@ -177,46 +177,41 @@ class Pfile:
             return None
 
         psd = self.hdr.rhi_psdname.decode('utf-8').lower()
+        if psd.endswith('gaba'):
+            psd = 'gaba'
+
         numecho = self.hdr.rhi_numecho
 
-        if psd in ('probe-p', 'probe-s'):
+        if psd in \
+                (
+                    'probe-p',
+                    'probe-s',
+                    'probe-p_ach',       # MM - added for Calgary PROBE-P sequence
+                    'presscsi',
+                    'fidcsi',            # bjs - added for Pom's fidcsi 13C data
+                    'ia/stable/fidcsi',  # bjs - added for Kearny's 13C data
+                    'presscsi_nfl',      # bjs - added for Govind's SVS data off v25
+                    'epsi_3d_24',        # bjs - added for soher check of MIDAS Browndyke data
+                    'fidall'             # WTC - added for JG's Hyperpolarised 13C data
+                ):
             mapper = PfileMapper
         elif psd in ('oslaser', 'slaser_cni', 'slaser') and numecho == 1:
             mapper = PfileMapperSlaser  # MM: If non-edited data, use PfileMapperSlaser
-        elif psd in 'oslaser' and numecho > 1:
+        elif psd == 'oslaser' and numecho > 1:
             mapper = PfileMapperGaba  # MM: If edited data, use PfileMapperGaba
-        elif psd in 'presscsi':
-            mapper = PfileMapper
-        elif psd == 'fidcsi':
-            # bjs - added for Pom's fidcsi 13C data
-            mapper = PfileMapper
-        elif psd == 'ia/stable/fidcsi':
-            # bjs - added for Kearny's 13C data
-            mapper = PfileMapper
-        elif psd == 'presscsi_nfl':
-            # bjs - added for Govind's SVS data off v25
-            mapper = PfileMapper
-        elif psd == 'epsi_3d_24':
-            # bjs - added for soher check of MIDAS Browndyke data
-            mapper = PfileMapper
-        elif psd == 'gaba':
-            # wtc - added for Nottingham MEGA-PRESS sequence.
-            mapper = PfileMapperGaba
-        elif psd == 'hbcd':
-            # ATG - added HBCD - reuse GABA mapper
+        elif psd in \
+                (
+                    'jpress',            # wtc - added for J-edited data.
+                    'jpress_ac',         # ARC - added for Bergen jpress patch
+                    'gaba',              # wtc - added for Nottingham MEGA-PRESS sequence
+                    'hbcd',              # ATG - added HBCD - reuse GABA mapper
+                    'probe-p-mega_rml',  # MM - added for Calgary MEGA-PRESS sequence
+                    'repress7'           # MM - added for old CUBRIC data
+                ):
             mapper = PfileMapperGaba
         elif psd == 'probe-sl':
             # wtc - added for CSI sequence from Manchester
             mapper = PfileMapperProbeSL
-        elif 'jpress_ac' in psd:
-            # ARC : Added for Bergen jpress patch
-            mapper = PfileMapperGaba
-        elif psd == 'jpress':
-            # wtc - Added for J-edited data.
-            mapper = PfileMapperGaba
-        elif psd == 'fidall':
-            # WTC - added for JG's Hyperpolarised 13C data
-            mapper = PfileMapper
         else:
             raise UnknownPfile("No Pfile mapper for pulse sequence = %s" % psd)
 
