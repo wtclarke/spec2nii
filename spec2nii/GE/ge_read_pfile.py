@@ -206,7 +206,7 @@ class Pfile:
             # ATG - added HBCD - reuse GABA mapper
             mapper = PfileMapperGaba
         elif psd == 'probe-sl':
-            # wtc - added for CSI sequence from Manchester.
+            # wtc - added for CSI sequence from Manchester
             mapper = PfileMapperProbeSL
         elif 'jpress_ac' in psd:
             # ARC : Added for Bergen jpress patch
@@ -1220,12 +1220,13 @@ class PfileMapperGaba(PfileMapper):
         nreceivers = self.get_num_coils
         dataWordSize = self.hdr.rhr_rh_point_size
 
-        cv24 = self.hdr.rhi_user24  # MM: CV24 is a control variable (CV) that defines several advanced options not stored in the other CVs
+        # MM: CV24 is a control variable (CV) that defines several advanced options not stored in the other CVs
+        cv24 = self.hdr.rhi_user24
 
         # Check if single voxel
         numVoxels = self.get_num_voxels
         self.is_svs = False
-        if (numVoxels[0] * numVoxels[1] * numVoxels[2] == 1):
+        if numVoxels[0] * numVoxels[1] * numVoxels[2] == 1:
             self.is_svs = True
 
         # Data loading
@@ -1259,7 +1260,7 @@ class PfileMapperGaba(PfileMapper):
                 dataframes *= nex
                 refframes = int(nframes - dataframes)
             else:
-                mult = 1.0 / nex
+                mult = 1 / nex
 
             self.raw_unsuppressed = self.raw_data[:, :, :, :, 1:(refframes + 1), :]
             self.raw_suppressed   = self.raw_data[:, :, :, :, (refframes + 1):, :]
@@ -1286,7 +1287,7 @@ class PfileMapperGaba(PfileMapper):
             X1, X2 = np.meshgrid(np.arange(refframes), np.arange(nechoes))
             X1 = X1.T.ravel()
             X2 = X2.T.ravel()
-            # Do not apply any phase cycling correction when the receiver phase toggle in sLASER has been set
+            # Do not apply any phase cycling correction if the receiver phase toggle in sLASER was set
             if cv24 >= 16384:
                 Y1 = np.ones_like(X1)
             else:
@@ -1299,7 +1300,7 @@ class PfileMapperGaba(PfileMapper):
             X1, X2 = np.meshgrid(np.arange(dataframes), np.arange(nechoes))
             X1 = X1.T.ravel()
             X2 = X2.T.ravel()
-            # Do not apply any phase cycling correction when the receiver phase toggle in sLASER has been set
+            # Do not apply any phase cycling correction if the receiver phase toggle in sLASER was set
             if cv24 >= 16384:
                 Y1 = np.ones_like(X1)
             else:
