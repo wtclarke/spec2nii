@@ -1209,8 +1209,8 @@ class PfileMapperGaba(PfileMapper):
         npoints = self.hdr.rhr_rh_da_xres
         nrows = self.hdr.rhr_rh_da_yres
 
-        dataframes = self.hdr.rhi_user4 / nex
-        refframes = self.hdr.rhi_user19
+        dataframes = self.hdr.rhr_rh_user4 / nex
+        refframes = int(self.hdr.rhr_rh_user19)
 
         nreceivers = self.get_num_coils
         dataWordSize = self.hdr.rhr_rh_point_size
