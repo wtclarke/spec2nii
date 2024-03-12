@@ -1,11 +1,12 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
-0.7.3 (WIP)
------------
+0.7.3 (Tuesday 12th March 2024)
+-------------------------------
 - Siemens .rda format now had corrected and validated orientations (tested on VE11 baseline).
 - Siemens .rda format now handles MRSI/CSI data and matches DICOM output. Validated on VE11 baseline data.
 - Fixes in Siemens Twix special case for universal editing sequence (HERMES conditions).
 - Added handling of custom Bruker sequences `mt_sLASER`, `mt_MEGA_sLASER_V35` and `cl_STELASER_PA360_b`.
+- Philips vendor MEGA-PRESS handled through DICOM pathway. Thanks to Sandeep Ganji and Yansong Zhao for their help.
 
 0.7.2 (Thursday 7th December 2023)
 ----------------------------------
