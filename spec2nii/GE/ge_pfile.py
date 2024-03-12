@@ -90,7 +90,9 @@ def _process_svs_pfile(pfile):
     :return: List of file name suffixes
     """
     psd = pfile.hdr.rhi_psdname.decode('utf-8').lower()
-    if psd.endswith('gaba'):  # MM: some 'gaba' psd strings contain full path names, so truncate to the end of the path
+
+    # MM: Some 'gaba' psd strings contain full path names, so truncate to the end of the path
+    if psd.endswith('gaba'):
         psd = 'gaba'
 
     numecho = pfile.hdr.rhi_numecho

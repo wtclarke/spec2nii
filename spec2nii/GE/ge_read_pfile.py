@@ -177,6 +177,8 @@ class Pfile:
             return None
 
         psd = self.hdr.rhi_psdname.decode('utf-8').lower()
+
+        # MM: Some 'gaba' psd strings contain full path names, so truncate to the end of the path
         if psd.endswith('gaba'):
             psd = 'gaba'
 
