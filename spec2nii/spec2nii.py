@@ -620,7 +620,7 @@ class spec2nii:
         """Philips DICOM format handler."""
         from warnings import warn
         from spec2nii.Philips.philips_dcm import multi_file_dicom
-        warn('This Philips DICOM conversion routine is experimental and poorly tested.'
+        warn('This Philips DICOM conversion routine has limited testing outside vendor PRESS and MEGA sequences.'
              ' Please get in contact with test data to help improve it.')
         path_in = Path(args.file)
         if path_in.is_dir():
