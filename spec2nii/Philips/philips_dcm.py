@@ -84,6 +84,7 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
             newshape = (1, 1, 1) + specDataCmplx.shape
             spec_data = specDataCmplx.reshape(newshape)
             if spec_ref is not None:
+                newshape = (1, 1, 1) + spec_ref.shape
                 spec_ref = spec_ref.reshape(newshape)
 
             # Data appears to require conjugation to meet standard's conventions.
@@ -210,12 +211,9 @@ def _process_philips_svs_new(img, verbose):
     specData = np.frombuffer(img.dcm_data[('5600', '0020')].value, dtype=np.single)
     specDataCmplx = specData[0::2] + 1j * specData[1::2]
 
-    # In the one piece of data I have been provided the data is twice as long as indicated (1 avg)
-    # and the second half is a water reference.
     # (0028,0008) IS [32]                                               # 2,1 Number of Frames
     nframes = int(img.dcm_data[0x0028, 0x0008].value)
     spec_points = img.dcm_data.SpectroscopyAcquisitionDataColumns
-    reference_inlcuded = img.dcm_data[0x0018, 0x9199].value == 'YES'
 
     npoints_expected = spec_points * nframes
     if npoints_expected != specDataCmplx.size:
@@ -223,25 +221,69 @@ def _process_philips_svs_new(img, verbose):
             f'Number of points {specDataCmplx.size}, does not equal frames ({nframes}) '
             f'* spectral points ({spec_points}).')
 
-    if reference_inlcuded:
-        spec_data_main = specDataCmplx[:spec_points]
-        spec_data_ref = specDataCmplx[spec_points:]
-        spec_data_main = spec_data_main.reshape(nframes - 1, spec_points).T
-        spec_data_main = spec_data_main.squeeze()
-    else:
-        spec_data_main = specDataCmplx.reshape(nframes, spec_points).T
-        spec_data_main = spec_data_main.squeeze()
-        spec_data_ref = None
+    # Only two conditions are known for the Spectroscopy scans 'normal/SV_PRESS' and 'SV_MEGA'
+    # So special case the MEGA and everything else goes through the PRESS pipeline.
+    try:
+        is_edited = img.dcm_data[0x2005, 0x1597].value == 'Y'
+    except KeyError:
+        is_edited = False
 
-    # 1) Extract dicom parameters
-    currNiftiOrientation = _enhanced_dcm_svs_to_orientation(img, verbose)
+    if img.dcm_data[0x0008, 0x9209].value == 'SPECTROSCOPY'\
+            and is_edited:
+        # Data is MEGA
+        on_idx = []
+        off_idx = []
+        ref_idx = []
+        for idx, instance in enumerate(img.dcm_data[0x2005, 0x140f]):
+            if instance[0x2005, 0x1304].value:
+                ref_idx.append(idx)
+            else:
+                if instance[0x2005, 0x1598].value == '1':
+                    on_idx.append(idx)
+                elif instance[0x2005, 0x1598].value == '0':
+                    off_idx.append(idx)
 
-    dwelltime = 1.0 / img.dcm_data.SpectralWidth
-    meta = _extractDicomMetadata_new(img)
-    if reference_inlcuded:
+        specDataCmplx = specDataCmplx.reshape((nframes, spec_points))
+
+        spec_data_main = np.stack(
+            (specDataCmplx[on_idx, :].T,
+             specDataCmplx[off_idx, :].T), axis=-1)
+        spec_data_ref = specDataCmplx[ref_idx, :].T
+
+        meta = _extractDicomMetadata_new(img)
         meta_r = _extractDicomMetadata_new(img, water_suppressed=False)
+
+        meta.set_dim_info("5th", "DIM_DYN")
+        meta.set_dim_info("6th", "DIM_EDIT", hdr={"EditCondition": ["ON", "OFF"]})
+
+        meta_r.set_dim_info("5th", "DIM_DYN")
+
     else:
-        meta_r = None
+        # In the one piece of data I have been provided the data is twice as long as indicated (1 avg)
+        # and the second half is a water reference.
+
+        # This actually tells you if it is selected in the UI, but seems to be a surrogate
+        # for acquired in the PRESS scan
+        reference_inlcuded = img.dcm_data[0x0018, 0x9199].value == 'YES'
+
+        if reference_inlcuded:
+            spec_data_main = specDataCmplx[:spec_points]
+            spec_data_ref = specDataCmplx[spec_points:]
+            spec_data_main = spec_data_main.reshape(nframes - 1, spec_points).T
+            spec_data_main = spec_data_main.squeeze()
+        else:
+            spec_data_main = specDataCmplx.reshape(nframes, spec_points).T
+            spec_data_main = spec_data_main.squeeze()
+            spec_data_ref = None
+
+        meta = _extractDicomMetadata_new(img)
+        if reference_inlcuded:
+            meta_r = _extractDicomMetadata_new(img, water_suppressed=False)
+        else:
+            meta_r = None
+
+    currNiftiOrientation = _enhanced_dcm_svs_to_orientation(img, verbose)
+    dwelltime = 1.0 / img.dcm_data.SpectralWidth
 
     return spec_data_main, spec_data_ref, currNiftiOrientation, dwelltime, meta, meta_r
 
