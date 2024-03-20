@@ -503,7 +503,7 @@ class PfileMapper:
 
             lMax   = 0
             pMax   = 0
-            sMax   = 0
+            # sMax   = 0
             lIndex = 0
             pIndex = 0
             sIndex = 0
@@ -514,9 +514,12 @@ class PfileMapper:
                 if abs(dcos[i][1]) > pMax:
                     pIndex = i
                     pMax = abs(dcos[i][1])
-                if abs(dcos[i][2]) > sMax:
-                    sIndex = i
-                    sMax = abs(dcos[i][2])
+            
+            # WTC: Proposed fix for issue 123. Assumes that issue arises in final column.
+                # if abs(dcos[i][2]) > sMax:
+                #     sIndex = i
+                #     sMax = abs(dcos[i][2])
+            sIndex = [x for x in range(3) if x not in (lIndex, pIndex)][0]
 
             boxsize[lIndex] = self.hdr.rhi_user8
             boxsize[pIndex] = self.hdr.rhi_user9
@@ -637,6 +640,8 @@ class PfileMapper:
     def get_dcos(self):
         dcos = np.zeros([3, 3], float)
 
+        # WTC: Note this does not match negation of [0][0] and [0][1] in
+        # https://svn.code.sf.net/p/sivic/code/trunk/libs/src/svkGEPFileMapper.cc
         dcos[0][0] = (self.hdr.rhi_trhc_R - self.hdr.rhi_tlhc_R)
         dcos[0][1] = (self.hdr.rhi_trhc_A - self.hdr.rhi_tlhc_A)
         dcos[0][2] =  (self.hdr.rhi_trhc_S - self.hdr.rhi_tlhc_S)
@@ -649,6 +654,8 @@ class PfileMapper:
         dcos[0][1] /= dcosLengthX
         dcos[0][2] /= dcosLengthX
 
+        # WTC: Note this does not match negation of [0][0] and [0][1] in
+        # https://svn.code.sf.net/p/sivic/code/trunk/libs/src/svkGEPFileMapper.cc
         dcos[1][0] = (self.hdr.rhi_brhc_R - self.hdr.rhi_trhc_R)
         dcos[1][1] = (self.hdr.rhi_brhc_A - self.hdr.rhi_trhc_A)
         dcos[1][2] =  (self.hdr.rhi_brhc_S - self.hdr.rhi_trhc_S)
@@ -668,6 +675,18 @@ class PfileMapper:
         dcos[2][1] = - dcos[0][2] * dcos[1][0] + dcos[0][0] * dcos[1][2]
         dcos[2][2] = - dcos[0][0] * dcos[1][1] + dcos[0][1] * dcos[1][0]
 
+        # ModifyForPatientEntry
+        # Apply the necessary transformations based on patient entry: 
+        rotations = np.eye(3)
+        patientPosition = self.hdr.rhs_position
+
+        # PRONE: patientPosition == 2
+        # rotate RL(x) and AP(y) axis by 180 degrees, i.e. rotate frame about SI (z) axis: 
+        if patientPosition == 2:
+            rotations[0, 0] = -1.0
+            rotations[1, 1] = -1.0
+
+        dcos = rotations @ dcos
         return dcos
 
     @property
