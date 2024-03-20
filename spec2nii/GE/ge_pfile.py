@@ -225,11 +225,15 @@ def _process_gaba(pfile):
 
     meta.set_dim_info(0, 'DIM_COIL')
     meta.set_dim_info(1, 'DIM_DYN')
-    meta.set_dim_info(2, 'DIM_EDIT')
+    # Only set an EDIT dim if there is an editing dimension
+    if metab.ndim == 7:
+        meta.set_dim_info(2, 'DIM_EDIT')
 
     meta_ref.set_dim_info(0, 'DIM_COIL')
     meta_ref.set_dim_info(1, 'DIM_DYN')
-    meta_ref.set_dim_info(2, 'DIM_EDIT')
+    # Only set an EDIT dim if there is an editing dimension
+    if water.ndim == 7:
+        meta_ref.set_dim_info(2, 'DIM_EDIT')
 
     return [metab, water], [meta, meta_ref], dwelltime, ['', '_ref']
 

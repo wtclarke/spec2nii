@@ -1310,23 +1310,35 @@ class PfileMapperGaba(PfileMapper):
 
             self.raw_suppressed = self.raw_data[:, :, :, :, Y2, :] * Y1 * mult
 
-        # Up to this point we have simply replicated the logic of the GELoad function.
-        # Now reorganise dimensions to give an editing dimension.
-        # This means that this is done in a not particularly clear order, but it enables testing against
-        # the matlab code.
-        reorg_suppressed = []
-        reorg_unsuppressed = []
-        if nechoes == 1:
-            nechoes = 2
+        # Test if this is the case of the jpress like sequence being used for a non-editing condition
+        edit_waveform = self.hdr.rhi_user19
+        if nechoes == 1 and edit_waveform == 0:
+            # Editing conditions = 1 and there is no editing waveform
+            self.raw_suppressed[:, :, :, :, 0::2, :] *= np.exp(1j * np.pi)
+            self.raw_unsuppressed[:, :, :, :, 0::2, :] *= np.exp(1j * np.pi)
 
-        for ne in range(nechoes):
-            reorg_suppressed.append(self.raw_suppressed[:, :, :, :, ne::nechoes, :])
-            reorg_unsuppressed.append(self.raw_unsuppressed[:, :, :, :, ne::nechoes, :])
+            # Rearrange axes to (x, y, z, t, coils, dynamics)
+            self.raw_suppressed = np.moveaxis(self.raw_suppressed, (4, 5), (5, 4))
+            self.raw_unsuppressed = np.moveaxis(self.raw_unsuppressed, (4, 5), (5, 4))
+        else:
+            # Editing condition, update nechoes if needed for special cases like probe-p-mega_rml
+            if nechoes == 1:
+                nechoes = 2
 
-        reorg_suppressed = np.stack(reorg_suppressed, axis=-1)
-        # Rearrange axes to (x, y, z, t, coils, dynamics, edit)
-        self.raw_suppressed = np.moveaxis(reorg_suppressed, (4, 5), (5, 4))
+            # Up to this point we have simply replicated the logic of the GELoad function.
+            # Now reorganise dimensions to give an editing dimension.
+            # This means that this is done in a not particularly clear order, but it enables testing against
+            # the matlab code.
+            reorg_suppressed = []
+            reorg_unsuppressed = []
+            for ne in range(nechoes):
+                reorg_suppressed.append(self.raw_suppressed[:, :, :, :, ne::nechoes, :])
+                reorg_unsuppressed.append(self.raw_unsuppressed[:, :, :, :, ne::nechoes, :])
 
-        reorg_unsuppressed = np.stack(reorg_unsuppressed, axis=-1)
-        # Rearrange axes to (x, y, z, t, coils, dynamics, edit)
-        self.raw_unsuppressed = np.moveaxis(reorg_unsuppressed, (4, 5), (5, 4))
+            reorg_suppressed = np.stack(reorg_suppressed, axis=-1)
+            # Rearrange axes to (x, y, z, t, coils, dynamics, edit)
+            self.raw_suppressed = np.moveaxis(reorg_suppressed, (4, 5), (5, 4))
+
+            reorg_unsuppressed = np.stack(reorg_unsuppressed, axis=-1)
+            # Rearrange axes to (x, y, z, t, coils, dynamics, edit)
+            self.raw_unsuppressed = np.moveaxis(reorg_unsuppressed, (4, 5), (5, 4))
