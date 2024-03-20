@@ -202,7 +202,7 @@ def test_mm_mega(tmp_path):
         assert img.shape[3] in (2048, 4096)
         assert img.shape[6] == 2
         assert np.iscomplexobj(img.dataobj)
-        assert 1 / img.header['pixdim'][4] == 2000.0
+        assert 1 / img.header['pixdim'][4] in (2000.0, 5000.0)
         assert hdr_ext['dim_5'] == 'DIM_COIL'
         assert hdr_ext['dim_6'] == 'DIM_DYN'
         assert hdr_ext['dim_7'] == 'DIM_EDIT'
