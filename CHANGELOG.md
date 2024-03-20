@@ -1,5 +1,9 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.7.4 (WIP)
+---------------------------------
+- Refinements and improvements to the GE SVS pipeline from Mark Mikkelsen
+
 0.7.3 (Tuesday 12th March 2024)
 -------------------------------
 - Siemens .rda format now had corrected and validated orientations (tested on VE11 baseline).
