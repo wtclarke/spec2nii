@@ -495,41 +495,36 @@ class PfileMapper:
 
     @property
     def get_select_box_size(self):
-
-        boxsize = np.array([0.0, 0.0, 0.0])
-        dcos = self.get_dcos
-
         if self.version > 9:
+            # WTC: Proposed fix for issue 123. Closer match to Osprey coreg.
+            orientation = np.argmax(np.abs(self.get_dcos[2]))
+            if orientation == 2:
+                boxsize = np.array([
+                    self.hdr.rhi_user8,
+                    self.hdr.rhi_user9,
+                    self.hdr.rhi_user10])
 
-            lMax   = 0
-            pMax   = 0
-            # sMax   = 0
-            lIndex = 0
-            pIndex = 0
-            sIndex = 0
-            for i in range(3):
-                if abs(dcos[i][0]) > lMax:
-                    lIndex = i
-                    lMax = abs(dcos[i][0])
-                if abs(dcos[i][1]) > pMax:
-                    pIndex = i
-                    pMax = abs(dcos[i][1])
-            
-            # WTC: Proposed fix for issue 123. Assumes that issue arises in final column.
-                # if abs(dcos[i][2]) > sMax:
-                #     sIndex = i
-                #     sMax = abs(dcos[i][2])
-            sIndex = [x for x in range(3) if x not in (lIndex, pIndex)][0]
+            elif orientation == 1:
+                boxsize = np.array([
+                    self.hdr.rhi_user8,
+                    self.hdr.rhi_user10,
+                    self.hdr.rhi_user9])
 
-            boxsize[lIndex] = self.hdr.rhi_user8
-            boxsize[pIndex] = self.hdr.rhi_user9
-            boxsize[sIndex] = self.hdr.rhi_user10
-
+            elif orientation == 0:
+                boxsize = np.array([
+                    self.hdr.rhi_user9,
+                    self.hdr.rhi_user10,
+                    self.hdr.rhi_user8])
+            print(self.hdr.rhi_user8)
+            print(self.hdr.rhi_user9)
+            print(self.hdr.rhi_user10)
+            print(orientation)
+            print(boxsize)
         else:
-
-            boxsize[0] = self.hdr.rhr_roilenx
-            boxsize[1] = self.hdr.rhr_roileny
-            boxsize[2] = self.hdr.rhr_roilenz
+            boxsize = np.array([
+                self.hdr.rhr_roilenx,
+                self.hdr.rhr_roileny,
+                self.hdr.rhr_roilenz])
 
             if self.is_swap_on:
                 ftemp = boxsize[0]
