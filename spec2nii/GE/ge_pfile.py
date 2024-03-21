@@ -206,6 +206,39 @@ def _process_slaser(pfile):
     return [metab, water], [meta, meta_ref], dwelltime, ['', '_ref']
 
 
+def _add_editing_info(pfile, meta, data):
+    """Add editing information to dimension tags and headers
+
+    :param pfile: p-file object
+    :type pfile: Pfile
+    :param meta: Header extension object
+    :type meta: Hdr_Ext
+    :param data: Shaped complex data
+    :type data: np.ndarray
+    """
+    edit_rf_waveform = pfile.hdr.rhi_user19
+    # edit_rf_waveform == 19.0 is used by HERMES and HERCULES
+    if data.shape[-1] == 2 and not edit_rf_waveform == 19.0:
+        edit_rf_freq_off1 = pfile.hdr.rhi_user20
+        edit_rf_freq_off2 = pfile.hdr.rhi_user21
+        edit_rf_ppm_off1 = edit_rf_freq_off1 / float(pfile.hdr.rhr_rh_ps_mps_freq * 1E-7)
+        edit_rf_ppm_off2 = edit_rf_freq_off2 / float(pfile.hdr.rhr_rh_ps_mps_freq  * 1E-7)
+        edit_rf_dur = pfile.hdr.rhi_user22
+        # check for default value (-1) of pulse length
+        if edit_rf_dur <= 0:
+            edit_rf_dur = 16000
+        dim_info = "MEGA-EDITED j-difference editing, two conditions"
+        dim_header = {"EditCondition": ["ON", "OFF"]}
+        edit_pulse_val = {
+            "ON": {"PulseOffset": edit_rf_ppm_off1, "PulseDuration": edit_rf_dur / 1E6},
+            "OFF": {"PulseOffset": edit_rf_ppm_off2, "PulseDuration": edit_rf_dur / 1E6}}
+
+        meta.set_dim_info(2, 'DIM_EDIT', hdr=dim_header, info=dim_info)
+        meta.set_standard_def("EditPulse", edit_pulse_val)
+    else:
+        meta.set_dim_info(2, 'DIM_EDIT')
+
+
 def _process_gaba(pfile):
     """Extract metabolite and reference data from a gaba (MPRESS) format pfile
 
@@ -227,13 +260,13 @@ def _process_gaba(pfile):
     meta.set_dim_info(1, 'DIM_DYN')
     # Only set an EDIT dim if there is an editing dimension
     if metab.ndim == 7:
-        meta.set_dim_info(2, 'DIM_EDIT')
+        _add_editing_info(pfile, meta, metab)
 
     meta_ref.set_dim_info(0, 'DIM_COIL')
     meta_ref.set_dim_info(1, 'DIM_DYN')
     # Only set an EDIT dim if there is an editing dimension
     if water.ndim == 7:
-        meta_ref.set_dim_info(2, 'DIM_EDIT')
+        _add_editing_info(pfile, meta_ref, water)
 
     return [metab, water], [meta, meta_ref], dwelltime, ['', '_ref']
 

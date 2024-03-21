@@ -143,6 +143,10 @@ def test_mm_hercules(tmp_path):
         assert hdr_ext['OriginalFile'][0] == path.name
         assert hdr_ext['WaterSuppressed']
 
+        # Test that the MEGA editing header info is not added
+        assert 'dim_7_header' not in hdr_ext
+        assert 'EditPulse' not in hdr_ext
+
         img_ref, hdr_ext_ref = read_nifti_mrs_with_hdr(
             tmp_path / f'{path.stem}_ref.nii.gz')
         assert img_ref.shape[:5] == (1, 1, 1, 4096, 32)
@@ -175,6 +179,9 @@ def test_mm_hermes(tmp_path):
         assert hdr_ext['ResonantNucleus'][0] == '1H'
         assert hdr_ext['OriginalFile'][0] == path.name
         assert hdr_ext['WaterSuppressed']
+
+        assert 'dim_7_header' not in hdr_ext
+        assert 'EditPulse' not in hdr_ext
 
         img_ref, hdr_ext_ref = read_nifti_mrs_with_hdr(
             tmp_path / f'{path.stem}_ref.nii.gz')
@@ -210,6 +217,10 @@ def test_mm_mega(tmp_path):
         assert hdr_ext['ResonantNucleus'][0] == '1H'
         assert hdr_ext['OriginalFile'][0] == path.name
         assert hdr_ext['WaterSuppressed']
+
+        assert 'dim_7_header' in hdr_ext
+        assert 'EditPulse' in hdr_ext
+        assert 'dim_7_info' in hdr_ext
 
         img_ref, hdr_ext_ref = read_nifti_mrs_with_hdr(
             tmp_path / f'{path.stem}_ref.nii.gz')
