@@ -2,7 +2,8 @@ This document contains the Spec2nii release history in reverse chronological ord
 
 0.7.4 (WIP)
 ---------------------------------
-- Refinements and improvements to the GE SVS pipeline from Mark Mikkelsen
+- Refinements and improvements to the GE SVS pipeline from Mark Mikkelsen.
+- Add support for older jMRUI text formats which have a slightly different syntax. With thanks to Donnie Cameron.
 
 0.7.3 (Tuesday 12th March 2024)
 -------------------------------
