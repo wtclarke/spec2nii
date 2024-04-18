@@ -4,6 +4,7 @@ converted from twix/.dat data.
 Will Clarke, University of Oxford, 2022
 """
 import numpy as np
+import re
 
 
 def smm_svs_herc_hyper(twixObj, reord_data, meta_obj, dim_tags, subseq, subseq_name):
@@ -204,3 +205,89 @@ def mgs_svs_ed_twix(twixObj, reord_data, meta_obj, dim_tags):
     meta_obj.set_standard_def("EditPulse", edit_pulse_val)
 
     return reord_data, meta_obj, dim_tags
+
+
+def slaser_dkd(twixObj, reord_data, meta_obj, dim_tags):
+
+    scan_mode = twixObj.hdr['MeasYaps'][('sSpecPara', 'lAutoRefScanMode')]
+    seq_file_name = twixObj['hdr']['Meas'][('tSequenceFileName')].lower()
+
+    group_out = []
+
+    if scan_mode == 1.0:
+        for idx, dt in enumerate(dim_tags):
+            meta_obj.set_dim_info(idx, dt)
+        group_out.append(
+            (reord_data.reshape((1, 1, 1) + reord_data.shape),
+             meta_obj,
+             ''))
+
+    elif (re.search(r'svs_slaser(voi)?_dkd2$', seq_file_name) and scan_mode == 8.0)\
+            or (re.search(r'svs_slaser(voi)?_dkd$', seq_file_name) and scan_mode == 8.0):
+        num_ref = int(twixObj.hdr['MeasYaps'][('sSpecPara', 'lAutoRefScanNo')])
+        num_dyn = int(twixObj.hdr['MeasYaps'][('lAverages',)])
+
+        base_shape = (1, 1, 1) + reord_data.shape[:2] + (-1, )
+
+        for idx, dt in enumerate(dim_tags):
+            meta_obj.set_dim_info(idx, dt)
+
+        # Main acq
+        start = (num_ref * 2)
+        stop = start + num_dyn
+        group_out.append(
+            (reord_data[..., start:stop].reshape(base_shape),
+             meta_obj.copy(),
+             ''))
+
+        # _rf_off
+        indices = np.concatenate(
+            (np.arange(num_ref), np.arange(-2 * num_ref, -num_ref)))
+        group_out.append(
+            (reord_data[..., indices].reshape(base_shape),
+             meta_obj.copy(),
+             '_rf_off'))
+
+        # _rf_grads_ovs_off
+        indices = np.concatenate(
+            (np.arange(num_ref, 2 * num_ref), np.arange(-num_ref, 0)))
+        group_out.append(
+            (reord_data[..., indices].reshape(base_shape),
+             meta_obj.copy(),
+             '_rf_grads_ovs_off'))
+
+    elif (re.search(r'svs_slaser(voi)?_dkd2', seq_file_name) and scan_mode == 2.0):
+        num_ref = int(twixObj.hdr['MeasYaps'][('sSpecPara', 'lAutoRefScanNo')])
+        num_dyn = int(twixObj.hdr['MeasYaps'][('lAverages',)])
+
+        base_shape = (1, 1, 1) + reord_data.shape[:2] + (-1, )
+
+        for idx, dt in enumerate(dim_tags):
+            meta_obj.set_dim_info(idx, dt)
+
+        # Main acq
+        start = num_ref
+        stop = start + num_dyn
+        group_out.append(
+            (reord_data[..., start:stop].reshape(base_shape),
+             meta_obj.copy(),
+             ''))
+
+        # _vapor_ovs_rfoff
+        indices = np.concatenate(
+            (np.arange(num_ref), np.arange(-num_ref, 0)))
+        group_out.append(
+            (reord_data[..., indices].reshape(base_shape),
+             meta_obj.copy(),
+             '_vapor_ovs_rfoff'))
+
+    else:
+        print(f'slaser_dkd special case processing: unrecognised case for {seq_file_name} with scan mode {scan_mode}.')
+        for idx, dt in enumerate(dim_tags):
+            meta_obj.set_dim_info(idx, dt)
+        group_out.append(
+            (reord_data.reshape((1, 1, 1) + reord_data.shape),
+             meta_obj,
+             ''))
+
+    return group_out

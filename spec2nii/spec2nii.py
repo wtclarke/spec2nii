@@ -80,8 +80,13 @@ class spec2nii:
         # Handle dicom subcommand
         parser_dicom = subparsers.add_parser('dicom', help='Convert from Siemens DICOM format.')
         parser_dicom.add_argument('file', help='file or directory to convert', type=str)
-        parser_dicom.add_argument("-t", "--tag", type=str, help="Specify NIfTI MRS tag used for 5th "
-                                                                "dimension if multiple files are passed.")
+        parser_dicom.add_argument(
+            "-t",
+            "--tag",
+            type=str,
+            default='DIM_DYN',
+            help="Specify NIfTI MRS tag used for 5th dimension if multiple files are passed. "
+                 "Defaults to DIM_DYN.")
         parser_dicom.add_argument('--voi', action='store_true', help='Output VOI as single voxel NIfTI mask.')
         parser_dicom = add_common_parameters(parser_dicom)
         parser_dicom.set_defaults(func=self.dicom)
