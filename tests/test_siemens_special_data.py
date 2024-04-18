@@ -63,7 +63,7 @@ def test_dicom_anon(tmp_path):
     assert hdr_ext['OriginalFile'][0] == str(data_path_anon)
 
 
-data_path_slaser_dkd = siemens_path / 'special_cases_slaser_dkd' / 'DICOM'
+data_path_slaser_dkd_dicom = siemens_path / 'special_cases_slaser_dkd' / 'DICOM'
 slaser_dkd_options = {
     "svs_slaser_dkd_von_wrsoff_13_None": {'': 4, '_rf_off': 0, '_rf_grads_ovs_off': 0},
     "svs_slaser_dkd_von_wrs1_15_None": {'': 4, '_rf_off': 2, '_rf_grads_ovs_off': 2},
@@ -77,16 +77,46 @@ slaser_dkd_options = {
 
 
 def test_dicom_slaser_dkd(tmp_path):
-    for idx, key in enumerate(slaser_dkd_options):
-        print(key)
+    for key in slaser_dkd_options:
         subprocess.run(
             ['spec2nii', 'dicom',
              '-f', key,
              '-o', tmp_path,
-             '-j', data_path_slaser_dkd / key])
+             '-j', data_path_slaser_dkd_dicom / key])
 
         for subkey in slaser_dkd_options[key]:
             if slaser_dkd_options[key][subkey] > 0:
                 print(f'{key}, {subkey}, {slaser_dkd_options[key][subkey]}')
                 img = read_nifti_mrs(tmp_path / f'{key}{subkey}.nii.gz')
                 assert img.shape == (1, 1, 1, 2048, slaser_dkd_options[key][subkey])
+
+
+data_path_slaser_dkd_twix = siemens_path / 'special_cases_slaser_dkd' / 'twix'
+slaser_dkd_options_twix = {
+    "meas_MID00053_FID16506_svs_slaser_dkd_von_wrsoff.dat": {'': 4, '_rf_off': 0, '_rf_grads_ovs_off': 0},
+    "meas_MID00054_FID16507_svs_slaser_dkd_von_wrs1.dat": {'': 4, '_rf_off': 2, '_rf_grads_ovs_off': 2},
+    "meas_MID00055_FID16508_svs_slaser_dkd_von_wrs2.dat": {'': 4, '_rf_off': 4, '_rf_grads_ovs_off': 4},
+    "meas_MID00056_FID16509_svs_slaserVOI_dkd2_von_wrsoff.dat": {'': 4, '_vapor_ovs_rfoff': 0},
+    "meas_MID00057_FID16510_svs_slaserVOI_dkd2_von_wrsw1pw3_1.dat": {'': 4, '_rf_off': 2, '_rf_grads_ovs_off': 2},
+    "meas_MID00058_FID16511_svs_slaserVOI_dkd2_von_wrsw1pw3_2.dat": {'': 4, '_rf_off': 4, '_rf_grads_ovs_off': 4},
+    "meas_MID00059_FID16512_svs_slaserVOI_dkd2_von_wrsw4_1.dat": {'': 4, '_vapor_ovs_rfoff': 2},
+    "meas_MID00060_FID16513_svs_slaserVOI_dkd2_von_wrsw4_2.dat": {'': 4, '_vapor_ovs_rfoff': 4}
+}
+
+
+def test_twix_slaser_dkd(tmp_path):
+    for key in slaser_dkd_options_twix:
+        print(key)
+        subprocess.run(
+            ['spec2nii', 'twix',
+             '-e', 'image',
+             '-f', key.split('.')[0],
+             '-o', tmp_path,
+             '-j', data_path_slaser_dkd_twix / key])
+
+        for subkey in slaser_dkd_options_twix[key]:
+            if slaser_dkd_options_twix[key][subkey] > 0:
+                print(f'{key}, {subkey}, {slaser_dkd_options_twix[key][subkey]}')
+                img = read_nifti_mrs(tmp_path / f'{key.split(".")[0]}{subkey}.nii.gz')
+                assert img.shape[:4] == (1, 1, 1, 4096)
+                assert img.shape[-1] == slaser_dkd_options_twix[key][subkey]

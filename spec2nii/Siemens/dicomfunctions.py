@@ -722,7 +722,7 @@ def identify_integrated_references(img, inst_num):
     # Three cases as explained by DKD.
     '''
     dkd_slaserVOI_dkd
-        ScanMode = 8 
+        ScanMode = 8
         (NOTE DKD originally said 2, but from testing the sLASER_VE11C_Sept2016 version 8 is the only option
         xprot[('sSpecPara', 'lAutoRefScanMode')] = 1 when set to 'off' and 8 when set to 'on')
             4 water ref at start and 4 at the end where the first 2 water ref in
