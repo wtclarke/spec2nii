@@ -880,7 +880,17 @@ def examineTwix(twixObj, fileName, mraid):
 def extractTwixMetadata(mapVBVDHdr, original_file):
     """Pass to appropriate extractTwixMetadata function for software version."""
     if xa_or_vx(mapVBVDHdr) == 'vx':
-        return extractTwixMetadata_vx(mapVBVDHdr, original_file)
+        try:
+            return extractTwixMetadata_vx(mapVBVDHdr, original_file)
+        except KeyError as original_err:
+            try:
+                print(f'VX-line scanner headers caused KeyError {original_err}.')
+                print('Trying XA interpreter. ')
+                return extractTwixMetadata_xa(mapVBVDHdr, original_file)
+            except Exception as backup_err:
+                print(f'XA interpreter failed with reason {backup_err}. Raising original error.')
+                raise original_err
+
     elif xa_or_vx(mapVBVDHdr) == 'xa':
         return extractTwixMetadata_xa(mapVBVDHdr, original_file)
 
