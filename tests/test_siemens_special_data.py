@@ -61,3 +61,32 @@ def test_dicom_anon(tmp_path):
     assert hdr_ext['SpectrometerFrequency'][0] == 123.255582
     assert hdr_ext['ResonantNucleus'][0] == "1H"
     assert hdr_ext['OriginalFile'][0] == str(data_path_anon)
+
+
+data_path_slaser_dkd = siemens_path / 'special_cases_slaser_dkd' / 'DICOM'
+slaser_dkd_options = {
+    "svs_slaser_dkd_von_wrsoff_13_None": {'': 4, '_rf_off': 0, '_rf_grads_ovs_off': 0},
+    "svs_slaser_dkd_von_wrs1_15_None": {'': 4, '_rf_off': 2, '_rf_grads_ovs_off': 2},
+    "svs_slaser_dkd_von_wrs2_17_None": {'': 4, '_rf_off': 4, '_rf_grads_ovs_off': 4},
+    "svs_slaserVOI_dkd2_von_wrsoff_19_None": {'': 4, '_vapor_ovs_rfoff': 0},
+    "svs_slaserVOI_dkd2_von_wrsw1pw3_1_21_None": {'': 4, '_rf_off': 2, '_rf_grads_ovs_off': 2},
+    "svs_slaserVOI_dkd2_von_wrsw1pw3_2_23_None": {'': 4, '_rf_off': 4, '_rf_grads_ovs_off': 4},
+    "svs_slaserVOI_dkd2_von_wrsw4_1_25_None": {'': 4, '_vapor_ovs_rfoff': 2},
+    "svs_slaserVOI_dkd2_von_wrsw4_2_27_None": {'': 4, '_vapor_ovs_rfoff': 4}
+}
+
+
+def test_dicom_slaser_dkd(tmp_path):
+    for idx, key in enumerate(slaser_dkd_options):
+        print(key)
+        subprocess.run(
+            ['spec2nii', 'dicom',
+             '-f', key,
+             '-o', tmp_path,
+             '-j', data_path_slaser_dkd / key])
+
+        for subkey in slaser_dkd_options[key]:
+            if slaser_dkd_options[key][subkey] > 0:
+                print(f'{key}, {subkey}, {slaser_dkd_options[key][subkey]}')
+                img = read_nifti_mrs(tmp_path / f'{key}{subkey}.nii.gz')
+                assert img.shape == (1, 1, 1, 2048, slaser_dkd_options[key][subkey])

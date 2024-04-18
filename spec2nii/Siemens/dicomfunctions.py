@@ -719,24 +719,56 @@ def identify_integrated_references(img, inst_num):
     # Handle CMRR DKD sequence
     # https://www.cmrr.umn.edu/spectro/
     # SEMI-LASER (MRM 2011, NMB 2019) Release 2016-12
+    # Three cases as explained by DKD.
+    '''
+    dkd_slaserVOI_dkd
+        ScanMode = 8 
+        (NOTE DKD originally said 2, but from testing the sLASER_VE11C_Sept2016 version 8 is the only option
+        xprot[('sSpecPara', 'lAutoRefScanMode')] = 1 when set to 'off' and 8 when set to 'on')
+            4 water ref at start and 4 at the end where the first 2 water ref in
+            each are acquired with VAPOR RF off but OVS on while last 2 ref are with VAPOR and OVS completely off.
+
+    dkd_slaserVOI_dkd2
+        ScanMode =8
+            does the same as ScanMode =8 above
+
+        ScanMode =2 with ScanNo=2
+            this means 2 water ref at start and 2 at end;
+            this acq is done with VAPOR and OVS RF off, but all gradients still ON.
+    '''
     seq_file_name = xprot[('tSequenceFileName',)].strip('"').lower()
-    match = re.search(r'svs_slaservoi_dkd', seq_file_name)
-    if match and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0:
+    if (re.search(r'svs_slaser(voi)?_dkd2$', seq_file_name)
+        and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0)\
+        or (re.search(r'svs_slaser(voi)?_dkd$', seq_file_name)
+            and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0):
         num_ref = int(xprot[('sSpecPara', 'lAutoRefScanNo')])
         num_dyn = int(xprot[('lAverages',)])
         total_dyn = num_dyn + (num_ref * 4)
         if inst_num <= num_ref:
             # First ecc calibration references
-            return 1, '_ecc'
+            return 1, '_rf_off'
         elif inst_num <= (num_ref * 2):
             # First quantitation calibration references
-            return 2, '_quant'
+            return 2, '_rf_grads_ovs_off'
         elif (total_dyn - (2 * num_ref)) < inst_num <= (total_dyn - num_ref):
             # Second ecc calibration references
-            return 1, '_ecc'
+            return 1, '_rf_off'
         elif (total_dyn - num_ref) < inst_num <= total_dyn:
             # Second quantitation calibration references
-            return 2, '_quant'
+            return 2, '_rf_grads_ovs_off'
+        else:
+            return 0, ''
+    elif (re.search(r'svs_slaser(voi)?_dkd2', seq_file_name)
+            and xprot[('sSpecPara', 'lAutoRefScanMode')] == 2.0):
+        num_ref = int(xprot[('sSpecPara', 'lAutoRefScanNo')])
+        num_dyn = int(xprot[('lAverages',)])
+        total_dyn = num_dyn + (num_ref * 2)
+        if inst_num < num_ref:
+            # First WS and OVS RF off
+            return 1, '_vapor_ovs_rfoff'
+        elif inst_num >= (total_dyn - num_ref):
+            # SecondWS and OVS RF off
+            return 1, '_vapor_ovs_rfoff'
         else:
             return 0, ''
     else:
