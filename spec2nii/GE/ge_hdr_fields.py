@@ -2321,7 +2321,6 @@ def get_pfile_hdr_fields(version):
         plist.append(('pad_xx',                   ct.c_char * 51))
         plist.append(('rhi_image_uid',            ct.c_char * 32))
 
-
     elif version_major in (26, 27, 28, 29, 30):
         plist.append(('rhr_rh_rdbm_rev',           ct.c_float))
         plist.append(('rhr_rdb_hdr_off_data',      ct.c_int))
