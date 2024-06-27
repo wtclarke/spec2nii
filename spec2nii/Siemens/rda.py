@@ -4,7 +4,6 @@ Copyright (C) 2022 University of Oxford
 """
 import re
 from datetime import datetime
-import warnings
 
 import numpy as np
 
@@ -20,7 +19,7 @@ class MRSINotHandledError(Exception):
 
 
 def _locale_float(x):
-    """Handle locale specific flaoting point representations in header
+    """Handle locale specific floating point representations in header
 
     :param x: Header value as string with either . or , decimal separator
     :type x: str
@@ -44,41 +43,78 @@ def convert_rda(rda_path, fname_out, verbose):
 
     with open(rda_path, 'rb') as fp:
         for line in fp:
-            if hdr_st.search(line.decode()):
-                pass
-                # print('header found')
-            elif hdr_end.search(line.decode()):
-                # print('header end')
-                break
-            else:
-                match = hdr_val.search(line.decode())
-                if len(match.groups()) < 2:
-                    hdr[match[1]] = None
+            try:
+                if hdr_st.search(line.decode()):
+                    pass
+                    # print('header found')
+                elif hdr_end.search(line.decode()):
+                    # print('header end')
+                    break
                 else:
-                    hdr[match[1]] = match[2]
+                    match = hdr_val.search(line.decode())
+                    if len(match.groups()) < 2:
+                        hdr[match[1]] = None
+                    else:
+                        hdr[match[1]] = match[2]
+            except UnicodeDecodeError:
+                print('Trying latin-1 encoding.')
+                if hdr_st.search(line.decode('latin-1')):
+                    pass
+                    # print('header found')
+                elif hdr_end.search(line.decode('latin-1')):
+                    # print('header end')
+                    break
+                else:
+                    match = hdr_val.search(line.decode('latin-1'))
+                    if len(match.groups()) < 2:
+                        hdr[match[1]] = None
+                    else:
+                        hdr[match[1]] = match[2]
         if verbose:
             print(hdr)
 
         data = np.fromfile(fp)
 
+    data_cmplx = data[0::2] + 1j * data[1::2]
+
+    # MRSI
     if (int(hdr['CSIMatrixSize[0]'])
             * int(hdr['CSIMatrixSize[1]'])
             * int(hdr['CSIMatrixSize[2]']))\
             > 1:
-        raise MRSINotHandledError('MRSI is currently not handled in the RDA format. Test data needed.')
+        data_cmplx = data_cmplx.reshape((
+            int(hdr['CSIMatrixSize[2]']),
+            int(hdr['CSIMatrixSize[1]']),
+            int(hdr['CSIMatrixSize[0]']),
+            int(hdr['VectorSize'])))
+        data_cmplx = np.moveaxis(data_cmplx, (0, 1, 2), (2, 1, 0))
+        data_shape = data_cmplx.shape[:3]
 
-    data_cmplx = data[0::2] + 1j * data[1::2]
-    data_cmplx = data_cmplx.reshape((1, 1, 1) + data_cmplx.shape)
+        imagePositionPatient = np.asarray([
+            _locale_float(hdr['PositionVector[0]']),
+            _locale_float(hdr['PositionVector[1]']),
+            _locale_float(hdr['PositionVector[2]'])])
+
+        half_shift = True
+    # SVS
+    else:
+        data_cmplx = data_cmplx.reshape((1, 1, 1) + data_cmplx.shape)
+        data_shape = (1, 1, 1)
+
+        try:
+            imagePositionPatient = np.asarray([
+                _locale_float(hdr['VOIPositionSag']),
+                _locale_float(hdr['VOIPositionCor']),
+                _locale_float(hdr['VOIPositionTra'])])
+        except KeyError:
+            imagePositionPatient = np.asarray([
+                _locale_float(hdr['PositionVector[0]']),
+                _locale_float(hdr['PositionVector[1]']),
+                _locale_float(hdr['PositionVector[2]'])])
+
+        half_shift = False
+
     dwelltime = _locale_float(hdr['DwellTime']) / 1E6
-
-    warnings.warn(
-        'The orientation calculations for rda data is mostly untested.'
-        ' Please contribute test data if you can!')
-
-    imagePositionPatient = np.asarray([
-        _locale_float(hdr['PositionVector[0]']),
-        _locale_float(hdr['PositionVector[1]']),
-        _locale_float(hdr['PositionVector[2]'])])
 
     imageOrientationPatient = np.asarray([
         [_locale_float(hdr['RowVector[0]']), _locale_float(hdr['ColumnVector[0]'])],
@@ -93,8 +129,9 @@ def convert_rda(rda_path, fname_out, verbose):
     currNiftiOrientation = dcm_to_nifti_orientation(imageOrientationPatient,
                                                     imagePositionPatient,
                                                     xyzMM,
-                                                    (1, 1, 1),
-                                                    verbose=verbose)
+                                                    data_shape,
+                                                    verbose=verbose,
+                                                    half_shift=half_shift)
 
     meta = extractRdaMetadata(hdr)
     meta.set_standard_def('OriginalFile', [rda_path.name])
@@ -122,13 +159,14 @@ def extractRdaMetadata(hdr):
         hdr['Nucleus'])
 
     # Standard defined metadata
-    def set_standard_def(nifti_mrs_key, location, key, cast=None):
-        if key in location\
-                and location[key] is not None:
+    def set_standard_def(nifti_mrs_key, key, cast=None):
+        if key in hdr\
+                and hdr[key] is not None\
+                and hdr[key]:
             if cast is not None:
-                obj.set_standard_def(nifti_mrs_key, cast(location[key]))
+                obj.set_standard_def(nifti_mrs_key, cast(hdr[key]))
             else:
-                obj.set_standard_def(nifti_mrs_key, location[key])
+                obj.set_standard_def(nifti_mrs_key, hdr[key])
 
     # # 5.1 MRS specific Tags
     # 'EchoTime'
@@ -165,22 +203,22 @@ def extractRdaMetadata(hdr):
 
     # # 5.3 Sequence information
     # 'SequenceName'
-    obj.set_standard_def('SequenceName', hdr['SequenceName'])
+    set_standard_def('SequenceName', 'SequenceName')
     # 'ProtocolName'
-    obj.set_standard_def('ProtocolName', hdr['ProtocolName'])
+    set_standard_def('ProtocolName', 'ProtocolName')
     # # 5.4 Sequence information
     # 'PatientPosition'
-    obj.set_standard_def('PatientPosition', hdr['PatientPosition'])
+    set_standard_def('PatientPosition', 'PatientPosition')
     # 'PatientName'
-    obj.set_standard_def('PatientName', hdr['PatientName'])
+    set_standard_def('PatientName', 'PatientName')
     # 'PatientID'
-    obj.set_standard_def('PatientID', hdr['PatientID'])
+    set_standard_def('PatientID', 'PatientID')
     # 'PatientWeight'
-    obj.set_standard_def('PatientWeight', _locale_float(hdr['PatientWeight']))
+    set_standard_def('PatientWeight', 'PatientWeight', cast=_locale_float)
     # 'PatientDoB'
-    obj.set_standard_def('PatientDoB', hdr['PatientBirthDate'])
+    set_standard_def('PatientDoB', 'PatientBirthDate')
     # 'PatientSex'
-    obj.set_standard_def('PatientSex', hdr['PatientSex'])
+    set_standard_def('PatientSex', 'PatientSex')
 
     # # 5.5 Provenance and conversion metadata
     obj.set_standard_def('ConversionMethod', f'spec2nii v{spec2nii_ver}')

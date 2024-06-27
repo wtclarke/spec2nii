@@ -16,7 +16,8 @@ file_path = Path(__file__).parent
 testdata = {'fida_single': file_path / 'spec2nii_test_data/jmrui/metab_jmrui.txt',
             'txt_multi': file_path / 'spec2nii_test_data/jmrui/basis_woTMS.txt',
             'mrui_single': file_path / 'spec2nii_test_data/jmrui/press2.mrui',
-            'mrui_multi': file_path / 'spec2nii_test_data/jmrui/ALLSIG.mrui'}
+            'mrui_multi': file_path / 'spec2nii_test_data/jmrui/ALLSIG.mrui',
+            'txt_old': file_path / 'spec2nii_test_data/jmrui/P31rest_proc_jmrui.txt'}
 
 
 @pytest.fixture
@@ -104,5 +105,24 @@ def test_jmrui_multi_mrui(affine_file, tmp_path):
     converted = nib.load(tmp_path / 'mrui_multi.nii.gz')
 
     assert converted.shape == (1, 1, 1, 2048, 28)
+    assert np.iscomplexobj(converted.dataobj)
+    assert np.allclose(np.loadtxt(affine_file), converted.affine)
+
+
+def test_jmrui_old(affine_file, tmp_path):
+    """Test the 'jmrui' txt old format with different # signal syntax.
+    Namely, 'Signal number: ' rather than 'Signal')
+    """
+    # Run spec2nii on text
+    subprocess.call(['spec2nii', 'jmrui',
+                     '-f', 'txt_old',
+                     '-o', str(tmp_path),
+                     '-a', affine_file,
+                     '-j', testdata['txt_old']])
+
+    # Load the new nifti file
+    converted = nib.load(tmp_path / 'txt_old.nii.gz')
+
+    assert converted.shape == (1, 1, 1, 2048)
     assert np.iscomplexobj(converted.dataobj)
     assert np.allclose(np.loadtxt(affine_file), converted.affine)

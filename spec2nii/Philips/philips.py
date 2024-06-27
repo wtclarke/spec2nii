@@ -12,6 +12,8 @@ from nifti_mrs.hdr_ext import Hdr_Ext
 from spec2nii.nifti_orientation import NIFTIOrient, calc_affine
 from spec2nii import __version__ as spec2nii_ver
 
+default_tag_order = ['DIM_DYN', 'DIM_EDIT', 'DIM_USER_0']
+
 
 def read_sdat_spar_pair(sdat_file, spar_file, shape=None, tags=None, fileout=None, special=None):
     """Read and convert SPAR/SDAT pairs from Philips scanners
@@ -55,9 +57,19 @@ def read_sdat_spar_pair(sdat_file, spar_file, shape=None, tags=None, fileout=Non
     meta = spar_to_nmrs_hdrext(spar_params)
     meta.set_standard_def('OriginalFile', [sdat_file.name])
 
-    for idx, tag in enumerate(tags):
+    # Sort dimension tags
+    # First ensure user defined tags has length of 3.
+    while len(tags) < 3:
+        tags.append(None)
+
+    # Set user defined tags, or the default if the dimension exists
+    # and is larger than 1
+    for idx, (tag, default) in enumerate(zip(tags, default_tag_order)):
+        npdim = idx + 4
         if tag is not None:
             meta.set_dim_info(idx, tag)
+        elif data.ndim > npdim and data.shape[npdim] > 1:
+            meta.set_dim_info(idx, default)
 
     # Orientation
     if spar_params["volume_selection_enable"] == "yes":

@@ -1,4 +1,4 @@
-'''Reader for GE p-files.
+"""Reader for GE p-files.
 
 This code is taken from the VESPA project https://scion.duhs.duke.edu/vespa/project.
 I therefore include their BSD statement here.
@@ -60,7 +60,7 @@ and as such we have included their BSD statement in this file.
     ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-'''
+"""
 # Python modules
 import math
 import sys
@@ -156,7 +156,7 @@ class Pfile:
                         157276,  # v24 empirical
                         213684,  # 26.002
                         219828,  # 27.000
-                        228020   # 28.003
+                        228020   # 28.003,29.1,30.0
                     ):
                 return True
             else:
@@ -178,42 +178,42 @@ class Pfile:
 
         psd = self.hdr.rhi_psdname.decode('utf-8').lower()
 
-        if psd in ('probe-p', 'probe-s'):
+        # MM: Some 'gaba' psd strings contain full path names, so truncate to the end of the path
+        if psd.endswith('gaba'):
+            psd = 'gaba'
+
+        numecho = self.hdr.rhi_numecho
+
+        if psd in \
+                (
+                    'probe-p',
+                    'probe-s',
+                    'probe-p_ach',       # MM - added for Calgary PROBE-P sequence
+                    'presscsi',
+                    'fidcsi',            # bjs - added for Pom's fidcsi 13C data
+                    'ia/stable/fidcsi',  # bjs - added for Kearny's 13C data
+                    'presscsi_nfl',      # bjs - added for Govind's SVS data off v25
+                    'epsi_3d_24',        # bjs - added for soher check of MIDAS Browndyke data
+                    'fidall'             # WTC - added for JG's Hyperpolarised 13C data
+                ):
             mapper = PfileMapper
-        elif psd in ('oslaser', 'slaser_cni', 'slaser'):
-            mapper = PfileMapperSlaser
-        elif psd == 'presscsi':
-            mapper = PfileMapper
-        elif psd == 'fidcsi':
-            # bjs - added for Pom's fidcsi 13C data
-            mapper = PfileMapper
-        elif psd == 'ia/stable/fidcsi':
-            # bjs - added for Kearny's 13C data
-            mapper = PfileMapper
-        elif psd == 'presscsi_nfl':
-            # bjs - added for Govind's SVS data off v25
-            mapper = PfileMapper
-        elif psd == 'epsi_3d_24':
-            # bjs - added for soher check of MIDAS Browndyke data
-            mapper = PfileMapper
-        elif psd == 'gaba':
-            # wtc - added for Nottingham MEGA-PRESS sequence.
-            mapper = PfileMapperGaba
-        elif psd == 'hbcd':
-            # ATG - added HBCD - reuse GABA mapper
+        elif psd in ('oslaser', 'slaser_cni', 'slaser') and numecho == 1:
+            mapper = PfileMapperSlaser  # MM: If non-edited data, use PfileMapperSlaser
+        elif psd == 'oslaser' and numecho > 1:
+            mapper = PfileMapperGaba  # MM: If edited data, use PfileMapperGaba
+        elif psd in \
+                (
+                    'jpress',            # wtc - added for J-edited data.
+                    'jpress_ac',         # ARC - added for Bergen jpress patch
+                    'gaba',              # wtc - added for Nottingham MEGA-PRESS sequence
+                    'hbcd',              # ATG - added HBCD - reuse GABA mapper
+                    'probe-p-mega_rml',  # MM - added for Calgary MEGA-PRESS sequence
+                    'repress7'           # MM - added for old CUBRIC data
+                ):
             mapper = PfileMapperGaba
         elif psd == 'probe-sl':
-            # wtc - added for CSI sequence from Manchester.
+            # wtc - added for CSI sequence from Manchester
             mapper = PfileMapperProbeSL
-        elif 'jpress_ac' in psd:
-            # ARC : Added for Bergen jpress patch
-            mapper = PfileMapperGaba
-        elif psd == 'jpress':
-            # wtc - Added for HURCULES data.
-            mapper = PfileMapperGaba
-        elif psd == 'fidall':
-            # WTC - added for JG's Hyperpolarised 13C data
-            mapper = PfileMapper
         else:
             raise UnknownPfile("No Pfile mapper for pulse sequence = %s" % psd)
 
@@ -311,14 +311,16 @@ class Pfile:
         known_revisions = \
             [
                 7, 8, 9, 10, 11,
-                14.0, 14.1, 14.2,
+                14.0, 14.1, 14.2, 14.3,
                 15.000, 15.001, 16.000,
                 20.001, 20.002, 20.003, 20.004, 20.005, 20.006, 20.007,
                 24.000,
                 25.001, 25.002, 25.003, 25.004,
                 26.000, 26.001, 26.002,
                 27.000, 27.001,
-                28.000, 28.002, 28.003
+                28.000, 28.002, 28.003,
+                29.1,
+                30.0
             ]
 
         # Note that caution is needed for float comparisons, given the
@@ -709,7 +711,7 @@ class PfileMapper:
 
     @property
     def get_frequency_offset(self):
-        """ Returns the spectral frquency offset """
+        """ Returns the spectral frequency offset """
         if self.version > 9:
             return 0.0
         else:
@@ -823,8 +825,8 @@ class PfileMapper:
     def get_num_kspace_points(self):
         """
         Determine the number of sampled k-space points in the data set.
-        This may differ from the number of voxels in the rectalinear grid,
-        for example if elliptical or another non rectangular acquisition
+        This may differ from the number of voxels in the rectilinear grid,
+        for example if elliptical or another non-rectangular acquisition
         sampling strategy was employed.  GE product sequences pad the
         reduced k-space data with zeros so the number of k-space points
         is the same as the number of voxels, but that may not be true for
@@ -1077,7 +1079,7 @@ class PfileMapper:
         self.raw_data = data
 
         #  Modify the data loading behavior.  For single voxel multi-acq data
-        #  this means return the averaged (suppresssed data, if applicable).
+        #  this means return the averaged (suppressed data, if applicable).
 
         numUnsuppressed = self.get_number_unsuppressed_acquisitions
         numSuppressed   = self.get_number_suppressed_acquisitions
@@ -1184,10 +1186,10 @@ class PfileMapperGaba(PfileMapper):
 
         Without some more knowledgeable input I can't currently square the logic
         of BJS's mapper classes with the logic from Gannet/Osprey etc.
-        Therefore this is really a hack that uses the PfileMapper orientation logic
+        Therefore, this is really a hack that uses the PfileMapper orientation logic
         but otherwise uses the logic from Gannet/Osprey.
 
-        Thus most work is done in the overloaded read_data method and functions like
+        Thus, most work is done in the overloaded read_data method and functions like
         get_num_voxels_in_vol are currently meaningless. I would like to square both
         methods in the future.
         """
@@ -1197,8 +1199,8 @@ class PfileMapperGaba(PfileMapper):
         """Function that contains all the data loading logic for the 'gaba'
         sequence.
 
-        This is currently  a reimplementation of the Gannert/Osprey GELoad.m
-        function. Therefore the logic is unlike the other mappers.
+        This is currently a reimplementation of the Gannet/Osprey GELoad.m
+        function. Therefore, the logic is unlike the other mappers.
         The suppressed and unsuppressed data can be fetched from the raw_suppressed
         and raw_unsuppressed property.
         """
@@ -1209,16 +1211,19 @@ class PfileMapperGaba(PfileMapper):
         npoints = self.hdr.rhr_rh_da_xres
         nrows = self.hdr.rhr_rh_da_yres
 
-        dataframes = self.hdr.rhi_user4 / nex
-        refframes = self.hdr.rhi_user19
+        dataframes = self.hdr.rhr_rh_user4 / nex
+        refframes = int(self.hdr.rhr_rh_user19)
 
         nreceivers = self.get_num_coils
-        dataWordSize    = self.hdr.rhr_rh_point_size
+        dataWordSize = self.hdr.rhr_rh_point_size
+
+        # MM: CV24 is a control variable (CV) that defines several advanced options not stored in the other CVs
+        cv24 = self.hdr.rhi_user24
 
         # Check if single voxel
         numVoxels = self.get_num_voxels
         self.is_svs = False
-        if (numVoxels[0] * numVoxels[1] * numVoxels[2] == 1):
+        if numVoxels[0] * numVoxels[1] * numVoxels[2] == 1:
             self.is_svs = True
 
         # Data loading
@@ -1244,18 +1249,17 @@ class PfileMapperGaba(PfileMapper):
         tempData = tempData.view(np.complex64)
 
         if nechoes == 1:
-            tempData = tempData.reshape((1, 1, 1, nreceivers, totalframes, npoints))
-            self.raw_data = np.swapaxes(tempData, -1, -3)
-
-            if (dataframes + refframes) != nframes:
+            if int(dataframes + refframes) != nframes:
                 mult = 1
                 dataframes *= nex
                 refframes = int(nframes - dataframes)
             else:
-                mult = 1.0 / nex
+                mult = 1 / nex
 
-            self.raw_unsuppressed = self.raw_data[:, :, :, :, 1:(refframes + 1), :]
-            self.raw_suppressed   = self.raw_data[:, :, :, :, (refframes + 1):, :]
+            tempData = tempData.reshape((1, 1, 1, nreceivers, totalframes, npoints))
+            self.raw_data = np.swapaxes(tempData, -1, -3)
+            self.raw_unsuppressed = self.raw_data[:, :, :, :, 1:(refframes + 1), :] * mult
+            self.raw_suppressed = self.raw_data[:, :, :, :, (refframes + 1):, :] * mult / 2
 
         else:
             if int(dataframes + refframes) != nframes:
@@ -1265,7 +1269,11 @@ class PfileMapperGaba(PfileMapper):
                 dataframes *= nex
                 refframes = nframes - dataframes
             else:
-                mult = nex / 2
+                # MM: Change mult to match latest code in Gannet (2020)
+                # Previous factors:
+                #   mult: 1 (RTN 2017), nex / 2 (RTN 2016)
+                #   multw: 1 / nex (RTN 2017), 1 (RTN 2016)
+                mult = 1 / nex
                 multw = 1
                 noadd = 0
 
@@ -1279,7 +1287,11 @@ class PfileMapperGaba(PfileMapper):
             X1, X2 = np.meshgrid(np.arange(refframes), np.arange(nechoes))
             X1 = X1.T.ravel()
             X2 = X2.T.ravel()
-            Y1 = (-1)**(noadd * X1)
+            # Do not apply any phase cycling correction if the receiver phase toggle in sLASER was set
+            if cv24 >= 16384:
+                Y1 = np.ones_like(X1)
+            else:
+                Y1 = (-1) ** (noadd * X1)
             Y1 = np.moveaxis(np.broadcast_to(Y1, (1, 1, 1, npoints, nreceivers, Y1.size)), -1, -2)
             Y2 = (1 + (totalframes / nechoes) * X2 + X1).astype(int)
 
@@ -1288,17 +1300,35 @@ class PfileMapperGaba(PfileMapper):
             X1, X2 = np.meshgrid(np.arange(dataframes), np.arange(nechoes))
             X1 = X1.T.ravel()
             X2 = X2.T.ravel()
-            Y1 = (-1)**(noadd * X1)
+            # Do not apply any phase cycling correction if the receiver phase toggle in sLASER was set
+            if cv24 >= 16384:
+                Y1 = np.ones_like(X1)
+            else:
+                Y1 = (-1) ** (noadd * X1)
             Y1 = np.moveaxis(np.broadcast_to(Y1, (1, 1, 1, npoints, nreceivers, Y1.size)), -1, -2)
             Y2 = (1 + refframes + (totalframes / nechoes) * X2 + X1).astype(int)
 
             self.raw_suppressed = self.raw_data[:, :, :, :, Y2, :] * Y1 * mult
 
+        # Test if this is the case of the jpress like sequence being used for a non-editing condition
+        edit_waveform = self.hdr.rhi_user19
+        if nechoes == 1 and edit_waveform == 0:
+            # Editing conditions = 1 and there is no editing waveform
+            self.raw_suppressed[:, :, :, :, 0::2, :] *= np.exp(1j * np.pi)
+            self.raw_unsuppressed[:, :, :, :, 0::2, :] *= np.exp(1j * np.pi)
+
+            # Rearrange axes to (x, y, z, t, coils, dynamics)
+            self.raw_suppressed = np.moveaxis(self.raw_suppressed, (4, 5), (5, 4))
+            self.raw_unsuppressed = np.moveaxis(self.raw_unsuppressed, (4, 5), (5, 4))
+        else:
+            # Editing condition, update nechoes if needed for special cases like probe-p-mega_rml
+            if nechoes == 1:
+                nechoes = 2
+
             # Up to this point we have simply replicated the logic of the GELoad function.
-            # Now reorganise dimensions to give a editing dimension.
+            # Now reorganise dimensions to give an editing dimension.
             # This means that this is done in a not particularly clear order, but it enables testing against
             # the matlab code.
-
             reorg_suppressed = []
             reorg_unsuppressed = []
             for ne in range(nechoes):
@@ -1306,9 +1336,9 @@ class PfileMapperGaba(PfileMapper):
                 reorg_unsuppressed.append(self.raw_unsuppressed[:, :, :, :, ne::nechoes, :])
 
             reorg_suppressed = np.stack(reorg_suppressed, axis=-1)
-            # Rearange axes to (x, y, z, t, coils, dynamics, edit)
+            # Rearrange axes to (x, y, z, t, coils, dynamics, edit)
             self.raw_suppressed = np.moveaxis(reorg_suppressed, (4, 5), (5, 4))
 
             reorg_unsuppressed = np.stack(reorg_unsuppressed, axis=-1)
-            # Rearange axes to (x, y, z, t, coils, dynamics, edit)
+            # Rearrange axes to (x, y, z, t, coils, dynamics, edit)
             self.raw_unsuppressed = np.moveaxis(reorg_unsuppressed, (4, 5), (5, 4))

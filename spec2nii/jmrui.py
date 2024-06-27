@@ -246,7 +246,7 @@ def readjMRUItxt(filename):
         Header information
 
     """
-    signalRe = re.compile(r'Signal (\d{1,}) out of (\d{1,}) in file')
+    signalRe = re.compile(r'Signal (?:number: |)(\d{1,}) out of (\d{1,}) in file')
     headerRe = re.compile(r'(\w*):(.*)')
     header = {}
     data   = []

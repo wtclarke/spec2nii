@@ -1,5 +1,34 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.7.4 (Thursday 18th April 2024)
+--------------------------------
+- Refinements and improvements to the GE SVS pipeline from Mark Mikkelsen.
+- Add support for older jMRUI text formats which have a slightly different syntax. With thanks to Donnie Cameron.
+- Handle odd case of XA like .twix headers in a VX baseline scan
+- Improved (and validated) handling of Dinesh Deelchand's slaser sequences with integrated references (`svs_slaser(voi)_dkd(2)`)
+
+0.7.3 (Tuesday 12th March 2024)
+-------------------------------
+- Siemens .rda format now had corrected and validated orientations (tested on VE11 baseline).
+- Siemens .rda format now handles MRSI/CSI data and matches DICOM output. Validated on VE11 baseline data.
+- Fixes in Siemens Twix special case for universal editing sequence (HERMES conditions).
+- Added handling of custom Bruker sequences `mt_sLASER`, `mt_MEGA_sLASER_V35` and `cl_STELASER_PA360_b`.
+- Philips vendor MEGA-PRESS handled through DICOM pathway. Thanks to Sandeep Ganji and Yansong Zhao for their help.
+
+0.7.2 (Thursday 7th December 2023)
+----------------------------------
+- SpectralWidth now added to header extension automatically to match bids specification.
+- NIfTI-MRS V0.8 now generated.
+- Better handling of philips spar/sdat tags and singleton dimensions.
+- Fixed bug where no name was set when a mixed folder of imaging and spectroscopy dicom was provided.
+
+0.7.1 (Tuesday 7th November 2023)
+---------------------------------
+- The --anon flag can be passed with any call to anonymise after writing files.
+- The Siemens enhanced dicom filetype pathway now handles CSI data.
+- Fixed issue with RDA files having latin1 encoding. Thanks to gaunab on github. Fixes Issue #96.
+- Now support GE p-files up to version 30.0.
+
 0.7.0 (Saturday 5th August 2023)
 --------------------------------
 - Fixed a bug in Philips Classic DICOM orientations (supplementing the fixes to Enhanced DICOM in `0.6.11`)
@@ -27,7 +56,7 @@ This document contains the Spec2nii release history in reverse chronological ord
 ---------------------------------
 - Added handling for the GE jpress sequence (for JH HURCULES sequence)
 - Added twix handling of the HYPER (smm_svs_herc_hyper) sequence (added by Aaron Gudmundson)
-- Better handling of partial acqusitions of Siemens and Philips HYPER sequence.
+- Better handling of partial acquisitions of Siemens and Philips HYPER sequence.
 
 0.6.7 (Wednesday 15th March 2023)
 ---------------------------------
@@ -63,7 +92,7 @@ This document contains the Spec2nii release history in reverse chronological ord
 - SPAR/SDAT pipeline now handles HYPER special case.
 - Data/list pipeline now handles HYPER special case.
 - Fixed issue with XA Twix PatientSex and TxOffset attributes.
-- Reenable Bruker conversion. 
+- Re-enable Bruker conversion.
 
 0.6.0 (Wednesday 11th January 2023)
 -----------------------------------

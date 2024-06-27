@@ -11,9 +11,9 @@ import sys
 import os.path as op
 from pathlib import Path
 import json
-
 from nibabel.nifti2 import Nifti2Image
 from spec2nii import __version__ as spec2nii_ver
+from numpy import isclose
 # There are case specific imports below
 
 
@@ -47,7 +47,12 @@ class spec2nii:
                                    help="Override SpectrometerFrequency field with input(s). Input in MHz.")
             subparser.add_argument("--override_dwelltime", type=float,
                                    help="Override dwell time field with input. Input in seconds.")
+            subparser.add_argument(
+                '--anon',
+                action='store_true',
+                help="Create file without sensitive metadata. For greater control use spec2nii anon.")
             subparser.add_argument('--verbose', action='store_true')
+
             return subparser
 
         # Auto subcommand - heuristic ID of file type
@@ -75,8 +80,13 @@ class spec2nii:
         # Handle dicom subcommand
         parser_dicom = subparsers.add_parser('dicom', help='Convert from Siemens DICOM format.')
         parser_dicom.add_argument('file', help='file or directory to convert', type=str)
-        parser_dicom.add_argument("-t", "--tag", type=str, help="Specify NIfTI MRS tag used for 5th "
-                                                                "dimension if multiple files are passed.")
+        parser_dicom.add_argument(
+            "-t",
+            "--tag",
+            type=str,
+            default='DIM_DYN',
+            help="Specify NIfTI MRS tag used for 5th dimension if multiple files are passed. "
+                 "Defaults to DIM_DYN.")
         parser_dicom.add_argument('--voi', action='store_true', help='Output VOI as single voxel NIfTI mask.')
         parser_dicom = add_common_parameters(parser_dicom)
         parser_dicom.set_defaults(func=self.dicom)
@@ -103,8 +113,10 @@ class spec2nii:
             "-t", "--tags",
             type=str,
             nargs='+',
-            default=["DIM_DYN", None, None],
-            help="Specify NIfTI MRS tags used for higher (5th-7th) dimensions.")
+            default=[None, None, None],
+            help="Specify NIfTI MRS tags used for higher (5th-7th) dimensions. "
+                 "Defaults to DIM_DYN if more than one spectrum is present. "
+                 "Can be used to create singleton higher dimensions.")
         parser_philips.add_argument(
             "-s", "--shape",
             type=int,
@@ -234,7 +246,8 @@ class spec2nii:
                                  nifti1=False,
                                  override_nucleus=None,
                                  override_frequency=None,
-                                 override_dwelltime=None)
+                                 override_dwelltime=None,
+                                 anon=False)
 
         parser_dump = subparsers.add_parser('dump', help='Dump contents of headers from existing NIfTI-MRS file.')
         parser_dump.add_argument('file', help='NIfTI-MRS file', type=Path)
@@ -264,7 +277,8 @@ class spec2nii:
                                    override_nucleus=None,
                                    override_frequency=None,
                                    override_dwelltime=None,
-                                   verbose=False)
+                                   verbose=False,
+                                   anon=False)
 
         if len(sys.argv) == 1:
             parser.print_usage(sys.stderr)
@@ -284,6 +298,14 @@ class spec2nii:
 
         if self.imageOut:
             self.implement_overrides(args)
+
+            self.insert_spectralwidth()
+
+            if args.anon:
+                from spec2nii.anonymise import anon_nifti_mrs
+                for idx, nifti_mrs_img in enumerate(self.imageOut):
+                    self.imageOut[idx] = anon_nifti_mrs(nifti_mrs_img, verbose=args.verbose)
+
             self.validate_output()
             self.write_output(args.json, args.nifti1)
             self.validate_write(args.verbose)
@@ -312,6 +334,19 @@ class spec2nii:
                 new_ext = Nifti1Extension(44, json_s.encode('UTF-8'))
                 nifti_mrs_img.header.extensions.clear()
                 nifti_mrs_img.header.extensions.append(new_ext)
+
+    def insert_spectralwidth(self):
+        """Ensure that the correct spectral width is inserted into the header extension"""
+        for nifti_mrs_img in self.imageOut:
+            if 'SpectralWidth' in nifti_mrs_img.hdr_ext\
+                    and not isclose(
+                        nifti_mrs_img.hdr_ext['SpectralWidth'],
+                        1 / nifti_mrs_img.dwelltime,
+                        atol=1E-2):
+                nifti_mrs_img.remove_hdr_field('SpectralWidth')
+                nifti_mrs_img.add_hdr_field('SpectralWidth', 1 / nifti_mrs_img.dwelltime)
+            else:
+                nifti_mrs_img.add_hdr_field('SpectralWidth', 1 / nifti_mrs_img.dwelltime)
 
     def validate_output(self):
         """Run NIfTI MRS validation on output."""
@@ -412,7 +447,7 @@ class spec2nii:
             setattr(args, 'special', None)
             self.philips(args)
 
-        # Philips DATA/LIST - Reject bcause of unknown aux file format.
+        # Philips DATA/LIST - Reject because of unknown aux file format.
         elif args.file.suffix.lower() in ('.data', '.list'):
             raise Spec2niiError(
                 'Automatic conversion not setup for data/list conversion. '
@@ -450,7 +485,7 @@ class spec2nii:
                     self.philips_dicom(args)
                 else:
                     raise Spec2niiError(f'Unknown DICOM manufacturer {manufacturer}.')
-            # No sucessful ID as DICOM - fail at automatic load.
+            # No successful ID as DICOM - fail at automatic load.
             except pdcm.errors.InvalidDicomError:
                 raise Spec2niiError(
                     'Unable to automatically identify file type. '
@@ -590,7 +625,7 @@ class spec2nii:
         """Philips DICOM format handler."""
         from warnings import warn
         from spec2nii.Philips.philips_dcm import multi_file_dicom
-        warn('This Philips DICOM conversion routine is experimental and poorly tested.'
+        warn('This Philips DICOM conversion routine has limited testing outside vendor PRESS and MEGA sequences.'
              ' Please get in contact with test data to help improve it.')
         path_in = Path(args.file)
         if path_in.is_dir():
@@ -641,8 +676,8 @@ class spec2nii:
 
     # Anonymise function
     def anon(self, args):
-        from spec2nii.anonymise import anon_nifti_mrs
-        self.imageOut, self.fileoutNames = anon_nifti_mrs(args)
+        from spec2nii.anonymise import anon_file
+        self.imageOut, self.fileoutNames = anon_file(args)
 
     # Dump function
     @staticmethod

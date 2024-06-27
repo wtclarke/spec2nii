@@ -13,17 +13,18 @@ from nifti_mrs.nifti_mrs import NIFTI_MRS
 from nifti_mrs.hdr_ext import Hdr_Ext
 
 
-def anon_nifti_mrs(args):
-    """Function for anonymising input NIfTI-MRS files.
+def anon_nifti_mrs(nifti_mrs_img, extra_keys=None, verbose=False):
+    """Function for anonymising an existing nifti-mrs object
 
-    :param args: Command line arguments parsed in spec2nii.py
-    :return: List of anonymised images
-    :rtype: [nib.nifti2.Nifti2Image,]
-    :return: List of output names
-    :rtype: [str,]
+    :param nifti_mrs_img: NIfTI-MRS object to anonymise
+    :type nifti_mrs_img: nifti_mrs.nifti_mrs.NIFTI_MRS
+    :param extra_keys: List of keys to explicitly remove, defaults to None
+    :type extra_keys: List, optional
+    :param verbose: Print verbose output, defaults to False
+    :type verbose: bool, optional
+    :return: Anonymised NIfTI-MRS object
+    :rtype: nifti_mrs.nifti_mrs.NIFTI_MRS
     """
-    # Load data
-    nifti_mrs_img = NIFTI_MRS(args.file)
 
     # Extract header extension
     hdr_ext = nifti_mrs_img.hdr_ext.to_dict()
@@ -38,8 +39,8 @@ def anon_nifti_mrs(args):
         removed = {}
         for key, value in in_dict.items():
             # Explicitly set on command line
-            if args.remove\
-                    and key in args.remove:
+            if extra_keys\
+                    and key in extra_keys:
                 removed.update({key: value})
             # Standard defined
             elif key in standard_defined:
@@ -65,7 +66,7 @@ def anon_nifti_mrs(args):
 
     anon_hdr, removed_dict = iter_json(hdr_ext)
 
-    if args.verbose:
+    if verbose:
         pp = pprint.PrettyPrinter(indent=4)
         print('\nThe following keys were removed:')
         pp.pprint(removed_dict)
@@ -73,11 +74,22 @@ def anon_nifti_mrs(args):
         pp.pprint(anon_hdr)
 
     # Make new NIfTI-MRS image
-    anon_out = gen_nifti_mrs_hdr_ext(
+    return gen_nifti_mrs_hdr_ext(
         nifti_mrs_img[:],
         nifti_mrs_img.dwelltime,
         Hdr_Ext.from_header_ext(anon_hdr),
         affine=nifti_mrs_img.getAffine('voxel', 'world'))
+
+
+def anon_file(args):
+    """Function for anonymising NIfTI-MRS files stored on drive.
+
+    :param args: Command line arguments parsed in spec2nii.py
+    :return: List of anonymised images
+    :rtype: [nib.nifti2.Nifti2Image,]
+    :return: List of output names
+    :rtype: [str,]
+    """
 
     # Process output name.
     if args.fileout:
@@ -85,4 +97,8 @@ def anon_nifti_mrs(args):
     else:
         fname_out = [args.file.with_suffix('').with_suffix('').name, ]
 
-    return [anon_out, ], fname_out
+    return [
+        anon_nifti_mrs(
+            NIFTI_MRS(args.file),
+            verbose=args.verbose,
+            extra_keys=args.remove), ], fname_out

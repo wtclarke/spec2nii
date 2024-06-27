@@ -305,7 +305,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
 
     # AG 03/22/2023 Moved the NIFTI/Out lists and if statement up to work with new Hyper function below.
     # AG 03/22/2023 Create Lists for assembled data - Starts with XA reference..
-    nifit_mrs_out = []
+    nifti_mrs_out = []
     filename_out  = []
 
     if xa_ref_scans is not None:
@@ -319,7 +319,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
         meta_obj_ref = extractTwixMetadata(twixObj['hdr'], basename(twixObj[dataKey].filename))
         meta_obj_ref.set_standard_def('WaterSuppressed', True)
 
-        nifit_mrs_out.append(
+        nifti_mrs_out.append(
             assemble_nifti_mrs(
                 xa_ref_scans.reshape(newshape),
                 dwellTime,
@@ -395,19 +395,37 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
 
             if reord_data_.ndim <= 4:                                                       # 4 or less Dims
                 newshape  = (1, 1, 1) + reord_data_.shape                                   # Pad 3 singleton dims
-                nifit_mrs_out.append(assemble_nifti_mrs(reord_data_.reshape(newshape),
+                nifti_mrs_out.append(assemble_nifti_mrs(reord_data_.reshape(newshape),
                                                         dwellTime,
                                                         orientation,
                                                         meta_obj_))
                 filename_out.append(f'{mainStr}_{hyp_suffix[ii]}')
 
-        return nifit_mrs_out, filename_out
+        return nifti_mrs_out, filename_out
 
     # HERCULES Data
     elif (xa_or_vx(twixObj['hdr']) == 'xa' and 'smm_svs_herc' in twixObj['hdr']['Meas'][('tSequenceFileName')]):
         from spec2nii.Siemens.twix_special_case import mgs_svs_ed_twix
         reord_data, meta_obj, dim_tags = mgs_svs_ed_twix(twixObj, reord_data, meta_obj, dim_tags)
 
+    elif re.search(
+            r'svs_slaser(voi)?_dkd',
+            twixObj['hdr']['Meas'][('tSequenceFileName')],
+            re.IGNORECASE):
+        from spec2nii.Siemens.twix_special_case import slaser_dkd
+        for data, meta, name in slaser_dkd(twixObj, reord_data, meta_obj, dim_tags):
+
+            nifti_mrs_out.append(
+                gen_nifti_mrs_hdr_ext(
+                    data,
+                    dwellTime,
+                    meta,
+                    orientation.Q44,
+                    no_conj=True))
+
+            filename_out.append(f'{mainStr}{name}')
+
+        return nifti_mrs_out, filename_out
     else:
         # Set dim tags in meta now as no additional info
         for idx, dt in enumerate(dim_tags):
@@ -417,7 +435,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
         # Pad with three singleton dimensions (x,y,z)
         newshape = (1, 1, 1) + reord_data.shape
 
-        nifit_mrs_out.append(assemble_nifti_mrs(reord_data.reshape(newshape),
+        nifti_mrs_out.append(assemble_nifti_mrs(reord_data.reshape(newshape),
                                                 dwellTime,
                                                 orientation,
                                                 meta_obj))
@@ -432,7 +450,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
             # Pad with three singleton dimensions (x,y,z)
             newshape = (1, 1, 1) + reord_data[modIndex].shape
 
-            nifit_mrs_out.append(
+            nifti_mrs_out.append(
                 assemble_nifti_mrs(reord_data[modIndex].reshape(newshape),
                                    dwellTime,
                                    orientation,
@@ -446,7 +464,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
 
             filename_out.append(out_name)
 
-    return nifit_mrs_out, filename_out
+    return nifti_mrs_out, filename_out
 
 
 def process_fid(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_os, quiet=False, verbose=False):
@@ -580,13 +598,13 @@ def process_fid(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
     reord_data = np.moveaxis(squeezedData, original, new)
 
     # Now assemble data
-    nifit_mrs_out = []
+    nifti_mrs_out = []
     filename_out = []
     if reord_data.ndim <= 4:
         # Pad with three singleton dimensions (x,y,z)
         newshape = (1, 1, 1) + reord_data.shape
 
-        nifit_mrs_out.append(assemble_nifti_mrs(reord_data.reshape(newshape),
+        nifti_mrs_out.append(assemble_nifti_mrs(reord_data.reshape(newshape),
                                                 dwellTime,
                                                 orientation,
                                                 meta_obj,
@@ -602,7 +620,7 @@ def process_fid(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
             # Pad with three singleton dimensions (x,y,z)
             newshape = (1, 1, 1) + reord_data[modIndex].shape
 
-            nifit_mrs_out.append(
+            nifti_mrs_out.append(
                 assemble_nifti_mrs(reord_data[modIndex].reshape(newshape),
                                    dwellTime,
                                    orientation,
@@ -628,7 +646,7 @@ def process_fid(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
         meta_obj_ref = extractTwixMetadata(twixObj['hdr'], basename(twixObj[dataKey].filename))
         meta_obj_ref.set_standard_def('WaterSuppressed', True)
 
-        nifit_mrs_out.append(
+        nifti_mrs_out.append(
             assemble_nifti_mrs(
                 xa_ref_scans.reshape(newshape),
                 dwellTime,
@@ -638,7 +656,7 @@ def process_fid(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
 
         filename_out.append(mainStr + '_ref')
 
-    return nifit_mrs_out, filename_out
+    return nifti_mrs_out, filename_out
 
 
 def assemble_nifti_mrs(data, dwellTime, orientation, meta_obj, dim_tags=None):
@@ -825,7 +843,7 @@ def CSIOrientations(slice_normal, ip_rot, fov_pe, fov_ro, fov_sl, n_pe, n_ro, n_
         base_pos -= slice_normal * (fov_sl / 2 - fov_sl / n_sl / 2)
         fov_sl /= n_sl
 
-    # Sagital
+    # Sagittal
     if mo_case == 0:
         print('Mirror along ROW/readout direction: VB = LIN, VE+ = SEG')
         dRowVec_vector *= -1.0
@@ -880,7 +898,17 @@ def examineTwix(twixObj, fileName, mraid):
 def extractTwixMetadata(mapVBVDHdr, original_file):
     """Pass to appropriate extractTwixMetadata function for software version."""
     if xa_or_vx(mapVBVDHdr) == 'vx':
-        return extractTwixMetadata_vx(mapVBVDHdr, original_file)
+        try:
+            return extractTwixMetadata_vx(mapVBVDHdr, original_file)
+        except KeyError as original_err:
+            try:
+                print(f'VX-line scanner headers caused KeyError {original_err}.')
+                print('Trying XA interpreter. ')
+                return extractTwixMetadata_xa(mapVBVDHdr, original_file)
+            except Exception as backup_err:
+                print(f'XA interpreter failed with reason {backup_err}. Raising original error.')
+                raise original_err
+
     elif xa_or_vx(mapVBVDHdr) == 'xa':
         return extractTwixMetadata_xa(mapVBVDHdr, original_file)
 

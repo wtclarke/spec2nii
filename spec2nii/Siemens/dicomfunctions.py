@@ -48,7 +48,7 @@ def xa_or_vx(img):
         if img.dcm_data.SOPClassUID == '1.2.840.10008.5.1.4.1.1.4':
             raise IncompatibleSOPClassUID(
                 f'spec2nii detected SOPClassUID {img.dcm_data.SOPClassUID}.'
-                ' This normaly contains MR imaging (not spectroscopy) data.'
+                ' This normally contains MR imaging (not spectroscopy) data.'
                 ' This data was collected on a'
                 f' {img.dcm_data.SoftwareVersions} baseline scanner.'
                 ' spec2nii is tested on VA-VE, XA20, and XA30 DICOM files.')
@@ -91,6 +91,7 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
     reference = []
     str_suffix = []
     mainStr = ''
+    first_mrs_dcm_found = False
     for idx, fn in enumerate(files_in):
         if verbose:
             print(f'Converting dicom file {fn}')
@@ -129,7 +130,8 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         reference.append(ref_ind)
         str_suffix.append(str_suf)
 
-        if idx == 0:
+        if not first_mrs_dcm_found:
+            first_mrs_dcm_found = True
             if fname_out:
                 mainStr = fname_out
             elif 'SeriesDescription' in img.dcm_data:
@@ -241,6 +243,25 @@ def process_siemens_svs(img, verbose):
         return process_siemens_svs_xa(img, verbose)
 
 
+def _get_enhanced_dcm_img_orientation_pat(img):
+    """Extract the image orientation patient field from an enhanced dicom scan
+
+    :param img: DICOM image object
+    :type img: nibabel.nicom.dicomwrappers.SiemensWrapper
+    :return: 3x2 Numpy array containing the orientation info
+    :rtype: np.ndarray
+    """
+    dcm_hdrs = img.dcm_data.PerFrameFunctionalGroupsSequence[0]
+    dcm_hdrs1 = img.dcm_data.SharedFunctionalGroupsSequence[0]
+    # 1) Extract dicom parameters
+    try:
+        return np.array(dcm_hdrs.PlaneOrientationSequence[0].ImageOrientationPatient).reshape(2, 3)
+    except AttributeError:
+        # For VB19 data formatted as MRSpectroscopyStorage this seems to be different to
+        # the XA data I've seen. But this could also be a sequence specific thing!
+        return np.array(dcm_hdrs1.PlaneOrientationSequence[0].ImageOrientationPatient).reshape(2, 3)
+
+
 def process_siemens_svs_xa(img, verbose):
     """Process Siemens DICOM SVS data acquired on a NumarisX system."""
     specData = np.frombuffer(img.dcm_data[('5600', '0020')].value, dtype=np.single)
@@ -250,13 +271,7 @@ def process_siemens_svs_xa(img, verbose):
     dcm_hdrs = img.dcm_data.PerFrameFunctionalGroupsSequence[0]
     dcm_hdrs1 = img.dcm_data.SharedFunctionalGroupsSequence[0]
     # 1) Extract dicom parameters
-    try:
-        imageOrientationPatient = np.array(dcm_hdrs.PlaneOrientationSequence[0].ImageOrientationPatient).reshape(2, 3)
-    except AttributeError:
-        # For VB19 data formatted as MRSpectroscopyStorage this seems to be different to
-        # the XA data I've seen. But this could also be a sequence specific thing!
-        imageOrientationPatient = np.array(dcm_hdrs1.PlaneOrientationSequence[0].ImageOrientationPatient).reshape(2, 3)
-    # VoiPosition - this does not have the FOV shift that imagePositionPatient has
+    imageOrientationPatient = _get_enhanced_dcm_img_orientation_pat(img)
     imagePositionPatient = dcm_hdrs.PlanePositionSequence[0].ImagePositionPatient
 
     # The first two elements could easily be the reverse of this.
@@ -309,9 +324,55 @@ def process_siemens_csi(img, verbose):
 
 
 def process_siemens_csi_xa(img, verbose):
-    """Process Siemens DICOM CSI data acquired on a NumarisX system."""
-    # NOTE: WTC expect to need to reverse the phase convention as above for svs.
-    raise NotImplementedError('Method process_siemens_csi_xa not implemented, example data needed!')
+    """Process Siemens DICOM CSI data acquired on a NumarisX system or Numaris4 Vx using enhanced DCM export"""
+
+    warnings.warn(
+        'The orientation of CSI stored in enhanced DICOM remains weakly tested.'
+        'Please provide more test data.')
+
+    specData = np.frombuffer(img.dcm_data[('5600', '0020')].value, dtype=np.single)
+    # It appears the phase convention is reversed in the NumarisX systems.
+    specDataCmplx = specData[0::2] - 1j * specData[1::2]
+
+    # The data in img.dcm_data.SharedFunctionalGroupsSequence[0].MRSpectroscopyFOVGeometrySequence[0]
+    # is the uninterpolated (lower) resolution that doesn't match the data size
+    rows = img.dcm_data.Rows
+    cols = img.dcm_data.Columns
+    slices = int(img.dcm_data.NumberOfFrames)
+    spectral_points = img.dcm_data.DataPointColumns
+
+    specDataCmplx = specDataCmplx.reshape((slices, rows, cols, spectral_points))
+    specDataCmplx = np.moveaxis(specDataCmplx, (0, 1, 2), (2, 1, 0))
+
+    dcm_hdrs = img.dcm_data.PerFrameFunctionalGroupsSequence[0]
+    dcm_hdrs1 = img.dcm_data.SharedFunctionalGroupsSequence[0]
+
+    # 1) Extract dicom parameters
+    imageOrientationPatient = _get_enhanced_dcm_img_orientation_pat(img)
+    # VoiPosition - this does not have the FOV shift that imagePositionPatient has
+    imagePositionPatient = dcm_hdrs.PlanePositionSequence[0].ImagePositionPatient
+
+    # The first two elements could easily be the reverse of this.
+    xyzMM = np.array([float(dcm_hdrs1.PixelMeasuresSequence[0].PixelSpacing[0]),
+                      float(dcm_hdrs1.PixelMeasuresSequence[0].PixelSpacing[1]),
+                      float(dcm_hdrs1.PixelMeasuresSequence[0].SliceThickness)])
+
+    # Note that half_shift = False. This is the opposite as for classic/original DCM.
+    # THIS NEEDS TESTING AND DOCUMENTING. For an explanation of original shift see spec2nii/notes/siemens.md
+    currNiftiOrientation = dcm_to_nifti_orientation(imageOrientationPatient,
+                                                    imagePositionPatient,
+                                                    xyzMM,
+                                                    specDataCmplx.shape[:3],
+                                                    half_shift=False,
+                                                    verbose=verbose)
+
+    dwelltime = 1 / img.dcm_data.SpectralWidth
+    meta = extractDicomMetadata_xa(img)
+
+    # Look for a VOI in the data
+    meta = _detect_and_fill_voi_enh(img, meta)
+
+    return specDataCmplx, currNiftiOrientation, dwelltime, meta
 
 
 def process_siemens_csi_vx(img, verbose):
@@ -377,6 +438,39 @@ def _detect_and_fill_voi(img, meta):
     xyzMM = np.array([img.csa_header['tags']['VoiPhaseFoV']['items'][0],
                       img.csa_header['tags']['VoiReadoutFoV']['items'][0],
                       img.csa_header['tags']['VoiThickness']['items'][0]])
+
+    voiNiftiOrientation = dcm_to_nifti_orientation(imageOrientationPatient,
+                                                   imagePositionPatient,
+                                                   xyzMM,
+                                                   (1, 1, 1))
+
+    meta.set_standard_def('VOI', voiNiftiOrientation.Q44.tolist())
+
+    return meta
+
+
+def _detect_and_fill_voi_enh(img, meta):
+    """Look for a VOI volume in the headers of a CSI scan stored in enhanced dicom.
+    If present populate the VOI header field.
+
+    :param img: Nibable DICOM image object
+    :type img: SiemensWrapper
+    :param meta: Existing NIfTI-MRS meta object
+    :type meta: hdr_ext
+    :return: Modified meta hdr_ext object
+    :rtype: hdr_ext
+    """
+
+    imageOrientationPatient = _get_enhanced_dcm_img_orientation_pat(img)
+
+    # VoiPosition - this does not have the FOV shift that imagePositionPatient has
+    vol_loc_seq = img.dcm_data.VolumeLocalizationSequence
+    imagePositionPatient = vol_loc_seq[0].MidSlabPosition
+
+    # This order needs validating!!
+    xyzMM = np.array([vol_loc_seq[1].SlabThickness,
+                      vol_loc_seq[2].SlabThickness,
+                      vol_loc_seq[0].SlabThickness])
 
     voiNiftiOrientation = dcm_to_nifti_orientation(imageOrientationPatient,
                                                    imagePositionPatient,
@@ -516,7 +610,7 @@ def extractDicomMetadata_vx(dcmdata):
             pass
 
     # # 5.1 MRS specific Tags
-    # 'EchoTime' - requires substantial extraction from the full protocol incase there are multiple
+    # 'EchoTime' - requires substantial extraction from the full protocol in case there are multiple
     # sub-values, e.g. summing the three TEs of a sLAASER sequence together.
     fullcsa = csar.get_csa_header(dcmdata.dcm_data, csa_type='series')
     xprot = parse_buffer(fullcsa['tags']['MrPhoenixProtocol']['items'][0])
@@ -557,6 +651,9 @@ def extractDicomMetadata_vx(dcmdata):
     # 'InstitutionAddress'
     set_standard_def('InstitutionAddress', dcmdata.dcm_data, 'InstitutionAddress')
     # 'TxCoil'
+    obj.set_standard_def(
+        'TxCoil',
+        dcmdata.csa_header['tags']['TransmittingCoil']['items'][0])
     # 'RxCoil'
     if len(dcmdata.csa_header['tags']['ReceivingCoil']['items']) > 0:
         obj.set_standard_def('RxCoil',
@@ -622,24 +719,56 @@ def identify_integrated_references(img, inst_num):
     # Handle CMRR DKD sequence
     # https://www.cmrr.umn.edu/spectro/
     # SEMI-LASER (MRM 2011, NMB 2019) Release 2016-12
+    # Three cases as explained by DKD.
+    '''
+    dkd_slaserVOI_dkd
+        ScanMode = 8
+        (NOTE DKD originally said 2, but from testing the sLASER_VE11C_Sept2016 version 8 is the only option
+        xprot[('sSpecPara', 'lAutoRefScanMode')] = 1 when set to 'off' and 8 when set to 'on')
+            4 water ref at start and 4 at the end where the first 2 water ref in
+            each are acquired with VAPOR RF off but OVS on while last 2 ref are with VAPOR and OVS completely off.
+
+    dkd_slaserVOI_dkd2
+        ScanMode =8
+            does the same as ScanMode =8 above
+
+        ScanMode =2 with ScanNo=2
+            this means 2 water ref at start and 2 at end;
+            this acq is done with VAPOR and OVS RF off, but all gradients still ON.
+    '''
     seq_file_name = xprot[('tSequenceFileName',)].strip('"').lower()
-    match = re.search(r'svs_slaservoi_dkd', seq_file_name)
-    if match and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0:
+    if (re.search(r'svs_slaser(voi)?_dkd2$', seq_file_name)
+        and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0)\
+        or (re.search(r'svs_slaser(voi)?_dkd$', seq_file_name)
+            and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0):
         num_ref = int(xprot[('sSpecPara', 'lAutoRefScanNo')])
         num_dyn = int(xprot[('lAverages',)])
         total_dyn = num_dyn + (num_ref * 4)
         if inst_num <= num_ref:
             # First ecc calibration references
-            return 1, '_ecc'
+            return 1, '_rf_off'
         elif inst_num <= (num_ref * 2):
             # First quantitation calibration references
-            return 2, '_quant'
+            return 2, '_rf_grads_ovs_off'
         elif (total_dyn - (2 * num_ref)) < inst_num <= (total_dyn - num_ref):
             # Second ecc calibration references
-            return 1, '_ecc'
+            return 1, '_rf_off'
         elif (total_dyn - num_ref) < inst_num <= total_dyn:
             # Second quantitation calibration references
-            return 2, '_quant'
+            return 2, '_rf_grads_ovs_off'
+        else:
+            return 0, ''
+    elif (re.search(r'svs_slaser(voi)?_dkd2', seq_file_name)
+            and xprot[('sSpecPara', 'lAutoRefScanMode')] == 2.0):
+        num_ref = int(xprot[('sSpecPara', 'lAutoRefScanNo')])
+        num_dyn = int(xprot[('lAverages',)])
+        total_dyn = num_dyn + (num_ref * 2)
+        if inst_num < num_ref:
+            # First WS and OVS RF off
+            return 1, '_vapor_ovs_rfoff'
+        elif inst_num >= (total_dyn - num_ref):
+            # SecondWS and OVS RF off
+            return 1, '_vapor_ovs_rfoff'
         else:
             return 0, ''
     else:

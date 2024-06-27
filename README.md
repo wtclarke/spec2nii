@@ -43,7 +43,7 @@ This table lists the currently supported formats. I have very limited experience
 |---------------|----------------|-----|-----|-----------------------|
 | Siemens Twix  | .dat           | Yes | †   | Yes                   |
 | Siemens DICOM | .ima / .dcm    | Yes | Yes | Yes                   |
-| Siemens RDA   | .rda           | Yes | No  | Yes (WIP)             |
+| Siemens RDA   | .rda           | Yes | Yes | Yes                   |
 | Philips       | .SPAR/.SDAT    | Yes | No  | Yes                   |
 | Philips       | .data/.list    | Yes | No  | Yes                   |
 | Philips DICOM | .dcm           | Yes | No  | Yes                   |
@@ -91,8 +91,7 @@ NIfTI MRS dimension tags (e.g. `DIM_COIL`) can be specified using the `-t` comma
 ### Siemens RDA
 `spec2nii rda RDA_FILE`
 
-Only supports SVS currently. Please contact the developers with examples for MRSI capability.
-Orientation calculation is a WIP, test data for different voxel orientations would be greatly appreciated!
+Compatible with CSI and SVS data. Validated to be the same data and orientation information as DICOM output on VE baselines.
 
 ### UIH DICOM
 `spec2nii uih DCM_FILE_or_DIR`
@@ -120,7 +119,7 @@ NIfTI MRS dimension tags (e.g. `DIM_COIL`) can be specified using the `-t` comma
 
 Generates separate reference file if present.
 
-Both classic and enhanced DICOM is handled.
+Both classic and enhanced DICOM is handled. Well tested on the vendors' own PRESS and MEGA-PRESS sequence.
 
 ### Bruker (2dseq/fid)
 `spec2nii bruker -m 2DSEQ 2DSEQ_FILE_or_DIR`
