@@ -346,7 +346,7 @@ def _process_hbcd(pfile):
         new_num_avgs = (lTE_mask.shape[-1] // 4) * 4                                        # New Total Averages
         lTE_metab    = lTE_metab[:, :, :, :, :new_num_avgs, :]                              # Remove Incomplete
 
-        notestring   = f'{subseq:3d} {subseq_name:<20}'                                     # Note Incomplete Data
+        notestring   = '80ms HERCULES'                                                      # Note Incomplete Data
         notestring   = f'{notestring} - Correcting - Incomplete Averages'                   # Note Incomplete Data
         notestring   = f'{notestring}  {old_num_avgs} --> {new_num_avgs}'                   # Note Incomplete Data
         print(f'{notestring} \t Corrected**')                                               # Note Incomplete Data
