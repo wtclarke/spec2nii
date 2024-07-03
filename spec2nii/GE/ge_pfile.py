@@ -107,6 +107,8 @@ def _process_svs_pfile(pfile):
         data, meta, dwelltime, fname_suffix = _process_slaser(pfile)
     elif psd in ('jpress', 'jpress_ac', 'gaba', 'hbcd', 'probe-p-mega_rml', 'repress7'):
         data, meta, dwelltime, fname_suffix = _process_gaba(pfile)
+    elif psd in ('hbcd'):                                                       # ATG
+        data, meta, dwelltime, fname_suffix = _process_hbcd(pfile)              # ATG
     else:
         raise UnsupportedPulseSequenceError(f'Unrecognised sequence {psd}.')
 
@@ -269,6 +271,143 @@ def _process_gaba(pfile):
         _add_editing_info(pfile, meta_ref, water)
 
     return [metab, water], [meta, meta_ref], dwelltime, ['', '_ref']
+
+
+def _process_hbcd(pfile):
+    """
+    Input:
+        Pfile Object
+
+    Output:
+        List of NumPy Data Arrays
+        List of File Name Suffixes
+
+    Details:
+        Hyper/ISTHMUS Sequence
+
+        The Integrated Short-TE and Hadamard-edited Multi-Sequence (ISTHMUS)
+          incorporates a Short TE (35ms) PRESS, Long-TE (80ms) HERCULES, and
+          a water reference for each.
+
+        Data is organized within the file as follows:
+          ( 1) Long  TE Reference : 80ms Unsupressed Water
+          (32) Long  TE Edited    : 80ms Water Suppressed HERCULES
+          ( 1) Short TE Reference : 35ms Unsupressed Water
+          (32) Short TE Unedited  : 35ms Water Suppressed PRESS
+          ( 1) Long  TE Reference : 80ms Unsupressed Water
+          (32) Short TE Unedited  : 35ms Water Suppressed PRESS
+          ( 1) Short TE Reference : 35ms Unsupressed Water
+          (32) Short TE Unedited  : 35ms Water Suppressed PRESS
+          ( 1) Long  TE Reference : 80ms Unsupressed Water
+          (32) Short TE Unedited  : 35ms Water Suppressed PRESS
+          ( 1) Short TE Reference : 35ms Unsupressed Water
+          (32) Short TE Unedited  : 35ms Water Suppressed PRESS
+          ( 1) Long  TE Reference : 80ms Unsupressed Water
+          (32) Short TE Unedited  : 35ms Water Suppressed PRESS
+          ( 1) Short TE Reference : 35ms Unsupressed Water
+          (32) Short TE Unedited  : 35ms Water Suppressed PRESS
+
+        Data is directly separated from the raw data (pfile.map.raw_data) where the data
+          mapper (GABA mapper) is simply used to populate in the raw data.
+
+        Author : Aaron Gudmundson, Johns Hopkins University, 2024
+        Contact: agudmun2@jhmi.edu
+    """
+
+    # Additional Imports
+    import copy
+
+    # Editing Parameters
+    edit_cases       = 4                                                                    # 4 Editing Conditions
+    edit_pulse_1     = 4.58                                                                 # 4.58 ppm
+    edit_pulse_2     = 1.90                                                                 # 1.90 ppm
+    edit_pulse_4     = 4.18                                                                 # 4.18 ppm
+    pulse_length     = 0.02                                                                 # Edit Pulse 20 ms
+
+    dim_header       = {'EditCondition': ['A', 'B', 'C', 'D']}                              # 4 Subscans
+    edit_pulse_val   = {'A': {'PulseOffset': [edit_pulse_1, edit_pulse_2], 'PulseDuration': pulse_length},
+                        'B': {'PulseOffset': [edit_pulse_4, edit_pulse_2], 'PulseDuration': pulse_length},
+                        'C': {'PulseOffset': edit_pulse_1, 'PulseDuration': pulse_length},
+                        'D': {'PulseOffset': edit_pulse_4, 'PulseDuration': pulse_length}}
+
+    # All Data (Skip 1st Transient - GE automatically has historically included a 'noise' transient)
+    raw_data         = pfile.map.raw_data[:, :, :, :, 1:, :]                                # Raw Data from Mapper
+
+    # Long TE HERCULES Metabolite Data
+    lTE_metab        = copy.deepcopy(raw_data)                                              # Long TE Metab
+    lTE_mask         = np.ones(lTE_metab.shape[4], dtype=bool)                              # Create a Mask
+    lTE_mask[::33]   = False                                                                # Remove Water Refs
+    lTE_mask[: 33]   = False                                                                # Remove PRESS
+    lTE_metab        = lTE_metab[:, :, :, :, lTE_mask, :]                                   # Isolated HERCULES
+
+    # Handle Incomplete
+    if lTE_mask.shape[-1] % 4 != 0:                                                         # Incomplete Acquisition
+        old_num_avgs = lTE_mask.shape[-1]                                                   # Old Total Averages
+        new_num_avgs = (lTE_mask.shape[-1] // 4) * 4                                        # New Total Averages
+        lTE_metab    = lTE_metab[:, :, :, :, :new_num_avgs, :]                              # Remove Incomplete
+
+        notestring   = '80ms HERCULES'                                                      # Note Incomplete Data
+        notestring   = f'{notestring} - Correcting - Incomplete Averages'                   # Note Incomplete Data
+        notestring   = f'{notestring}  {old_num_avgs} --> {new_num_avgs}'                   # Note Incomplete Data
+        print(f'{notestring} \t Corrected**')                                               # Note Incomplete Data
+
+    bef_shape     = list(lTE_metab.shape)                                                   # Remove Averages Dim
+    bef_shape[4]  = bef_shape[4] // 4                                                       # Closest multiple of 4
+    bef_shape.append(edit_cases)                                                            # Include Subscans
+    lTE_metab     = lTE_metab.reshape(bef_shape)                                            # With Subscan Dim
+
+    lTE_metab_meta = _populate_metadata(pfile, water_suppressed=True)                       # Acquisition Information
+    lTE_metab_meta.set_standard_def('EchoTime', 0.080)                                      # TE
+    lTE_metab_meta.set_standard_def('WaterSuppressed', True)                                # Water Suppression
+    lTE_metab_meta.set_standard_def('EditPulse', edit_pulse_val)                            # Header Edit Info
+
+    lTE_metab_meta.set_dim_info(0, 'DIM_DYN')                                               # Dimension Info
+    lTE_metab_meta.set_dim_info(1, 'DIM_COIL')                                              # Dimension Info
+    lTE_metab_meta.set_dim_info(2, 'DIM_EDIT', hdr=dim_header)                              # Dimension Info
+
+    # Short TE HERCULES Metabolite Data
+    sTE_metab = copy.deepcopy(raw_data[:, :, :, :, 1:33, :])
+
+    sTE_metab_meta = _populate_metadata(pfile, water_suppressed=True)                       # Acquisition Information
+    sTE_metab_meta.set_standard_def('EchoTime', 0.035)                                      # TE
+    sTE_metab_meta.set_standard_def('WaterSuppressed', True)                                # Water Suppression
+
+    sTE_metab_meta.set_dim_info(0, 'DIM_DYN')                                               # Dimension Info
+    sTE_metab_meta.set_dim_info(1, 'DIM_COIL')                                              # Dimension Info
+
+    # Long TE Reference Water Data
+    lTE_water = copy.deepcopy(raw_data[:, :, :, :, 0::66, :])
+
+    lTE_water_meta = _populate_metadata(pfile, water_suppressed=False)                      # Acquisition Information
+    lTE_water_meta.set_standard_def('EchoTime', 0.080)                                      # TE
+    lTE_water_meta.set_standard_def('WaterSuppressed', False)                               # Water Suppression
+
+    lTE_water_meta.set_dim_info(0, 'DIM_DYN')                                               # Dimension Info
+    lTE_water_meta.set_dim_info(1, 'DIM_COIL')                                              # Dimension Info
+
+    # Short TE Reference Water Data
+    sTE_water = copy.deepcopy(raw_data[:, :, :, :, 33::66, :])
+
+    sTE_water_meta = _populate_metadata(pfile, water_suppressed=False)                      # Acquisition Information
+    sTE_water_meta.set_standard_def('EchoTime', 0.035)                                      # TE
+    sTE_water_meta.set_standard_def('WaterSuppressed', False)                               # Water Suppression
+
+    sTE_water_meta.set_dim_info(0, 'DIM_DYN')                                               # Dimension Info
+    sTE_water_meta.set_dim_info(1, 'DIM_COIL')                                              # Dimension Info
+
+    # Dwell Time
+    dwelltime = 1 / pfile.hdr.rhr_spectral_width
+
+    data      = [lTE_metab, sTE_metab, lTE_water, sTE_water]                                # ISTHMUS Data
+    meta      = [lTE_metab_meta, sTE_metab_meta, lTE_water_meta, sTE_water_meta]            # ISTHMUS Header
+    ref_names = ['_edited', '_short_te', '_ref_edited', '_ref_short_te']                    # ISTHMUS Naming
+
+    print('Returning ISTHMUS Data:')
+    for ii in range(len(data)):
+        print('    {:02d} {:<14} '.format(ii, ref_names[ii]), data[ii].shape)
+    print(' ')
+
+    return data, meta, dwelltime, ref_names
 
 
 def _process_mrsi_pfile(pfile):
