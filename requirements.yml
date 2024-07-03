@@ -1,9 +1,9 @@
 dependencies:
- - numpy
+ - numpy>=1.26
  - nibabel
  - pydicom
- - pyMapVBVD>=0.5.2
- - scipy
+ - pyMapVBVD>=0.6.0
+ - scipy==1.13.*
  - brukerapi>=0.1.8
  - pandas
- - nifti-mrs>=1.1.1
+ - nifti-mrs>=1.3.0

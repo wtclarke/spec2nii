@@ -1,5 +1,10 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.8.0 (Wednesday 3rd July 2024)
+-------------------------------
+- Dropped support for Python 3.8 (EOL imminent), added support and testing for 3.12.
+- Compatibility with Numpy 2.0
+
 0.7.4 (Thursday 18th April 2024)
 --------------------------------
 - Refinements and improvements to the GE SVS pipeline from Mark Mikkelsen.
