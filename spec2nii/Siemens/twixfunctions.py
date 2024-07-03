@@ -460,7 +460,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
             out_name = f'{mainStr}'
             for idx, ii in enumerate(index):
                 indexStr = dim_order[3 + idx]
-                out_name += f'_{indexStr}{ii :03d}'
+                out_name += f'_{indexStr}{ii: 03d}'
 
             filename_out.append(out_name)
 
@@ -631,7 +631,7 @@ def process_fid(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
             out_name = f'{mainStr}'
             for idx, ii in enumerate(index):
                 indexStr = dim_order[3 + idx]
-                out_name += f'_{indexStr}{ii :03d}'
+                out_name += f'_{indexStr}{ii: 03d}'
 
             filename_out.append(out_name)
 
