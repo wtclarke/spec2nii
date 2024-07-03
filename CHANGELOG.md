@@ -1,5 +1,9 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.8.1 (Wednesday 3rd July 2024)
+-------------------------------
+- Bug fix for GE HBCD sequence.
+
 0.8.0 (Wednesday 3rd July 2024)
 -------------------------------
 - Dropped support for Python 3.8 (EOL imminent), added support and testing for 3.12.
