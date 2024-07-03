@@ -21,7 +21,7 @@ def svs_or_CSI(img):
     """Identify from the headers whether data is CSI or SVS."""
     # Currently this only looks in-plane. I don't have examples of CSI from
     # UIH.
-    if np.product(img.image_shape) > 1.0:
+    if np.prod(img.image_shape) > 1.0:
         return 'CSI'
     else:
         return 'SVS'
