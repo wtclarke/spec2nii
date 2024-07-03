@@ -40,7 +40,7 @@ def svs_or_CSI(img):
         if img.image_shape is None \
                 and img.dcm_data.VolumeLocalizationTechnique == 'NONE':
             return 'FID'
-        elif np.product(img.image_shape) > 1.0:
+        elif np.prod(img.image_shape) > 1.0:
             return 'CSI'
         else:
             return 'SVS'
@@ -53,7 +53,7 @@ def svs_or_CSI(img):
         if img.image_shape is None \
                 and img.dcm_data.VolumeLocalizationTechnique == 'NONE':
             return 'FID'
-        elif np.product([columns, rows, slices]) > 1.0:
+        elif np.prod([columns, rows, slices]) > 1.0:
             return 'CSI'
         else:
             return 'SVS'

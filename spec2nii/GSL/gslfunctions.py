@@ -21,7 +21,7 @@ def class_ori(sag_comp, cor_comp, tra_comp, debug):
     '''
 
     if debug:
-        print(f'Normal vector = {sag_comp : 10.7f} {cor_comp : 10.7f} {tra_comp : 10.7f}.')
+        print(f'Normal vector = {sag_comp: 10.7f} {cor_comp: 10.7f} {tra_comp: 10.7f}.')
 
     # Compute some temporary values
     abs_sag_comp     = np.abs(sag_comp)
