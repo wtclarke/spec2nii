@@ -107,7 +107,7 @@ def _process_svs_pfile(pfile):
         data, meta, dwelltime, fname_suffix = _process_slaser(pfile)
     elif psd in ('jpress', 'jpress_ac', 'gaba', 'probe-p-mega_rml', 'repress7'):
         data, meta, dwelltime, fname_suffix = _process_gaba(pfile)
-    elif psd in ('hbcd'):                                                       # ATG
+    elif psd in ('hbcd', 'hbcd1', 'hbcd2'):                                     # ATG
         data, meta, dwelltime, fname_suffix = _process_hbcd(pfile)              # ATG
     else:
         raise UnsupportedPulseSequenceError(f'Unrecognised sequence {psd}.')
