@@ -206,7 +206,9 @@ class Pfile:
                     'jpress',            # wtc - added for J-edited data.
                     'jpress_ac',         # ARC - added for Bergen jpress patch
                     'gaba',              # wtc - added for Nottingham MEGA-PRESS sequence
-                    'hbcd',              # ATG - added HBCD - reuse GABA mapper
+                    'hbcd',              # ATG - added HBCD  - reuse GABA mapper
+                    'hbcd1',             # ATG - added HBCD1 - reuse GABA mapper
+                    'hbcd2',             # ATG - added HBCD2 - reuse GABA mapper
                     'probe-p-mega_rml',  # MM - added for Calgary MEGA-PRESS sequence
                     'repress7'           # MM - added for old CUBRIC data
                 ):
