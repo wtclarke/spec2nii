@@ -12,7 +12,7 @@ import numpy as np
 
 from .io_for_tests import read_nifti_mrs
 from .io_for_tests import read_nifti_mrs_with_hdr
-
+from nifti_mrs.nifti_mrs import NIFTI_MRS
 
 # Data paths
 ge_path = Path(__file__).parent / 'spec2nii_test_data' / 'ge'
@@ -31,6 +31,9 @@ mm_mega = ge_path / 'pFiles' / 'MEGA' / 'Big_GABA'
 mm_press = ge_path / 'pFiles' / 'PRESS' / 'Big_GABA'
 mm_press_noid = ge_path / 'pFiles' / 'PRESS' / 'sub-01_ses-01_acq-press_svs_noID.7'
 mm_slaser = ge_path / 'pFiles' / 'sLASER' / 'sub-01_ses-01_acq-slaser_svs_noID.7'
+
+# HBCD / ISTHMUS datasets
+hbcd2_path = ge_path / 'pFiles' / 'hbcd' / 'P31744.7'
 
 
 def test_svs(tmp_path):
@@ -322,3 +325,33 @@ def test_mm_slaser(tmp_path):
     assert img_ref.shape[:5] == (1, 1, 1, 4096, 32)
     assert not hdr_ext_ref['WaterSuppressed']
     assert hdr_ext_ref['dim_5'] == 'DIM_COIL'
+
+
+def test_hbcd_isthmus(tmp_path):
+    subprocess.run([
+        'spec2nii', 'ge',
+        '-f', 'hbcd',
+        '-o', tmp_path,
+        '-j',
+        hbcd2_path])
+
+    assert (tmp_path / 'hbcd_edited.nii.gz').is_file()
+    assert (tmp_path / 'hbcd_ref_edited.nii.gz').is_file()
+    assert (tmp_path / 'hbcd_ref_short_te.nii.gz').is_file()
+    assert (tmp_path / 'hbcd_short_te.nii.gz').is_file()
+
+    img = NIFTI_MRS(tmp_path / 'hbcd_edited.nii.gz')
+    assert img.shape == (1, 1, 1, 2048, 56, 8, 4)
+    assert img.dim_tags == ['DIM_DYN', 'DIM_COIL', 'DIM_EDIT']
+
+    img = NIFTI_MRS(tmp_path / 'hbcd_ref_edited.nii.gz')
+    assert img.shape == (1, 1, 1, 2048, 4, 8)
+    assert img.dim_tags == ['DIM_DYN', 'DIM_COIL', None]
+
+    img = NIFTI_MRS(tmp_path / 'hbcd_ref_short_te.nii.gz')
+    assert img.shape == (1, 1, 1, 2048, 4, 8)
+    assert img.dim_tags == ['DIM_DYN', 'DIM_COIL', None]
+
+    img = NIFTI_MRS(tmp_path / 'hbcd_short_te.nii.gz')
+    assert img.shape == (1, 1, 1, 2048, 32, 8)
+    assert img.dim_tags == ['DIM_DYN', 'DIM_COIL', None]
