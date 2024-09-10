@@ -177,6 +177,9 @@ class Pfile:
             return None
 
         psd = self.hdr.rhi_psdname.decode('utf-8').lower()
+        proto = self.hdr.rhs_se_desc.decode('utf-8').lower()
+        if psd == 'hbcd' and "press" in proto:
+            psd = self.hdr.rhs_se_desc.decode('utf-8').lower()
 
         # MM: Some 'gaba' psd strings contain full path names, so truncate to the end of the path
         if psd.endswith('gaba'):
@@ -195,6 +198,7 @@ class Pfile:
                     'presscsi_nfl',      # bjs - added for Govind's SVS data off v25
                     'epsi_3d_24',        # bjs - added for soher check of MIDAS Browndyke data
                     'fidall'             # WTC - added for JG's Hyperpolarised 13C data
+                    'mrs-press'          # ATG - Added for GE ShortTE in hbcd
                 ):
             mapper = PfileMapper
         elif psd in ('oslaser', 'slaser_cni', 'slaser') and numecho == 1:
