@@ -89,13 +89,13 @@ def _process_svs_pfile(pfile):
     :return: List of NIFTI MRS data objects
     :return: List of file name suffixes
     """
-     psd = pfile.hdr.rhi_psdname.decode('utf-8').lower()
+    psd = pfile.hdr.rhi_psdname.decode('utf-8').lower()
     proto = pfile.hdr.rhs_se_desc.decode('utf-8').lower()
-    if psd == 'hbcd' and "press" inproto:
-	    print('\nPSD was: ', psd)
-	    print('Proto is: ', proto)
+    if psd == 'hbcd' and "press" in proto:
+        print('\nPSD was: ', psd)
+        print('Proto is: ', proto)
         psd = pfile.hdr.rhs_se_desc.decode('utf-8').lower()
-	    print('PSD updated to: ', psd)
+        print('PSD updated to: ', psd)
 
     # MM: Some 'gaba' psd strings contain full path names, so truncate to the end of the path
     if psd.endswith('gaba'):
@@ -230,7 +230,7 @@ def _add_editing_info(pfile, meta, data):
         edit_rf_freq_off1 = pfile.hdr.rhi_user20
         edit_rf_freq_off2 = pfile.hdr.rhi_user21
         edit_rf_ppm_off1 = edit_rf_freq_off1 / float(pfile.hdr.rhr_rh_ps_mps_freq * 1E-7)
-        edit_rf_ppm_off2 = edit_rf_freq_off2 / float(pfile.hdr.rhr_rh_ps_mps_freq  * 1E-7)
+        edit_rf_ppm_off2 = edit_rf_freq_off2 / float(pfile.hdr.rhr_rh_ps_mps_freq * 1E-7)
         edit_rf_dur = pfile.hdr.rhi_user22
         # check for default value (-1) of pulse length
         if edit_rf_dur <= 0:
@@ -360,8 +360,8 @@ def _process_hbcd(pfile):
     new_shape     = list(lTE_metab.shape)                                                   # Remove Averages Dim
     new_shape[4]  = new_shape[4] // 4                                                       # Closest multiple of 4
     new_shape.insert(5, edit_cases)                                                         # Include Subscans
-    
-    lTE_metab_    = np.zeros(new_shape, dtype=np.complex_)                                  # New lTE Metab Array 
+
+    lTE_metab_    = np.zeros(new_shape, dtype=np.complex_)                                  # New lTE Metab Array
     lTE_metab_[:,:,:,:,:,0,:] = lTE_metab[:,:,:,:,0::4,:]                                   # Subscan 1
     lTE_metab_[:,:,:,:,:,1,:] = lTE_metab[:,:,:,:,1::4,:]                                   # Subscan 2
     lTE_metab_[:,:,:,:,:,2,:] = lTE_metab[:,:,:,:,2::4,:]                                   # Subscan 3
