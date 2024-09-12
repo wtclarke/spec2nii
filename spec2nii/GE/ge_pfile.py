@@ -361,11 +361,11 @@ def _process_hbcd(pfile):
     new_shape[4]  = new_shape[4] // 4                                                       # Closest multiple of 4
     new_shape.insert(5, edit_cases)                                                         # Include Subscans
 
-    lTE_metab_    = np.zeros(new_shape, dtype=np.complex_)                                  # New lTE Metab Array
-    lTE_metab_[:, :, :, :, :, 0, :] = lTE_metab[:, :, :, :, 0::4, :]                         # Subscan 1
-    lTE_metab_[:, :, :, :, :, 1, :] = lTE_metab[:, :, :, :, 1::4, :]                         # Subscan 2
-    lTE_metab_[:, :, :, :, :, 2, :] = lTE_metab[:, :, :, :, 2::4, :]                         # Subscan 3
-    lTE_metab_[:, :, :, :, :, 3, :] = lTE_metab[:, :, :, :, 3::4, :]                         # Subscan 4
+    lTE_metab_    = np.zeros(new_shape, dtype=np.complex128)                                # New lTE Metab Array
+    lTE_metab_[:, :, :, :, :, 0, :] = lTE_metab[:, :, :, :, 0::4, :]                        # Subscan 1
+    lTE_metab_[:, :, :, :, :, 1, :] = lTE_metab[:, :, :, :, 1::4, :]                        # Subscan 2
+    lTE_metab_[:, :, :, :, :, 2, :] = lTE_metab[:, :, :, :, 2::4, :]                        # Subscan 3
+    lTE_metab_[:, :, :, :, :, 3, :] = lTE_metab[:, :, :, :, 3::4, :]                        # Subscan 4
     lTE_metab      = lTE_metab_                                                             # With Subscan Dim
 
     lTE_metab_meta = _populate_metadata(pfile, water_suppressed=True)                       # Acquisition Information
