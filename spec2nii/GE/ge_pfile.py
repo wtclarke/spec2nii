@@ -374,8 +374,8 @@ def _process_hbcd(pfile):
     lTE_metab_meta.set_standard_def('EditPulse', edit_pulse_val)                            # Header Edit Info
 
     lTE_metab_meta.set_dim_info(0, 'DIM_DYN')                                               # Dimension Info
-    lTE_metab_meta.set_dim_info(1, 'DIM_COIL')                                              # Dimension Info
-    lTE_metab_meta.set_dim_info(2, 'DIM_EDIT', hdr=dim_header)                              # Dimension Info
+    lTE_metab_meta.set_dim_info(1, 'DIM_EDIT', hdr=dim_header)                              # Dimension Info
+    lTE_metab_meta.set_dim_info(2, 'DIM_COIL')                                              # Dimension Info
 
     # Short TE HERCULES Metabolite Data
     sTE_metab = copy.deepcopy(raw_data[:, :, :, :, 1:33, :])
