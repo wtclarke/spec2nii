@@ -90,6 +90,12 @@ def _process_svs_pfile(pfile):
     :return: List of file name suffixes
     """
     psd = pfile.hdr.rhi_psdname.decode('utf-8').lower()
+    proto = pfile.hdr.rhs_se_desc.decode('utf-8').lower()
+    if psd == 'hbcd' and "press" in proto:
+        print('\nPSD was: ', psd)
+        print('Proto is: ', proto)
+        psd = pfile.hdr.rhs_se_desc.decode('utf-8').lower()
+        print('PSD updated to: ', psd)
 
     # MM: Some 'gaba' psd strings contain full path names, so truncate to the end of the path
     if psd.endswith('gaba'):
@@ -97,7 +103,7 @@ def _process_svs_pfile(pfile):
 
     numecho = pfile.hdr.rhi_numecho
 
-    if psd in ('probe-p', 'probe-s', 'probe-p_ach'):
+    if psd in ('mrs-press', 'probe-p', 'probe-s', 'probe-p_ach'):
         data, meta, dwelltime, fname_suffix = _process_probe_p(pfile)
     elif psd in ('oslaser', 'slaser_cni') and numecho == 1:  # MM: If non-edited data, use _process_oslaser
         data, meta, dwelltime, fname_suffix = _process_oslaser(pfile)
@@ -105,9 +111,9 @@ def _process_svs_pfile(pfile):
         data, meta, dwelltime, fname_suffix = _process_gaba(pfile)
     elif psd == 'slaser':
         data, meta, dwelltime, fname_suffix = _process_slaser(pfile)
-    elif psd in ('jpress', 'jpress_ac', 'gaba', 'probe-p-mega_rml', 'repress7'):
+    elif psd in ('hbcd', 'jpress', 'jpress_ac', 'gaba', 'probe-p-mega_rml', 'repress7'):
         data, meta, dwelltime, fname_suffix = _process_gaba(pfile)
-    elif psd in ('hbcd', 'hbcd1', 'hbcd2'):                                     # ATG
+    elif psd in ('hbcd2'):                                     					# ATG
         data, meta, dwelltime, fname_suffix = _process_hbcd(pfile)              # ATG
     else:
         raise UnsupportedPulseSequenceError(f'Unrecognised sequence {psd}.')
@@ -224,7 +230,7 @@ def _add_editing_info(pfile, meta, data):
         edit_rf_freq_off1 = pfile.hdr.rhi_user20
         edit_rf_freq_off2 = pfile.hdr.rhi_user21
         edit_rf_ppm_off1 = edit_rf_freq_off1 / float(pfile.hdr.rhr_rh_ps_mps_freq * 1E-7)
-        edit_rf_ppm_off2 = edit_rf_freq_off2 / float(pfile.hdr.rhr_rh_ps_mps_freq  * 1E-7)
+        edit_rf_ppm_off2 = edit_rf_freq_off2 / float(pfile.hdr.rhr_rh_ps_mps_freq * 1E-7)
         edit_rf_dur = pfile.hdr.rhi_user22
         # check for default value (-1) of pulse length
         if edit_rf_dur <= 0:
@@ -351,10 +357,16 @@ def _process_hbcd(pfile):
         notestring   = f'{notestring}  {old_num_avgs} --> {new_num_avgs}'                   # Note Incomplete Data
         print(f'{notestring} \t Corrected**')                                               # Note Incomplete Data
 
-    bef_shape     = list(lTE_metab.shape)                                                   # Remove Averages Dim
-    bef_shape[4]  = bef_shape[4] // 4                                                       # Closest multiple of 4
-    bef_shape.append(edit_cases)                                                            # Include Subscans
-    lTE_metab     = lTE_metab.reshape(bef_shape)                                            # With Subscan Dim
+    new_shape     = list(lTE_metab.shape)                                                   # Remove Averages Dim
+    new_shape[4]  = new_shape[4] // 4                                                       # Closest multiple of 4
+    new_shape.append(edit_cases)                                                        	# Include Subscans
+
+    lTE_metab_    = np.zeros(new_shape, dtype=np.complex128)                                # New lTE Metab Array
+    lTE_metab_[:, :, :, :, :, :, 0] = lTE_metab[:, :, :, :, 0::4, :]                        # Subscan 1
+    lTE_metab_[:, :, :, :, :, :, 1] = lTE_metab[:, :, :, :, 1::4, :]                        # Subscan 2
+    lTE_metab_[:, :, :, :, :, :, 2] = lTE_metab[:, :, :, :, 2::4, :]                        # Subscan 3
+    lTE_metab_[:, :, :, :, :, :, 3] = lTE_metab[:, :, :, :, 3::4, :]                        # Subscan 4
+    lTE_metab      = lTE_metab_                                                             # With Subscan Dim
 
     lTE_metab_meta = _populate_metadata(pfile, water_suppressed=True)                       # Acquisition Information
     lTE_metab_meta.set_standard_def('EchoTime', 0.080)                                      # TE
