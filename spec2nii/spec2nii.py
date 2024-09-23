@@ -467,9 +467,9 @@ class spec2nii:
                         sorted(args.file.rglob('*.IMA')) + \
                         sorted(args.file.rglob('*.ima')) + \
                         sorted(args.file.rglob('*.dcm'))
-                    file = pdcm.read_file(files_in[0])
+                    file = pdcm.dcmread(files_in[0])
                 else:
-                    file = pdcm.read_file(args.file)
+                    file = pdcm.dcmread(args.file)
 
                 manufacturer = file.Manufacturer
                 setattr(args, 'tag', None)
