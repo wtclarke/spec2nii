@@ -1,5 +1,9 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.8.4 (Monday 23rd September 2024)
+-------------------------------
+- GE HBCD sequence adjustments.
+
 0.8.3 (Tuesday 9th August 2024)
 -------------------------------
 - Fix for multiple GE HBCD sequence names (again).
