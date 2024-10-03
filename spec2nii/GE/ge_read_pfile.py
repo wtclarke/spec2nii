@@ -197,7 +197,7 @@ class Pfile:
                     'ia/stable/fidcsi',  # bjs - added for Kearny's 13C data
                     'presscsi_nfl',      # bjs - added for Govind's SVS data off v25
                     'epsi_3d_24',        # bjs - added for soher check of MIDAS Browndyke data
-                    'fidall'             # WTC - added for JG's Hyperpolarised 13C data
+                    'fidall',            # WTC - added for JG's Hyperpolarised 13C data
                     'mrs-press'          # ATG - Added for GE ShortTE in hbcd
                 ):
             mapper = PfileMapper
