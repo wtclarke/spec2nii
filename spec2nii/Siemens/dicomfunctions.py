@@ -201,14 +201,16 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         # Combine data into 5th dimension if needed
         data_in_gr = data_list[gr]
         if len(data_in_gr) > 1:
-            combined_data = np.stack(data_in_gr, axis=-1)
+        	combined_data = np.stack(data_in_gr, axis=-1)
+        	combined_data = np.moveaxis(combined_data, (0, 1, 2, 3, 4), (0, 1, 4, 3, 2))
         else:
-            combined_data = data_in_gr[0]
-
+        	combined_data = data_in_gr[0]
+	
         # Add dimension information (if not None for default)
         if tag:
             meta_used.set_dim_info(0, tag)
 
+	
         # Create NIFTI MRS object.
         try:
             nifti_mrs_out.append(gen_nifti_mrs_hdr_ext(combined_data, dt_used, meta_used, or_used.Q44, no_conj=True))
@@ -395,7 +397,7 @@ def process_siemens_csi_vx(img, verbose):
     # slices = int(xprot[('sSpecPara', 'lFinalMatrixSizeSlice')])
     # spectral_points = int(xprot[('sSpecPara', 'lVectorSize')])
 
-    specDataCmplx = specDataCmplx.reshape((slices, rows, cols, spectral_points))
+    specDataCmplx = specDataCmplx.reshape((1, rows, cols, spectral_points))
     specDataCmplx = np.moveaxis(specDataCmplx, (0, 1, 2), (2, 1, 0))
 
     # 1) Extract dicom parameters
