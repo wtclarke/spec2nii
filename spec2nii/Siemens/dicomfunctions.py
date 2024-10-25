@@ -804,8 +804,11 @@ def identify_integrated_references(img, inst_num):
 def special_case_sequences(combined_data, meta_used, img, tag, ref_status):
 
     fullcsa = csar.get_csa_header(img.dcm_data, csa_type='series')
-    xprot = parse_buffer(fullcsa['tags']['MrPhoenixProtocol']['items'][0])
-    seq_file_name = xprot[('tSequenceFileName',)].strip('"').lower()
+    if fullcsa is not None:
+        xprot = parse_buffer(fullcsa['tags']['MrPhoenixProtocol']['items'][0])
+        seq_file_name = xprot[('tSequenceFileName',)].strip('"').lower()
+    else:
+        seq_file_name = ''
 
     if re.search(r'dkd_svs_mslaser_msspnav$', seq_file_name)\
             and ref_status == 0:
@@ -817,7 +820,6 @@ def special_case_sequences(combined_data, meta_used, img, tag, ref_status):
             combined_data,
             combined_data.shape[:4] + (2, -1, 2,)
         )
-        print(combined_data.shape)
         meta_used.set_dim_info(0, 'DIM_EDIT')
         meta_used.set_dim_info(2, 'DIM_METCYCLE')
         meta_used.set_dim_info(1, 'DIM_DYN')
