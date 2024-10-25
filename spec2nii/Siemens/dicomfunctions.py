@@ -177,8 +177,7 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         print(f'Output groups: {group_ind}')
 
     nifti_mrs_out, fnames_out = [], []
-    for idx, gr in enumerate(group_ind):
-
+    for gr in group_ind:
         # If data shape, orientation, dwelltime match then
         # proceed
         def not_equal(lst):
@@ -205,9 +204,8 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         else:
             combined_data = data_in_gr[0]
 
-        # Add dimension information (if not None for default)
-        if tag:
-            meta_used.set_dim_info(0, tag)
+        # Special cases and dim tagging
+        combined_data, meta_used = special_case_sequences(combined_data, meta_used, img, tag, reference[gr[0]])
 
         # Create NIFTI MRS object.
         try:
@@ -702,7 +700,9 @@ def extractDicomMetadata_vx(dcmdata):
 
 def identify_integrated_references(img, inst_num):
     '''Heuristics for identifying integrated reference scans in known sequences.
-    Sequences handled: CMRR svs_slaserVOI_dkd(2)
+    Sequences handled:
+        - CMRR svs_slaserVOI_dkd(2)
+        - dkd_svs_(m)slaser_msspnav
 
     :param img: nibable dicom image
 
@@ -771,5 +771,61 @@ def identify_integrated_references(img, inst_num):
             return 1, '_vapor_ovs_rfoff'
         else:
             return 0, ''
+    elif (re.search(r'dkd_svs_mslaser_msspnav$', seq_file_name)
+            and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0):
+        num_ref = int(xprot[('sSpecPara', 'lAutoRefScanNo')])
+        num_dyn = int(xprot[('lAverages',)])
+        if True:
+            # This True should be replaced with the flag to control MEGA
+            total_dyn = num_dyn * 2 + (num_ref * 4)
+        else:
+            total_dyn = num_dyn + (num_ref * 4)
+
+        # Note instance number indexes from 1
+        if inst_num <= num_ref:
+            # print(f'case 1: {inst_num} <= {num_ref}')
+            # Start references
+            return 1, '_ws_ovs_off'
+        elif (inst_num > (num_dyn + num_ref)) and (inst_num < (num_dyn + num_ref * 4)):
+            # print(f'case 2: {inst_num}')
+            # Empty scans, all zeros
+            return 2, '_empty_data'
+        elif inst_num > (total_dyn - num_ref):
+            # print(f'case 1: {inst_num} > {(total_dyn - num_ref)}')
+            # End references
+            return 1, '_ws_ovs_off'
+        else:
+            # print(f'no case: {inst_num}')
+            return 0, ''
     else:
         return 0, ''
+
+
+def special_case_sequences(combined_data, meta_used, img, tag, ref_status):
+
+    fullcsa = csar.get_csa_header(img.dcm_data, csa_type='series')
+    if fullcsa is not None:
+        xprot = parse_buffer(fullcsa['tags']['MrPhoenixProtocol']['items'][0])
+        seq_file_name = xprot[('tSequenceFileName',)].strip('"').lower()
+    else:
+        seq_file_name = ''
+
+    if re.search(r'dkd_svs_mslaser_msspnav$', seq_file_name)\
+            and ref_status == 0:
+        '''
+        The dkd_svs_mslaser_msspnav sequence
+        This sequence contains both MEGA j-difference editing and metabolite cycling
+        '''
+        combined_data = np.reshape(
+            combined_data,
+            combined_data.shape[:4] + (2, -1, 2,)
+        )
+        meta_used.set_dim_info(0, 'DIM_EDIT')
+        meta_used.set_dim_info(2, 'DIM_METCYCLE')
+        meta_used.set_dim_info(1, 'DIM_DYN')
+
+    else:
+        # Add dimension information (if not None for default)
+        if tag:
+            meta_used.set_dim_info(0, tag)
+    return combined_data, meta_used
