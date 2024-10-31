@@ -1,5 +1,11 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.8.5 (Thursday 31st October 2024)
+----------------------------------
+- Add special case handling for DICOM dkd_svs_mslaser_msspnav sequence
+- More GE HBCD sequence adjustments.
+- Python 3.13 compatibility and testing, scipy dependency now >=1.13
+
 0.8.4 (Monday 23rd September 2024)
 -------------------------------
 - GE HBCD sequence adjustments.
