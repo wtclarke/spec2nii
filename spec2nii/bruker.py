@@ -7,7 +7,7 @@ Author: Tomas Psorn <tomaspsorn@isibrno.cz>
 Copyright (C) 2021 Institute of Scientific Instruments of the CAS, v. v. i.
 """
 import os
-import pkg_resources
+import importlib.resources as importlib_resources
 import warnings
 from datetime import datetime
 
@@ -64,39 +64,42 @@ def yield_bruker(args):
     2/ Directory - function yields data and properties and data of all datasets compliant to the queries
 
     """
-    # get location of the spec2nii Bruker properties configuration file
-    bruker_properties_path = pkg_resources.resource_filename('spec2nii', 'bruker_properties.json')
-    bruker_fid_override_path = pkg_resources.resource_filename('spec2nii', 'bruker_fid_override.json')
-
     # get a list of queries to filter datasets
     queries = _get_queries(args)
 
-    # case of Bruker dataset
-    if os.path.isfile(args.file):
-        d = Dataset(
-            args.file,
-            property_files=[bruker_fid_override_path, bruker_properties_path],
-            parameter_files=['method'])
-        try:
-            d.query(queries)
-        except FilterEvalFalse:
-            raise ValueError(f'Bruker dataset {d.path} is not suitable for conversion to mrs_nifti')
-        yield from _proc_dataset(d, args)
+    # get location of the spec2nii Bruker properties configuration file
+    ref1 = importlib_resources.files('spec2nii') / 'bruker_properties.json'
+    ref2 = importlib_resources.files('spec2nii') / 'bruker_fid_override.json'
 
-    # case of folder containing Bruker datasets
-    elif os.path.isdir(args.file):
+    with importlib_resources.as_file(ref1) as bruker_properties_path:
+        with importlib_resources.as_file(ref2) as bruker_fid_override_path:
 
-        # process individual datasets
-        for dataset in Folder(args.file, dataset_state={
-            "parameter_files": ['method'],
-            "property_files": [bruker_properties_path]
-        }).get_dataset_list_rec():
-            with dataset as d:
+            # case of Bruker dataset
+            if os.path.isfile(args.file):
+                d = Dataset(
+                    args.file,
+                    property_files=[bruker_fid_override_path, bruker_properties_path],
+                    parameter_files=['method'])
                 try:
                     d.query(queries)
                 except FilterEvalFalse:
-                    continue
+                    raise ValueError(f'Bruker dataset {d.path} is not suitable for conversion to mrs_nifti')
                 yield from _proc_dataset(d, args)
+
+            # case of folder containing Bruker datasets
+            elif os.path.isdir(args.file):
+
+                # process individual datasets
+                for dataset in Folder(args.file, dataset_state={
+                    "parameter_files": ['method'],
+                    "property_files": [bruker_properties_path]
+                }).get_dataset_list_rec():
+                    with dataset as d:
+                        try:
+                            d.query(queries)
+                        except FilterEvalFalse:
+                            continue
+                        yield from _proc_dataset(d, args)
 
 
 def _get_queries(args):
