@@ -40,4 +40,4 @@ jobs:
         run: |
             conda install pytest h5py
             pip install --no-deps .
-            pytest -k "not orientation" tests
+            pytest -m "not orientation" tests
