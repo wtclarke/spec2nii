@@ -90,7 +90,7 @@ def _process_svs_pfile(pfile):
     :return: List of file name suffixes
     """
 
-    assert(pfile.encoding is not None) # encoding should have been set in ge_read_pfile get_mapper
+    assert pfile.encoding is not None  # encoding should have been set in ge_read_pfile get_mapper
 
     psd = pfile.hdr.rhi_psdname.decode(pfile.encoding, errors='replace').lower()
     proto = pfile.hdr.rhs_se_desc.decode(pfile.encoding, errors='replace').lower()
@@ -433,7 +433,7 @@ def _process_mrsi_pfile(pfile):
     :return: List of file name suffixes
     """
 
-    assert(pfile.encoding is not None) # encoding should have been set in ge_read_pfile get_mapper
+    assert pfile.encoding is not None  # encoding should have been set in ge_read_pfile get_mapper
 
     psd = pfile.hdr.rhi_psdname.decode(pfile.encoding, errors='replace').lower()
 
@@ -591,7 +591,11 @@ def _populate_metadata(pfile, water_suppressed=True, data_dimensions=None):
     # 'TxCoil'
     # Not Known
     # 'RxCoil'
-    meta.set_user_def(key='ReceiveCoilName', value=hdr.rhi_cname.decode(pfile.encoding, errors='replace'), doc='Rx coil name.')
+    meta.set_user_def(
+        key="ReceiveCoilName",
+        value=hdr.rhi_cname.decode(pfile.encoding, errors="replace"),
+        doc="Rx coil name.",
+    )
 
     # # 5.3 Sequence information
     # 'SequenceName'

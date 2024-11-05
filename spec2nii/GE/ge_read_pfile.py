@@ -194,14 +194,14 @@ class Pfile:
 
                 if psd == "hbcd" and "press" in proto:
                     psd = self.hdr.rhs_se_desc.decode(encoding, errors).lower()
-            except UnicodeDecodeError as err:
+            except UnicodeDecodeError:
                 psd = ""
                 proto = ""
                 continue
             self.encoding = encoding
             break
 
-        assert(self.encoding is not None) # final codec must should have succeeded
+        assert self.encoding is not None  # final codec must should have succeeded
 
         # MM: Some 'gaba' psd strings contain full path names, so truncate to the end of the path
         if psd.endswith('gaba'):
@@ -667,7 +667,7 @@ class PfileMapper:
 
         dcos[0][0] = (self.hdr.rhi_trhc_R - self.hdr.rhi_tlhc_R)
         dcos[0][1] = (self.hdr.rhi_trhc_A - self.hdr.rhi_tlhc_A)
-        dcos[0][2] =  (self.hdr.rhi_trhc_S - self.hdr.rhi_tlhc_S)
+        dcos[0][2] = (self.hdr.rhi_trhc_S - self.hdr.rhi_tlhc_S)
 
         dcosLengthX = np.sqrt(dcos[0][0] * dcos[0][0]
                               + dcos[0][1] * dcos[0][1]
@@ -679,7 +679,7 @@ class PfileMapper:
 
         dcos[1][0] = (self.hdr.rhi_brhc_R - self.hdr.rhi_trhc_R)
         dcos[1][1] = (self.hdr.rhi_brhc_A - self.hdr.rhi_trhc_A)
-        dcos[1][2] =  (self.hdr.rhi_brhc_S - self.hdr.rhi_trhc_S)
+        dcos[1][2] = (self.hdr.rhi_brhc_S - self.hdr.rhi_trhc_S)
 
         dcosLengthY = np.sqrt(dcos[1][0] * dcos[1][0]
                               + dcos[1][1] * dcos[1][1]
@@ -1008,7 +1008,7 @@ class PfileMapper:
         numTimePts      = self.get_num_time_points
         numSpecPts      = self.hdr.rhr_rh_frame_size
         numFreqPts      = numSpecPts
-        numComponents   =  2
+        numComponents   = 2
         dataWordSize    = self.hdr.rhr_rh_point_size
 
         numBytesInVol   = self.get_num_kspace_points * numSpecPts * numComponents * dataWordSize
