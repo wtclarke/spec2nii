@@ -124,6 +124,7 @@ class Pfile:
         self.hdr        = None
         self.map        = None
         self.endian     = 'little'  # def for version >= 11
+        self.encoding   = None
 
         self.read_header()
 
@@ -176,10 +177,31 @@ class Pfile:
         if self.hdr is None:
             return None
 
-        psd = self.hdr.rhi_psdname.decode('utf-8').lower()
-        proto = self.hdr.rhs_se_desc.decode('utf-8').lower()
-        if psd == 'hbcd' and "press" in proto:
-            psd = self.hdr.rhs_se_desc.decode('utf-8').lower()
+        # ARC 20241105 : utf-8 codec is not standard across systems; here, we try a
+        # couple of likely candidates, falling back on permissive ascii
+
+        for encoding, errors in [
+            ("utf-8", "strict"),
+            ("ISO-8859-1", "strict"),
+            ("ascii", "replace"),
+        ]:
+            try:
+                psd = self.hdr.rhi_psdname.decode(encoding, errors).lower()
+                proto = self.hdr.rhs_se_desc.decode(encoding, errors).lower()
+
+                # the following is unused in this context, but can inform codec selection
+                _ = self.hdr.rhe_patname.decode(encoding, errors)
+
+                if psd == "hbcd" and "press" in proto:
+                    psd = self.hdr.rhs_se_desc.decode(encoding, errors).lower()
+            except UnicodeDecodeError as err:
+                psd = ""
+                proto = ""
+                continue
+            self.encoding = encoding
+            break
+
+        assert(self.encoding is not None) # final codec must should have succeeded
 
         # MM: Some 'gaba' psd strings contain full path names, so truncate to the end of the path
         if psd.endswith('gaba'):
