@@ -35,6 +35,10 @@ mm_slaser = ge_path / 'pFiles' / 'sLASER' / 'sub-01_ses-01_acq-slaser_svs_noID.7
 # HBCD / ISTHMUS datasets
 hbcd2_path = ge_path / 'pFiles' / 'hbcd' / 'P31744.7'
 
+# Test set from Bergen (MR30.1, non-English characters in header text)
+bergen_press_301 = ge_path / 'pFiles' / 'PRESS' / 'MR30.1' / 'P30101.7'
+bergen_press_301_non_english = ge_path / 'pFiles' / 'PRESS' / 'MR30.1' / 'P30104.7'
+
 
 def test_svs(tmp_path):
 
@@ -355,3 +359,71 @@ def test_hbcd_isthmus(tmp_path):
     img = NIFTI_MRS(tmp_path / 'hbcd_short_te.nii.gz')
     assert img.shape == (1, 1, 1, 2048, 32, 8)
     assert img.dim_tags == ['DIM_DYN', 'DIM_COIL', None]
+
+
+def test_svs_bergen_301(tmp_path):
+
+    subprocess.check_call(['spec2nii', 'ge',
+                           '-f', 'svs',
+                           '-o', tmp_path,
+                           '-j',
+                           str(bergen_press_301)])
+
+    img, hdr_ext = read_nifti_mrs_with_hdr(tmp_path / 'svs.nii.gz')
+    img_ref, hdr_ext_ref  = read_nifti_mrs_with_hdr(tmp_path / 'svs_ref.nii.gz')
+
+    assert img.shape == (1, 1, 1, 4096, 48, 2)
+    assert np.iscomplexobj(img.dataobj)
+    assert 1 / img.header['pixdim'][4] == 5000.0
+    assert hdr_ext['WaterSuppressed']
+
+    assert img_ref.shape == (1, 1, 1, 4096, 48, 2)
+    assert np.iscomplexobj(img_ref.dataobj)
+    assert 1 / img_ref.header['pixdim'][4] == 5000.0
+    assert not hdr_ext_ref['WaterSuppressed']
+
+    assert hdr_ext['dim_5'] == 'DIM_COIL'
+    assert hdr_ext['dim_6'] == 'DIM_DYN'
+    assert np.isclose(127.7, hdr_ext['SpectrometerFrequency'][0], atol=1E-1)
+    assert hdr_ext['ResonantNucleus'][0] == '1H'
+
+    assert np.isclose(hdr_ext['EchoTime'], 0.03)
+    assert np.isclose(hdr_ext['RepetitionTime'], 2.0)
+
+    assert hdr_ext['PatientName'] == 'fantom'
+    assert hdr_ext['SequenceName'] == 'PROBE-P'
+    assert hdr_ext['ProtocolName'] == 'PROBE-P'
+
+
+def test_svs_bergen_301_non_english(tmp_path):
+
+    subprocess.check_call(['spec2nii', 'ge',
+                           '-f', 'svs',
+                           '-o', tmp_path,
+                           '-j',
+                           str(bergen_press_301_non_english)])
+
+    img, hdr_ext = read_nifti_mrs_with_hdr(tmp_path / 'svs.nii.gz')
+    img_ref, hdr_ext_ref  = read_nifti_mrs_with_hdr(tmp_path / 'svs_ref.nii.gz')
+
+    assert img.shape == (1, 1, 1, 4096, 48, 2)
+    assert np.iscomplexobj(img.dataobj)
+    assert 1 / img.header['pixdim'][4] == 5000.0
+    assert hdr_ext['WaterSuppressed']
+
+    assert img_ref.shape == (1, 1, 1, 4096, 48, 2)
+    assert np.iscomplexobj(img_ref.dataobj)
+    assert 1 / img_ref.header['pixdim'][4] == 5000.0
+    assert not hdr_ext_ref['WaterSuppressed']
+
+    assert hdr_ext['dim_5'] == 'DIM_COIL'
+    assert hdr_ext['dim_6'] == 'DIM_DYN'
+    assert np.isclose(127.7, hdr_ext['SpectrometerFrequency'][0], atol=1E-1)
+    assert hdr_ext['ResonantNucleus'][0] == '1H'
+
+    assert np.isclose(hdr_ext['EchoTime'], 0.03)
+    assert np.isclose(hdr_ext['RepetitionTime'], 2.0)
+
+    assert hdr_ext['PatientName'] == 'fantom^prøve'
+    assert hdr_ext['SequenceName'] == 'PROBE-P'
+    assert hdr_ext['ProtocolName'] == 'PROBE-P åøæäöÅØÆÄÖ'

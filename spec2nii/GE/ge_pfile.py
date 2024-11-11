@@ -89,12 +89,15 @@ def _process_svs_pfile(pfile):
     :return: List of NIFTI MRS data objects
     :return: List of file name suffixes
     """
-    psd = pfile.hdr.rhi_psdname.decode('utf-8').lower()
-    proto = pfile.hdr.rhs_se_desc.decode('utf-8').lower()
+
+    assert pfile.encoding is not None  # encoding should have been set in ge_read_pfile get_mapper
+
+    psd = pfile.hdr.rhi_psdname.decode(pfile.encoding, errors='replace').lower()
+    proto = pfile.hdr.rhs_se_desc.decode(pfile.encoding, errors='replace').lower()
     if psd == 'hbcd' and "press" in proto:
         print('\nPSD was: ', psd)
         print('Proto is: ', proto)
-        psd = pfile.hdr.rhs_se_desc.decode('utf-8').lower()
+        psd = pfile.hdr.rhs_se_desc.decode(pfile.encoding, errors='replace').lower()
         print('PSD updated to: ', psd)
 
     # MM: Some 'gaba' psd strings contain full path names, so truncate to the end of the path
@@ -429,7 +432,10 @@ def _process_mrsi_pfile(pfile):
     :return: List of NIFTI MRS data objects
     :return: List of file name suffixes
     """
-    psd = pfile.hdr.rhi_psdname.decode('utf-8').lower()
+
+    assert pfile.encoding is not None  # encoding should have been set in ge_read_pfile get_mapper
+
+    psd = pfile.hdr.rhi_psdname.decode(pfile.encoding, errors='replace').lower()
 
     known_formats = ('probe-p', 'probe-sl', 'slaser_cni', 'presscsi')
     if psd not in known_formats:
@@ -573,37 +579,41 @@ def _populate_metadata(pfile, water_suppressed=True, data_dimensions=None):
     # 'Manufacturer'
     meta.set_standard_def('Manufacturer', 'GE')
     # 'ManufacturersModelName'
-    meta.set_standard_def('ManufacturersModelName', hdr.rhe_ex_sysid.decode('utf-8'))
+    meta.set_standard_def('ManufacturersModelName', hdr.rhe_ex_sysid.decode(pfile.encoding, errors='replace'))
     # 'DeviceSerialNumber'
-    meta.set_standard_def('DeviceSerialNumber', hdr.rhe_uniq_sys_id.decode('utf-8'))
+    meta.set_standard_def('DeviceSerialNumber', hdr.rhe_uniq_sys_id.decode(pfile.encoding, errors='replace'))
     # 'SoftwareVersions'
-    meta.set_standard_def('SoftwareVersions', hdr.rhe_ex_verscre.decode('utf-8'))
+    meta.set_standard_def('SoftwareVersions', hdr.rhe_ex_verscre.decode(pfile.encoding, errors='replace'))
     # 'InstitutionName'
-    meta.set_standard_def('InstitutionName', hdr.rhe_hospname.decode('utf-8'))
+    meta.set_standard_def('InstitutionName', hdr.rhe_hospname.decode(pfile.encoding, errors='replace'))
     # 'InstitutionAddress'
     # Not known
     # 'TxCoil'
     # Not Known
     # 'RxCoil'
-    meta.set_user_def(key='ReceiveCoilName', value=hdr.rhi_cname.decode('utf-8'), doc='Rx coil name.')
+    meta.set_user_def(
+        key="ReceiveCoilName",
+        value=hdr.rhi_cname.decode(pfile.encoding, errors="replace"),
+        doc="Rx coil name.",
+    )
 
     # # 5.3 Sequence information
     # 'SequenceName'
-    meta.set_standard_def('SequenceName', hdr.rhi_psdname.decode('utf-8'))
+    meta.set_standard_def('SequenceName', hdr.rhi_psdname.decode(pfile.encoding, errors='replace'))
     # 'ProtocolName'
-    meta.set_standard_def('ProtocolName', hdr.rhs_se_desc.decode('utf-8'))
+    meta.set_standard_def('ProtocolName', hdr.rhs_se_desc.decode(pfile.encoding, errors='replace'))
 
     # # 5.4 Sequence information
     # 'PatientPosition'
     # Not known
     # 'PatientName'
-    meta.set_standard_def('PatientName', hdr.rhe_patname.decode('utf-8'))
+    meta.set_standard_def('PatientName', hdr.rhe_patname.decode(pfile.encoding, errors='replace'))
     # 'PatientID'
     # Not known
     # 'PatientWeight'
     # Not known
     # 'PatientDoB'
-    meta.set_standard_def('PatientDoB', hdr.rhe_dateofbirth.decode('utf-8'))
+    meta.set_standard_def('PatientDoB', hdr.rhe_dateofbirth.decode(pfile.encoding, errors='replace'))
     # 'PatientSex'
     if hdr.rhe_patsex == 1:
         sex_str = 'M'
