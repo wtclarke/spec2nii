@@ -40,7 +40,7 @@ bergen_press_301 = ge_path / 'pFiles' / 'PRESS' / 'MR30.1' / 'P30101.7'
 bergen_press_301_non_english = ge_path / 'pFiles' / 'PRESS' / 'MR30.1' / 'P30104.7'
 
 
-def testsvs(tmp_path):
+def test_svs(tmp_path):
 
     subprocess.check_call(['spec2nii', 'ge',
                            '-f', 'svs',
@@ -72,7 +72,7 @@ def testsvs(tmp_path):
     assert np.isclose(hdr_ext['RepetitionTime'], 2.0)
 
 
-def testmrsi(tmp_path):
+def test_mrsi(tmp_path):
 
     subprocess.check_call(['spec2nii', 'ge',
                            '-f', 'mrsi',
@@ -94,7 +94,7 @@ def testmrsi(tmp_path):
     assert hdr_ext['OriginalFile'][0] == mrsi_path.name
 
 
-def testmpress(tmp_path):
+def test_mpress(tmp_path):
 
     subprocess.check_call(['spec2nii', 'ge',
                            '-f', 'mpress',
@@ -127,7 +127,7 @@ def testmpress(tmp_path):
     assert np.isclose(hdr_ext['RepetitionTime'], 2.0)
 
 
-def testmm_hercules(tmp_path):
+def test_mm_hercules(tmp_path):
     for path in mm_herc:
         subprocess.run([
             'spec2nii', 'ge',
@@ -164,7 +164,7 @@ def testmm_hercules(tmp_path):
         assert hdr_ext_ref['dim_7'] == 'DIM_EDIT'
 
 
-def testmm_hermes(tmp_path):
+def test_mm_hermes(tmp_path):
     for path in mm_hermes:
         subprocess.run([
             'spec2nii', 'ge',
@@ -200,7 +200,7 @@ def testmm_hermes(tmp_path):
         assert hdr_ext_ref['dim_7'] == 'DIM_EDIT'
 
 
-def testmm_mega(tmp_path):
+def test_mm_mega(tmp_path):
     for path in mm_mega.rglob('*.7'):
         subprocess.run([
             'spec2nii', 'ge',
@@ -242,7 +242,7 @@ def testmm_mega(tmp_path):
         assert hdr_ext_ref['dim_7'] == 'DIM_EDIT'
 
 
-def testmm_press(tmp_path):
+def test_mm_press(tmp_path):
     for path in mm_press.rglob('*.7'):
         subprocess.run([
             'spec2nii', 'ge',
@@ -277,7 +277,7 @@ def testmm_press(tmp_path):
         assert hdr_ext_ref['dim_6'] == 'DIM_DYN'
 
 
-def testmm_press_noid(tmp_path):
+def test_mm_press_noid(tmp_path):
     subprocess.run([
         'spec2nii', 'ge',
         '-f', mm_press_noid.stem,
@@ -304,7 +304,7 @@ def testmm_press_noid(tmp_path):
     assert hdr_ext_ref['dim_5'] == 'DIM_COIL'
 
 
-def testmm_slaser(tmp_path):
+def test_mm_slaser(tmp_path):
     subprocess.run([
         'spec2nii', 'ge',
         '-f', mm_slaser.stem,
@@ -331,7 +331,7 @@ def testmm_slaser(tmp_path):
     assert hdr_ext_ref['dim_5'] == 'DIM_COIL'
 
 
-def testhbcd_isthmus(tmp_path):
+def test_hbcd_isthmus(tmp_path):
     subprocess.run([
         'spec2nii', 'ge',
         '-f', 'hbcd',
@@ -361,7 +361,7 @@ def testhbcd_isthmus(tmp_path):
     assert img.dim_tags == ['DIM_DYN', 'DIM_COIL', None]
 
 
-def testsvs_bergen_301(tmp_path):
+def test_svs_bergen_301(tmp_path):
 
     subprocess.check_call(['spec2nii', 'ge',
                            '-f', 'svs',
@@ -395,7 +395,7 @@ def testsvs_bergen_301(tmp_path):
     assert hdr_ext['ProtocolName'] == 'PROBE-P'
 
 
-def testsvs_bergen_301_non_english(tmp_path):
+def test_svs_bergen_301_non_english(tmp_path):
 
     subprocess.check_call(['spec2nii', 'ge',
                            '-f', 'svs',
