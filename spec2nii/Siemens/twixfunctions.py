@@ -374,7 +374,9 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
                                                          dim_tags)
 
     # AG 03/22/2023 - New Hyper Function
-    elif 'smm_svs_herc_hyper' in twixObj['hdr']['Meas'][('tSequenceFileName')]:
+    # AG 03/25/2025 - Support for Siemens Update to 'smm_svs_isthmus_gls'
+    elif 'smm_svs_herc_hyper' in twixObj['hdr']['Meas'][('tSequenceFileName')] or (         # Hyper/ISTHMUS
+         'svs_isthmus' in twixObj['hdr']['Meas'][('tSequenceFileName')]):                   # ISTHMUS Update
         from spec2nii.Siemens.twix_special_case import smm_svs_herc_hyper                   # Hyper Data
 
         hyp_names  = ['35ms Water Reference',
