@@ -24,6 +24,7 @@ ve_fid = siemens_path / 'fid' / 'meas_MID00070_FID27084_fid_13C_360dyn_hyper_TR1
 hercules_ve = siemens_path / 'HERCULES' / 'Siemens_TIEMO_HERC.dat'
 hercules_xa30 = siemens_path / 'HERCULES' / 'meas_MID02595_FID60346_HERC.dat'
 hermes_xa50 = siemens_path / 'XAData' / 'XA50' / 'smm_svs_herc_v2_hermes.dat'
+isthmus_update = siemens_path / 'hyper_isthmus' / 'meas_MID00034_FID65022_smm_svs_isthmus_gls_scnh.dat'
 
 
 def test_VB(tmp_path):
@@ -222,6 +223,37 @@ def test_XA_HERMES(tmp_path):
     assert hdr_ext['dim_5'] == 'DIM_COIL'
     assert hdr_ext['dim_6'] == 'DIM_EDIT'
     assert hdr_ext['dim_7'] == 'DIM_DYN'
+
+
+def test_hyper_isthmus_special_case(tmp_path):
+    subprocess.run([
+        'spec2nii', 'twix',
+        '-e', 'image',
+        '-f', 'isthmus',
+        '-o', tmp_path,
+        isthmus_update
+    ])
+    for split in ['ref_short_te', 'ref_edited', 'short_te', 'edited']:
+        split_file = (tmp_path / ('isthmus_' + split)).with_suffix('.nii.gz')
+        assert split_file.exists()
+
+        curr_img = read_nifti_mrs(split_file)
+        hdr_ext_codes = curr_img.header.extensions.get_codes()
+        hdr_ext = json.loads(curr_img.header.extensions[hdr_ext_codes.index(44)].get_content())
+
+        if split == 'ref_short_te':
+            assert hdr_ext['dim_5'] == 'DIM_COIL'
+            assert hdr_ext['dim_6'] == 'DIM_DYN'
+        elif split == 'ref_edited':
+            assert hdr_ext['dim_5'] == 'DIM_COIL'
+            assert hdr_ext['dim_6'] == 'DIM_DYN'
+        elif split == 'short_te':
+            assert hdr_ext['dim_5'] == 'DIM_COIL'
+            assert hdr_ext['dim_6'] == 'DIM_DYN'
+        elif split == 'edited':
+            assert hdr_ext['dim_5'] == 'DIM_COIL'
+            assert hdr_ext['dim_6'] == 'DIM_EDIT'
+            assert hdr_ext['dim_7'] == 'DIM_DYN'
 
 
 def test_twix_mrsi_orientation(tmp_path):
