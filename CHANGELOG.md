@@ -1,5 +1,9 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.8.6 (Thursday 27th March 2025)
+--------------------------------
+- Added Isthmus sequence handling for siemens twix format (including tests)
+
 0.8.5 (Thursday 31st October 2024)
 ----------------------------------
 - Add special case handling for DICOM dkd_svs_mslaser_msspnav sequence
