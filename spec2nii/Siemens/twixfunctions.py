@@ -384,7 +384,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
                       '80ms HERCULES']                                                      # Hyper Subscan Names
         hyp_suffix = ['ref_short_te', 'ref_edited', 'short_te', 'edited']                   # Hyper Suffixes
 
-        # Reording the Data & Adjusting the Header Appropriately
+        # Reordering the Data & Adjusting the Header Appropriately
         for ii in range(len(hyp_names)):                                                    # Iterate over Subscans
             print(f'{ii:3d} {hyp_names[ii]:<20}', end='\r')
             reord_data_, meta_obj_, dim_tags_ = smm_svs_herc_hyper(twixObj,
