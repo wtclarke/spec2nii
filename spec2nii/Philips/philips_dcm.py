@@ -371,7 +371,7 @@ def _enhanced_dcm_svs_to_orientation(img, verbose=False):
             shift_hf = float(section[0x02005, 0x105b].value)
 
             # This matches the spar/sdat pathway in spec2nii.Philips.philips._philips_orientation
-            from spec2nii.nifti_orientation import NIFTIOrient, calc_affine
+            from spec2nii.nifti_orientation import calc_affine
             angles = [-angle_lr, -angle_ap, angle_hf]
             dimensions = [dim_lr, dim_ap, dim_hf]
             shift = [-shift_lr, -shift_ap, shift_hf]
