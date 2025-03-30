@@ -181,10 +181,10 @@ def test_dcm_spar_orientations(tmp_path):
              sdat, spar]
         )
 
-    for key in data:
-        dcm_call(data[key]['dcm_enhanced'], f'dcm_e_{key}')
-        dcm_call(data[key]['dcm_classic'], f'dcm_c_{key}')
-        ss_call(data[key]['spar'], f'spar_{key}')
+    for key, value in data.items():
+        dcm_call(value['dcm_enhanced'], f'dcm_e_{key}')
+        dcm_call(value['dcm_classic'], f'dcm_c_{key}')
+        ss_call(value['spar'], f'spar_{key}')
 
     all_cases = []
     for case in data:
