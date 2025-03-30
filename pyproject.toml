@@ -1,3 +1,7 @@
 [build-system]
 requires = ["setuptools", "versioneer", "pyyaml"]
 build-backend = "setuptools.build_meta"
+
+[tool.codespell]
+skip = "versioneer.py,_version.py,ge_hdr_fields.py,ge_pfile.py,ge_read_pfile.py,fileiobase.py,varian.py"
+ignore-words-list = "reson,te,ue,varian"
