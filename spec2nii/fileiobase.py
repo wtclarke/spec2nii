@@ -688,12 +688,12 @@ class data_nd:
 
                 # check for out of range indexes
                 if v >= self.shape[i]:
-                    raise IndexError("index({}) out of range(0 <= index < {}) \
-                    in dimension {}".format(v, self.shape[i] - 1, i))
+                    raise IndexError(f"index({v}) out of range(0 <= index < "
+                                     f"{self.shape[i] - 1}) in dimension {i}")
 
                 if v <= (-1 * self.shape[i] - 1):
-                    raise IndexError("index({}) out of range(0 <= index < {}) \
-                    in dimension {}".format(v, self.shape[i] - 1, i))
+                    raise IndexError(f"index({v}) out of range(0 <= index < "
+                                     f"{self.shape[i] - 1}) in dimension {i}")
 
                 if v < 0:
                     w = self.shape[i] + v
