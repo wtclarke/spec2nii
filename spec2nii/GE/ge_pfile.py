@@ -418,8 +418,8 @@ def _process_hbcd(pfile):
     ref_names = ['_edited', '_short_te', '_ref_edited', '_ref_short_te']                    # ISTHMUS Naming
 
     print('Returning ISTHMUS Data:')
-    for ii in range(len(data)):
-        print('    {:02d} {:<14} '.format(ii, ref_names[ii]), data[ii].shape)
+    for ii, item in enumerate(data):
+        print('    {:02d} {:<14} '.format(ii, ref_names[ii]), item.shape)
     print(' ')
 
     return data, meta, dwelltime, ref_names
