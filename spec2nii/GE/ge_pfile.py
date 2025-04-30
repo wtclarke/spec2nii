@@ -419,7 +419,7 @@ def _process_hbcd(pfile):
 
     print('Returning ISTHMUS Data:')
     for ii, item in enumerate(data):
-        print('    {:02d} {:<14} '.format(ii, ref_names[ii]), item.shape)
+        print(f'    {ii:02d} {ref_names[ii]:<14} {item.shape}')
     print(' ')
 
     return data, meta, dwelltime, ref_names
