@@ -92,7 +92,7 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
     str_suffix = []
     mainStr = ''
     first_mrs_dcm_found = False
-    for idx, fn in enumerate(files_in):
+    for fn in files_in:
         if verbose:
             print(f'Converting dicom file {fn}')
 
