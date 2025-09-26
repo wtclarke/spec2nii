@@ -143,7 +143,7 @@ class spec2nii:
             "--special",
             type=str,
             default=None,
-            help="Identify special case sequence. Options: 'hyper'.")
+            help="Identify special case sequence. Options: 'hyper' and 'four_files'.")
         parser_p_dl = add_common_parameters(parser_p_dl)
         parser_p_dl.set_defaults(func=self.philips_dl)
 
