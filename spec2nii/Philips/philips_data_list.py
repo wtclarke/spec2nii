@@ -120,7 +120,7 @@ def read_data_list_pair(data_file, list_file, aux_file, special_case=None):
                 and (special_case == 'four_files'):
             print('{} Data         Dims:          '.format(data_type), out_data.shape)
             out_ref, meta_ref = _special_case_hyper_ref(out_data, meta)
-            
+
             data_out.append(
                 gen_nifti_mrs_hdr_ext(out_ref[0], dwelltime, meta_ref[0], orientation.Q44, no_conj=True))
             name_out.append('hyper_ref_short_te')
@@ -342,9 +342,10 @@ def _special_case_hyper(data, meta):
     return [data_short_te, data_edited], \
            [meta_short_te, meta_edited]
 
+
 def _special_case_hyper_ref(data, meta):
-    ## Special case handling for the HYPER/ISTHMUS Water Reference
     '''
+    Special case handling for the HYPER/ISTHMUS Water Reference
     Notes:
       - (AG 09/2025) Updated to allow ISTHMUS full file separation.
     '''
@@ -361,18 +362,18 @@ def _special_case_hyper_ref(data, meta):
 
     # Meta Data Short TE Water Reference
     meta_short_te = meta.copy()
-    meta_short_te.set_dim_info(0,'DIM_COIL')
-    meta_short_te.set_dim_info(1,'DIM_DYN')
-    meta_short_te.set_dim_info(2,'DIM_USER_0', info='HYPER Short TE water reference')
-    
+    meta_short_te.set_dim_info(0, 'DIM_COIL')
+    meta_short_te.set_dim_info(1, 'DIM_DYN')
+    meta_short_te.set_dim_info(2, 'DIM_USER_0', info='HYPER Short TE water reference')
+
     meta_short_te.set_standard_def('WaterSuppressed', False)
     meta_short_te.set_standard_def('EchoTime', 0.035)
 
     # Meta Data Long TE Water Reference
     meta_edited = meta.copy()
-    meta_edited.set_dim_info(0,'DIM_COIL')
-    meta_edited.set_dim_info(1,'DIM_DYN')
-    meta_edited.set_dim_info(2,'DIM_USER_0', info='HYPER Long TE water reference')
+    meta_edited.set_dim_info(0, 'DIM_COIL')
+    meta_edited.set_dim_info(1, 'DIM_DYN')
+    meta_edited.set_dim_info(2, 'DIM_USER_0', info='HYPER Long TE water reference')
     meta_edited.set_standard_def('WaterSuppressed', False)
     meta_edited.set_standard_def('EchoTime', 0.08)
 
@@ -380,4 +381,4 @@ def _special_case_hyper_ref(data, meta):
     print('  - Short TE Water Dims: ', data_short_te.shape)
     print('  - Edited   Water Dims: ', data_edited.shape)
 
-    return [data_short_te, data_edited],[meta_short_te, meta_edited]
+    return [data_short_te, data_edited], [meta_short_te, meta_edited]
