@@ -30,6 +30,9 @@ hyper_path_spar = philips_path / 'hyper' / 'HBCD_HYPER_r5712_Export_WIP_HYPER_5_
 hyper_ref_path_sdat = philips_path / 'hyper' / 'HBCD_HYPER_r5712_Export_WIP_HYPER_5_2_raw_ref.SDAT'
 hyper_ref_path_spar = philips_path / 'hyper' / 'HBCD_HYPER_r5712_Export_WIP_HYPER_5_2_raw_ref.SPAR'
 
+anon_sdat = philips_path / 'spar_sdat_anon' / 'manual_anon.SDAT'
+anon_spar = philips_path / 'spar_sdat_anon' / 'manual_anon.SPAR'
+
 
 def test_svs(tmp_path):
 
@@ -213,3 +216,15 @@ def test_svs_hyper_ref(tmp_path):
     hdr_ext = json.loads(img_2.header.extensions[hdr_ext_codes.index(44)].get_content())
 
     assert hdr_ext['dim_5'] == 'DIM_DYN'
+
+
+def test_manual_anon(tmp_path):
+    subprocess.run([
+        'spec2nii', 'philips',
+        '-o', tmp_path,
+        '-f', 'anon',
+        anon_sdat,
+        anon_spar
+    ])
+
+    assert (tmp_path / 'anon.nii.gz').is_file()

@@ -230,11 +230,11 @@ def spar_to_nmrs_hdrext(spar_dict):
     except AttributeError:
         pass
     # 'PatientName'
-    set_standard_def('PatientName', spar_dict, 'patient_name')
+    set_standard_def('PatientName', spar_dict, 'patient_name', cast=str)
     # 'PatientID'
     # 'PatientWeight'
     # 'PatientDoB'
-    set_standard_def('PatientDoB', spar_dict, 'patient_birth_date')
+    set_standard_def('PatientDoB', spar_dict, 'patient_birth_date', cast=str)
     # 'PatientSex'
     # # 5.5 Provenance and conversion metadata
     # 'ConversionMethod'
