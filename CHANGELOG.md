@@ -1,5 +1,9 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.8.7 (Wednesday 8th October 2025)
+----------------------------------
+- Fixed issue with anonymised spar data
+
 0.8.6 (Thursday 27th March 2025)
 --------------------------------
 - Added Isthmus sequence handling for siemens twix format (including tests)
