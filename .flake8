@@ -1,11 +1,3 @@
-[versioneer]
-VCS = git
-style = pep440
-versionfile_source = spec2nii/_version.py
-versionfile_build = spec2nii/_version.py
-tag_prefix =
-parentdir_prefix =
-
 [flake8]
 ignore =
     # Multiple spaces before operator
@@ -23,7 +15,3 @@ exclude =
     # Exclude Definitions file so that things can be on one line.
     spec2nii/nifti_mrs/definitions.py
 max-line-length=120
-
-[codespell]
-skip =versioneer.py,_version.py,ge_hdr_fields.py,ge_pfile.py,ge_read_pfile.py,fileiobase.py,varian.py
-ignore-words-list = te,varian

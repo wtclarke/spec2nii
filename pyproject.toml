@@ -1,3 +1,41 @@
 [build-system]
-requires = ["setuptools", "versioneer", "pyyaml"]
+requires = ["setuptools>=77.0.3", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "spec2nii"
+requires-python = ">=3.9"
+authors = [
+    {name = "Will Clarke", email = "william.clarke@ndcn.ox.ac.uk"},
+]
+description = "Multi-format in vivo MR spectroscopy conversion to NIFTI"
+readme = "README.md"
+license = "BSD-3-Clause"
+license-files = ["LICENSE", "spec2nii/GE/VESPA_LICENSE"]
+classifiers=[
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+]
+dynamic = ["dependencies", "version"]
+
+[project.scripts]
+spec2nii = "spec2nii.spec2nii:main"
+
+[project.urls]
+homepage = 'https://github.com/wtclarke/spec2nii'
+
+[tool.setuptools]
+packages = ["spec2nii"]
+dynamic.dependencies = { file = ["requirements.txt"] }
+
+[tool.setuptools_scm]
+version_file = "spec2nii/_version.py"
+
+[tool.codespell]
+skip = "versioneer.py,_version.py,ge_hdr_fields.py,ge_pfile.py,ge_read_pfile.py,fileiobase.py,varian.py"
+ignore-words-list = "te,varian"

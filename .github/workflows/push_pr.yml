@@ -23,7 +23,6 @@ jobs:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
           activate-environment: test
-          environment-file: requirements.yml
           auto-activate-base: false
           channels: conda-forge
       - shell: bash -l {0}
@@ -38,6 +37,7 @@ jobs:
       - name: Run pytest
         shell: bash -l {0}
         run: |
+            conda install --yes --file requirements.txt
             conda install pytest h5py pillow
             pip install --no-deps .
             pytest -m "not orientation" tests
