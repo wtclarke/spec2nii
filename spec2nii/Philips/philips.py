@@ -101,7 +101,7 @@ def read_sdat_spar_pair(sdat_file, spar_file, shape=None, tags=None, fileout=Non
                [mainStr, ]
 
 
-def read_spar(filename):
+def read_spar(filename, encoding='utf-8'):
     '''Read the .spar file.
     :param filename: file path
 
@@ -110,7 +110,7 @@ def read_spar(filename):
     '''
 
     parameter_dict = {}
-    with open(filename, 'r') as f:
+    with open(filename, 'r', encoding=encoding) as f:
         for line in f:
             # ignore comments (!) and empty lines
             if line == "\n" or line.startswith("!"):
