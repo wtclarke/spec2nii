@@ -208,17 +208,17 @@ class spec2nii:
 
         # Bruker format
         parser_bruker = subparsers.add_parser('bruker', help='Convert from Bruker data format.')
-        parser_bruker.add_argument('file', help='2dseq file to convert', type=str)
+        parser_bruker.add_argument('file', help="fid, 2dseq or rawdata file to convert. If using '--inspect', specify a directory.", type=str)
         parser_bruker.add_argument('-q', '--query', action='append', default=[])
-        parser_bruker.add_argument('-m', '--mode', type=str, default='2DSEQ', choices=['2DSEQ', 'FID'])
+        parser_bruker.add_argument('-m', '--mode', type=str, default='2DSEQ', choices=['2DSEQ', 'FID', 'RAWDATA'],)
         parser_bruker.add_argument('-d', '--dump_headers',
                                    help='Dump bruker header files into json header extension',
                                    action='store_true')
+        parser_bruker.add_argument('--inspect', action='store_true', help='Inspect input directory for available file formats to convert.')
         parser_bruker = add_common_parameters(parser_bruker)
         parser_bruker.set_defaults(func=self.bruker)
 
         # Varian format
-
         parser_varian = subparsers.add_parser('varian', help='Convert from the Varian/OpenVnmrJ data format')
         parser_varian.add_argument(
             'file', help='Path to the varian .fid directory, containing procpar and fid files', type=str)
@@ -663,10 +663,15 @@ class spec2nii:
         from spec2nii.other_formats import lcm_raw
         self.imageOut, self.fileoutNames = lcm_raw(args)
 
-    # Bruker 2dseq files with FG_COMPLEX
+    # Bruker parser
     def bruker(self, args):
         from spec2nii.bruker import read_bruker
-
+        if args.inspect:
+            from spec2nii.bruker import inspect
+            if op.isdir(args.file):
+                args.file = inspect(args.file)
+            else:
+                raise ValueError('Bruker inspect option requires a directory path instead of file as input.')
         self.imageOut, self.fileoutNames = read_bruker(args)
 
     # Varian parser

@@ -259,10 +259,11 @@
               "ste_laser_dIR_WSTM.ppg",
               "mt_sLASER.ppg",
               "mt_MEGA_sLASER_V35.ppg",
-              "cl_STELASER_PA360_b.ppg"
+              "cl_STELASER_PA360_b.ppg",
+              "cl_STELASER_PA_35.ppg"
             ]
           ],
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
+          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>', '<PV-360.1.1>', '<PV-360.3.5>']"
         ]
       },
       {
@@ -452,6 +453,18 @@
         "conditions": [["#PULPROG[1:-1]",
             [
                 "cl_STELASER_PA360_b.ppg"
+            ]],
+          "@scheme_id=='SPECTROSCOPY'"
+        ]
+      },
+      {
+        "cmd": [
+          "#ACQ_size.tuple[0] * 2",
+          "#NR"
+        ],
+        "conditions": [["#PULPROG[1:-1]",
+            [
+                "cl_STELASER_PA_35.ppg"
             ]],
           "@scheme_id=='SPECTROSCOPY'"
         ]
@@ -662,6 +675,18 @@
         "conditions": [["#PULPROG[1:-1]",
             [
                 "cl_STELASER_PA360_b.ppg"
+            ]],
+          "@scheme_id=='SPECTROSCOPY'"
+        ]
+      },
+            {
+        "cmd": [
+          "#ACQ_size.tuple[0] * 2",
+          "#NR"
+        ],
+        "conditions": [["#PULPROG[1:-1]",
+            [
+                "cl_STELASER_PA_35.ppg"
             ]],
           "@scheme_id=='SPECTROSCOPY'"
         ]

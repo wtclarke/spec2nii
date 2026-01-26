@@ -1,4 +1,4 @@
-'''Tests for Philips SDAT/SPAR format conversion.
+'''Tests for Philips data/list format conversion.
 
 Copyright William Clarke, University of Oxford 2021
 Subject to the BSD 3-Clause License.

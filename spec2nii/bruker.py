@@ -4,6 +4,7 @@ https://github.com/isi-nmr/brukerapi-python
 
 Author: Tomas Psorn <tomaspsorn@isibrno.cz>
         Will Clarke <william.clarke@ndcn.ox.ac.uk>
+        Vasilis Karlaftis <vasilis.karlaftis@ndcn.ox.ac.uk>
 Copyright (C) 2021 Institute of Scientific Instruments of the CAS, v. v. i.
 """
 import os
@@ -29,6 +30,30 @@ fid_dimension_defaults = {
     'repetition': "DIM_DYN",
     'channel': "DIM_COIL"}
 
+
+def inspect(path):
+    """Inspect input folder to provide options for processing.
+    """
+    from pathlib import Path
+    path = Path(path)
+    # find all valid file formats
+    files = [next(path.rglob('rawdata.job0')),
+            next(f for f in path.rglob("fid*") if f.name in {"fid", "fid_proc.64"}),
+            next(path.rglob('2dseq'))]
+    # set different colours for each format
+    colours = ['\033[96m', '\033[92m', '\033[91m', '\033[0m']
+    # read and print data layout for each format
+    for i, (file, clr) in enumerate(zip(files, colours), 1):
+        d = Dataset(file)
+        print(f"\n{clr}[{i}] {file.stem.upper()} data layout")
+        for key, val in d._schema.layouts.items():
+            print(f"\t{key:20s}: {val}")
+    # read user input
+    user_choice = int(input(f"\n{colours[-1]}Select file (1-{len(files)}): "))
+    if user_choice < 1 or user_choice > len(files):
+        raise ValueError(f"Invalid choice '{user_choice}', please select a number between 1 and {len(files)}.")
+    print(f"\n✓ Selected: {files[user_choice-1].stem}")
+    return files[user_choice-1]
 
 def read_bruker(args):
     """
@@ -111,6 +136,9 @@ def _get_queries(args):
         queries = ["@type=='2dseq'", "@is_spectroscopy==True", "@is_complex==True"]
     elif args.mode == 'FID':
         queries = ["@type=='fid'", "@is_spectroscopy==True"]
+    # TODO review and update RAWDATA handling
+    elif args.mode == 'RAWDATA':
+        queries = ["@type=='rawdata'"]
     return queries + args.query
 
 
