@@ -670,6 +670,7 @@ class spec2nii:
             from spec2nii.bruker import inspect
             if op.isdir(args.file):
                 args.file = inspect(args.file)
+                # TODO update -m and -f options
             else:
                 raise ValueError('Bruker inspect option requires a directory path instead of file as input.')
         self.imageOut, self.fileoutNames = read_bruker(args)

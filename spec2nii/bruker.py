@@ -117,7 +117,7 @@ def yield_bruker(args):
                 # process individual datasets
                 for dataset in Folder(args.file, dataset_state={
                     "parameter_files": ['method'],
-                    "property_files": [bruker_properties_path]
+                    "property_files": [bruker_fid_override_path, bruker_properties_path]
                 }).get_dataset_list_rec():
                     with dataset as d:
                         try:
@@ -135,7 +135,7 @@ def _get_queries(args):
     if args.mode == '2DSEQ':
         queries = ["@type=='2dseq'", "@is_spectroscopy==True", "@is_complex==True"]
     elif args.mode == 'FID':
-        queries = ["@type=='fid'", "@is_spectroscopy==True"]
+        queries = ["@type in ['fid', 'fid_proc']", "@is_spectroscopy==True"]
     # TODO review and update RAWDATA handling
     elif args.mode == 'RAWDATA':
         queries = ["@type=='rawdata'"]
@@ -163,19 +163,19 @@ def _proc_dataset(d, args):
     properties = d.to_dict()
 
     # Orientation information
-    if d.type == 'fid':
+    if d.type in ['fid', 'fid_proc']:
         orientation = NIFTIOrient(_fid_affine_from_params(d))
     else:
         orientation = NIFTIOrient(np.reshape(np.array(properties['affine']), (4, 4)))
 
     # Meta data
-    if d.type == 'fid':
+    if d.type in ['fid', 'fid_proc']:
         meta = _fid_meta(d, dump=args.dump_headers)
     else:
         meta = _2dseq_meta(d, dump=args.dump_headers)
 
     # Dwelltime - to do resolve this factor of 2 issue
-    if d.type == 'fid':
+    if d.type in ['fid', 'fid_proc']:
         dwelltime = d.dwell_s * 2
     else:
         dwelltime = d.dwell_s * 2
@@ -197,7 +197,7 @@ def _prep_data_svs(d):
 
     """
     data = d.data
-    if d.type == 'fid':
+    if d.type in ['fid', 'fid_proc']:
         # Remove points acquired before echo
         data = data[d.points_prior_to_echo:, ...]
 
@@ -216,7 +216,7 @@ def _prep_data_mrsi(d):
 
     """
     data = d.data
-    if d.type == 'fid':
+    if d.type in ['fid', 'fid_proc']:
         # Remove points acquired before echo
         data = data[d.points_prior_to_echo:, ...]
 
