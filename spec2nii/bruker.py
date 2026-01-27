@@ -38,8 +38,8 @@ def inspect(path):
     path = Path(path)
     # find all valid file formats
     files = [next(path.rglob('rawdata.job0')),
-            next(f for f in path.rglob("fid*") if f.name in {"fid", "fid_proc.64"}),
-            next(path.rglob('2dseq'))]
+             next(f for f in path.rglob("fid*") if f.name in {"fid", "fid_proc.64"}),
+             next(path.rglob('2dseq'))]
     # set different colours for each format
     colours = ['\033[96m', '\033[92m', '\033[91m', '\033[0m']
     # read and print data layout for each format
@@ -52,10 +52,13 @@ def inspect(path):
     user_choice = int(input(f"\n{colours[-1]}Select file (1-{len(files)}): "))
     if user_choice < 1 or user_choice > len(files):
         raise ValueError(f"Invalid choice '{user_choice}', please select a number between 1 and {len(files)}.")
-    print(f"\n✓ Selected: {files[user_choice-1].stem}")
-    filename = files[user_choice-1]
-    mode = files[user_choice-1].stem.upper()
+    print(f"\n✓ Selected: {files[user_choice - 1].stem}")
+    filename = files[user_choice - 1]
+    mode = files[user_choice - 1].stem.upper()
+    if mode == 'fid_proc':
+        mode = 'fid'
     return filename, mode
+
 
 def read_bruker(args):
     """
@@ -97,11 +100,11 @@ def yield_bruker(args):
     # get location of the spec2nii Bruker properties configuration file
     ref1 = importlib_resources.files('spec2nii') / 'bruker_properties.json'
     ref2 = ref1
-    if args.mode in ['fid', 'fid_proc']:
+    if args.mode == 'FID':
         ref2 = importlib_resources.files('spec2nii') / 'bruker_fid_override.json'
-    elif args.mode == '2dseq':
+    elif args.mode == '2DSEQ':
         ref2 = importlib_resources.files('spec2nii') / 'bruker_2dseq_override.json'
-    elif args.mode == 'rawdata':
+    elif args.mode == 'RAWDATA':
         ref2 = importlib_resources.files('spec2nii') / 'bruker_rawdata_override.json'
 
     with importlib_resources.as_file(ref1) as bruker_properties_path:
@@ -126,7 +129,7 @@ def yield_bruker(args):
                 for dataset in Folder(args.file, dataset_state={
                     "parameter_files": ['method'],
                     "property_files": [bruker_override_path, bruker_properties_path]},
-                    dataset_index = [args.mode.lower()],
+                    dataset_index=[args.mode.lower()],
                 ).get_dataset_list_rec():
                     print(dataset.to_dict()['type'])
                     with dataset as d:

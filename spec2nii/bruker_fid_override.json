@@ -53,7 +53,7 @@
           "conditions": [
             "#ACQ_word_size=='_32_BIT'",
             "#BYTORDA=='little'",
-            ["#ACQ_sw_version",["<PV-360.1.1>"]]
+            ["#ACQ_sw_version",["<PV-360.1.1>", "<PV-360.3.5>"]]
           ]
       }
     ],
@@ -98,7 +98,7 @@
         "conditions": [
           ["#ACQ_sw_version",
             [
-              "<PV-360.1.1>"
+              "<PV-360.1.1>", "<PV-360.3.5>"
             ]
           ]
         ]
@@ -147,7 +147,7 @@
         "conditions": [
           ["#ACQ_sw_version",
             [
-              "<PV-360.1.1>"
+              "<PV-360.1.1>", "<PV-360.3.5>"
             ]
           ]
         ]
@@ -452,19 +452,10 @@
         ],
         "conditions": [["#PULPROG[1:-1]",
             [
-                "cl_STELASER_PA360_b.ppg"
-            ]],
-          "@scheme_id=='SPECTROSCOPY'"
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_size.tuple[0] * 2",
-          "#NR"
-        ],
-        "conditions": [["#PULPROG[1:-1]",
-            [
-                "cl_STELASER_PA_35.ppg"
+                "cl_STELASER_PA360_b.ppg",
+                "cl_STELASER_PA_35.ppg",
+                "mt_sLASER.ppg",
+                "STEAM.ppg"
             ]],
           "@scheme_id=='SPECTROSCOPY'"
         ]
@@ -477,18 +468,6 @@
         "conditions": [["#PULPROG[1:-1]",
             [
                 "mt_MEGA_sLASER_V35.ppg"
-            ]],
-          "@scheme_id=='SPECTROSCOPY'"
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_size.tuple[0] * 2",
-          "#NR"
-        ],
-        "conditions": [["#PULPROG[1:-1]",
-            [
-                "mt_sLASER.ppg"
             ]],
           "@scheme_id=='SPECTROSCOPY'"
         ]
@@ -674,19 +653,10 @@
         ],
         "conditions": [["#PULPROG[1:-1]",
             [
-                "cl_STELASER_PA360_b.ppg"
-            ]],
-          "@scheme_id=='SPECTROSCOPY'"
-        ]
-      },
-            {
-        "cmd": [
-          "#ACQ_size.tuple[0] * 2",
-          "#NR"
-        ],
-        "conditions": [["#PULPROG[1:-1]",
-            [
-                "cl_STELASER_PA_35.ppg"
+                "cl_STELASER_PA360_b.ppg",
+                "cl_STELASER_PA_35.ppg",
+                "mt_sLASER.ppg",
+                "STEAM.ppg"
             ]],
           "@scheme_id=='SPECTROSCOPY'"
         ]
@@ -699,18 +669,6 @@
         "conditions": [["#PULPROG[1:-1]",
             [
                 "mt_MEGA_sLASER_V35.ppg"
-            ]],
-          "@scheme_id=='SPECTROSCOPY'"
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_size.tuple[0] * 2",
-          "#NR"
-        ],
-        "conditions": [["#PULPROG[1:-1]",
-            [
-                "mt_sLASER.ppg"
             ]],
           "@scheme_id=='SPECTROSCOPY'"
         ]
@@ -846,5 +804,19 @@
           "@scheme_id=='CSI'"
         ]
       }
-    ]
+    ],
+      "dwell_s": [
+    {
+      "cmd": "1./ @sw_hz / 2.",
+      "conditions": [
+        "@sw_hz!=0"
+      ]
+    },
+    {
+      "cmd": "1./ @ACQ_jobs[0][5] / 2.",
+      "conditions": [
+        "@sw_hz==0"
+      ]
+    }
+  ]
   }

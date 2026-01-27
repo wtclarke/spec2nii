@@ -38,6 +38,8 @@ setup(name='spec2nii',
       entry_points={"console_scripts": [
           "spec2nii = spec2nii.spec2nii:main"]},
       package_data={'spec2nii': ['bruker_properties.json',
-                                 'bruker_fid_override.json'],
+                                 'bruker_fid_override.json',
+                                 'bruker_2dseq_override.json',
+                                 'bruker_rawdata_override.json'],
                     'spec2nii.GE': ['VESPA_LICENSE']}
       )
