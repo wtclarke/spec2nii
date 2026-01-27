@@ -53,7 +53,9 @@ def inspect(path):
     if user_choice < 1 or user_choice > len(files):
         raise ValueError(f"Invalid choice '{user_choice}', please select a number between 1 and {len(files)}.")
     print(f"\n✓ Selected: {files[user_choice-1].stem}")
-    return files[user_choice-1]
+    filename = files[user_choice-1]
+    mode = files[user_choice-1].stem.upper()
+    return filename, mode
 
 def read_bruker(args):
     """
@@ -94,16 +96,22 @@ def yield_bruker(args):
 
     # get location of the spec2nii Bruker properties configuration file
     ref1 = importlib_resources.files('spec2nii') / 'bruker_properties.json'
-    ref2 = importlib_resources.files('spec2nii') / 'bruker_fid_override.json'
+    ref2 = ref1
+    if args.mode in ['fid', 'fid_proc']:
+        ref2 = importlib_resources.files('spec2nii') / 'bruker_fid_override.json'
+    elif args.mode == '2dseq':
+        ref2 = importlib_resources.files('spec2nii') / 'bruker_2dseq_override.json'
+    elif args.mode == 'rawdata':
+        ref2 = importlib_resources.files('spec2nii') / 'bruker_rawdata_override.json'
 
     with importlib_resources.as_file(ref1) as bruker_properties_path:
-        with importlib_resources.as_file(ref2) as bruker_fid_override_path:
+        with importlib_resources.as_file(ref2) as bruker_override_path:
 
             # case of Bruker dataset
             if os.path.isfile(args.file):
                 d = Dataset(
                     args.file,
-                    property_files=[bruker_fid_override_path, bruker_properties_path],
+                    property_files=[bruker_override_path, bruker_properties_path],
                     parameter_files=['method'])
                 try:
                     d.query(queries)
@@ -117,8 +125,10 @@ def yield_bruker(args):
                 # process individual datasets
                 for dataset in Folder(args.file, dataset_state={
                     "parameter_files": ['method'],
-                    "property_files": [bruker_fid_override_path, bruker_properties_path]
-                }).get_dataset_list_rec():
+                    "property_files": [bruker_override_path, bruker_properties_path]},
+                    dataset_index = [args.mode.lower()],
+                ).get_dataset_list_rec():
+                    print(dataset.to_dict()['type'])
                     with dataset as d:
                         try:
                             d.query(queries)
