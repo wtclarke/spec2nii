@@ -1,2 +1,277 @@
 {
+  "subj_id": [
+      {
+        "cmd": "#VisuSubjectName[1:-1]",
+        "conditions": [
+        ]
+      },
+      {
+        "cmd": "''",
+        "conditions": [
+        ]
+      }
+  ],
+  "study_id": [
+      {
+        "cmd": "str(#VisuStudyNumber)",
+        "conditions": [
+        ]
+      },
+      {
+        "cmd": "''",
+        "conditions": [
+        ]
+      }
+  ],
+  "exp_id": [
+      {
+        "cmd": "@path.parents[2].name",
+        "conditions": [
+        ]
+      },
+      {
+        "cmd": "''",
+        "conditions": [
+        ]
+      }
+  ],
+  "proc_id": [
+      {
+        "cmd": "@path.parents[0].name",
+        "conditions": [
+        ]
+      },
+      {
+        "cmd": "''",
+        "conditions": [
+        ]
+      }
+  ],
+  "id": [
+      {
+        "cmd": "'2DSEQ_{}_{}_{}_{}'.format(@exp_id, @proc_id, @subj_id, @study_id)",
+        "conditions": [
+        ]
+      }
+  ],
+  "extent": [
+    {
+      "cmd": "np.array([#PVM_VoxArrSize[0,0] * #VisuAcqSize[1], #PVM_VoxArrSize[0,1] * #VisuAcqSize[2], #VisuCoreFrameThickness])",
+      "conditions": [
+        "#VisuCreatorVersion in ['<5.1>']",
+        "#VisuCoreDimDesc.list[0]=='spectroscopic'",
+        "#VisuCoreDimDesc.list[1]=='spatial'",
+        "#VisuCoreDimDesc.list[2]=='spatial'"]
+    },
+    {
+      "cmd": "np.array([#PVM_VoxArrSize[0,0], #PVM_VoxArrSize[0,1], #PVM_VoxArrSize[0,2]])",
+      "conditions": [
+        "#VisuCreatorVersion in ['<6.0.1>']",
+        "#VisuCoreDimDesc.list[0]=='spectroscopic'",
+        "#VisuCoreDimDesc.list[1]=='spatial'",
+        "#VisuCoreDimDesc.list[2]=='spatial'"]
+    },
+    {
+      "cmd": "np.array([#VisuCoreExtent[0], #VisuCoreExtent[1], (np.shape(#VisuCorePosition)[0] + 1 ) * abs(#VisuCorePosition[1,2] - #VisuCorePosition[0,2])])",
+      "conditions": [
+        "#VisuCorePosition.size[0]>1",
+        "#VisuCoreDim==2"
+      ]
+    },
+    {
+      "cmd": "np.array([#VisuCoreExtent[0], #VisuCoreExtent[1], #VisuCoreFrameThickness])",
+      "conditions": [
+        "#VisuCorePosition.size[0]==1",
+        "#VisuCoreDim==2"
+      ]
+    },
+    {
+      "cmd": "np.array([#VisuCoreExtent[0], #VisuCoreExtent[1], #VisuCoreExtent[2]])",
+      "conditions": [
+        "#VisuCoreDimDesc.list[0]=='spatial'",
+        "#VisuCoreDimDesc.list[1]=='spatial'",
+        "#VisuCoreDimDesc.list[2]=='spatial'"]
+    }
+  ],
+  "resolution": [
+    {
+      "cmd": "np.array([#PVM_VoxArrSize[0,0], #PVM_VoxArrSize[0,1], #VisuCoreFrameThickness])",
+      "conditions": [
+        "#VisuCreatorVersion in ['<5.1>']",
+        "#VisuCoreDimDesc.list[0]=='spectroscopic'",
+        "#VisuCoreDimDesc.list[1]=='spatial'",
+        "#VisuCoreDimDesc.list[2]=='spatial'"]
+    },
+    {
+      "cmd": "np.array([#PVM_VoxArrSize[0,0] / #VisuCoreSize[1], #PVM_VoxArrSize[0,1] / #VisuCoreSize[2], #PVM_VoxArrSize[0,2]])",
+      "conditions": [
+        "#VisuCreatorVersion in ['<6.0.1>']",
+        "#VisuCoreDimDesc.list[0]=='spectroscopic'",
+        "#VisuCoreDimDesc.list[1]=='spatial'",
+        "#VisuCoreDimDesc.list[2]=='spatial'"]
+    },
+    {
+      "cmd": "np.array([#VisuCoreExtent[0] / #VisuCoreSize[0], #VisuCoreExtent[1] / #VisuCoreSize[1], #VisuCoreFrameThickness + #VisuCoreSlicePacksSliceDist.list[0]])",
+      "conditions": [
+        "#VisuCreatorVersion in ['<6.0.1>']",
+        "#VisuCoreDim==2"]
+    },
+    {
+      "cmd": "np.array([#VisuCoreExtent[0] / #VisuCoreSize[0], #VisuCoreExtent[1] / #VisuCoreSize[1], abs(#VisuCorePosition[0,2] - #VisuCorePosition[1,2])])",
+      "conditions": [
+        "#VisuCreatorVersion in ['<5.1>']",
+        "#VisuCorePosition.size[0]>1",
+        "#VisuCoreDim==2"]
+    },
+    {
+      "cmd": "np.array([#VisuCoreExtent[0] / #VisuCoreSize[0], #VisuCoreExtent[1] / #VisuCoreSize[1], #VisuCoreFrameThickness])",
+      "conditions": [
+        "#VisuCreatorVersion in ['<5.1>']",
+        "#VisuCorePosition.size[0]==1",
+        "#VisuCoreDim==2"]
+    },
+    {
+      "cmd": "np.array([#VisuCoreExtent[0] / #VisuCoreSize[0], #VisuCoreExtent[1] / #VisuCoreSize[1], #VisuCoreExtent[2] / #VisuCoreSize[2]])",
+      "conditions": [
+        "#VisuCoreDimDesc.list[0]=='spatial'",
+        "#VisuCoreDimDesc.list[1]=='spatial'",
+        "#VisuCoreDimDesc.list[2]=='spatial'"]
+    }
+  ],
+  "position_matrix": [
+      {
+        "cmd": "np.array([[np.cos(np.pi), -np.sin(np.pi), 0], [np.sin(np.pi), np.cos(np.pi), 0], [0, 0, 1]])",
+        "conditions": [
+          "#VisuSubjectPosition=='Head_Supine'"
+        ],
+        "reference": "This recipe was taken from the version BrkRaw repository (https://github.com/BrkRaw/bruker) version 0.3.4 (10.5281/zenodo.3907018)"
+      },
+      {
+        "cmd": "np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])",
+        "conditions": [
+          "#VisuSubjectPosition=='Head_Prone'"
+        ],
+        "reference": "This recipe was taken from the version BrkRaw repository (https://github.com/BrkRaw/bruker) version 0.3.4 (10.5281/zenodo.3907018)"
+      },
+      {
+        "cmd": "np.array([[np.cos(np.pi/2), -np.sin(np.pi/2), 0], [np.sin(np.pi/2), np.cos(np.pi/2), 0], [0, 0, 1]])",
+        "conditions": [
+          "#VisuSubjectPosition=='Head_Left'"
+        ],
+        "reference": "This recipe was taken from the version BrkRaw repository (https://github.com/BrkRaw/bruker) version 0.3.4 (10.5281/zenodo.3907018)"
+      },
+      {
+        "cmd": "np.array([[np.cos(-np.pi/2), -np.sin(-np.pi/2), 0], [np.sin(-np.pi/2), np.cos(-np.pi/2), 0], [0, 0, 1]])",
+        "conditions": [
+          "#VisuSubjectPosition=='Head_Right'"
+        ],
+        "reference": "This recipe was taken from the version BrkRaw repository (https://github.com/BrkRaw/bruker) version 0.3.4 (10.5281/zenodo.3907018)"
+      },
+      {
+        "cmd": "np.array([[1, 0, 0], [0, np.cos(np.pi), -np.sin(np.pi)], [0, np.sin(np.pi), np.cos(np.pi)]]).astype('float')",
+        "conditions": [
+          "#VisuSubjectPosition in ['Foot_Supine', 'Tail_Supine']"
+        ],
+        "reference": "This recipe was taken from the version BrkRaw repository (https://github.com/BrkRaw/bruker) version 0.3.4 (10.5281/zenodo.3907018)"
+      },
+      {
+        "cmd": "np.array([[np.cos(np.pi), 0, np.sin(np.pi)], [0, 1, 0], [-np.sin(np.pi), 0, np.cos(np.pi)]]).astype('float')",
+        "conditions": [
+          "#VisuSubjectPosition in ['Foot_Prone', 'Tail_Prone']"
+        ],
+        "reference": "This recipe was taken from the version BrkRaw repository (https://github.com/BrkRaw/bruker) version 0.3.4 (10.5281/zenodo.3907018)"
+      },
+      {
+        "cmd": "np.array([[np.cos(np.pi/2), -np.sin(np.pi/2), 0], [np.sin(np.pi/2), np.cos(np.pi/2), 0], [0, 0, 1]])",
+        "conditions": [
+          "#VisuSubjectPosition in ['Foot_Left', 'Tail_Left']"
+        ],
+        "reference": "This recipe was taken from the version BrkRaw repository (https://github.com/BrkRaw/bruker) version 0.3.4 (10.5281/zenodo.3907018)"
+      },
+      {
+        "cmd": "np.array([[np.cos(-np.pi/2), -np.sin(-np.pi/2), 0], [np.sin(-np.pi/2), np.cos(-np.pi/2), 0], [0, 0, 1]])",
+        "conditions": [
+          "#VisuSubjectPosition in ['Foot_Right', 'Tail_Right']"
+        ],
+        "reference": "This recipe was taken from the version BrkRaw repository (https://github.com/BrkRaw/bruker) version 0.3.4 (10.5281/zenodo.3907018)"
+      }
+  ],
+  "rotation": [
+      {
+        "cmd": "np.dot(@position_matrix, np.reshape(#VisuCoreOrientation[0,:],(3,3)).T.dot(np.diag(@resolution)))",
+        "conditions": [
+        ],
+        "reference": "This recipe was taken from the version BrkRaw repository (https://github.com/BrkRaw/bruker) version 0.3.4 (10.5281/zenodo.3907018)"
+      }
+  ],
+  "position": [
+    {
+      "cmd": "#PVM_VoxArrPosition[0,:].astype(np.float64)",
+      "conditions": [
+        "#VisuCoreDimDesc.list[0]=='spectroscopic'",
+        "#VisuCoreDimDesc.list[1]=='spatial'",
+        "#VisuCoreDimDesc.list[2]=='spatial'"]
+    },
+    {
+      "cmd": "np.array([#VisuCorePosition[0,0] + @extent[0], #VisuCorePosition[0,1] + @extent[1], #VisuCorePosition[0,2]])",
+      "conditions": []
+    }
+  ],
+  "affine": [
+      {
+        "cmd": "np.array([[@rotation[0,0], @rotation[0,1], @rotation[0,2], @position[0]],[@rotation[1,0], @rotation[1,1], @rotation[1,2], @position[1]],[@rotation[2,0], @rotation[2,1], @rotation[2,2], @position[2]],[0, 0, 0, 1]])",
+        "conditions": []
+      },
+      {
+        "cmd": "np.identity(4)",
+        "conditions": [],
+        "comment": "default value"
+      }
+  ],
+  "TE": [
+      {
+        "cmd": "#VisuAcqEchoTime",
+        "conditions": [
+        ]
+      }
+  ],
+  "TR": [
+      {
+        "cmd": "#VisuAcqRepetitionTime",
+        "conditions": [
+        ]
+      }
+  ],
+  "imaging_frequency": [
+    {
+        "cmd": "#VisuAcqImagingFrequency",
+        "conditions": [
+        ]
+    }
+  ],
+  "date": [
+      {
+        "cmd": "datetime.datetime.strptime(#VisuStudyDate[1:-1], '%X %d %b %Y')",
+        "conditions": [
+          "#VisuVersion==1"
+        ]
+      },
+      {
+        "cmd": "datetime.datetime.strptime(#VisuStudyDate[1:-1], '%Y-%m-%dT%X,%f%z')",
+        "conditions": [
+          "#VisuVersion==3"
+        ]
+      }
+  ],
+  "dwell_s": [
+    {
+      "cmd": "1./ (#VisuAcqPixelBandwidth * #VisuCoreSize.list[0])  / 2.",
+      "conditions": []
+    },
+    {
+      "cmd": "None",
+      "conditions": [],
+      "comment": "default value"
+    }
+  ]
 }

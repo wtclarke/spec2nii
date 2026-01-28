@@ -1,822 +1,926 @@
 {
-    "numpy_dtype": [
-      {
-          "cmd": "np.dtype('int32').newbyteorder('<')",
-          "conditions": [
-            "#GO_raw_data_format=='GO_32BIT_SGN_INT'",
-            "#BYTORDA=='little'",
-            "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
-          ]
-      },
-      {
-          "cmd": "np.dtype('int16').newbyteorder('<')",
-          "conditions": [
-            "#GO_raw_data_format=='GO_16BIT_SGN_INT'",
-            "#BYTORDA=='little'",
-            "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
-          ]
-      },
-      {
-          "cmd": "np.dtype('float32').newbyteorder('<')",
-          "conditions": [
-            "#GO_raw_data_format=='GO_32BIT_FLOAT'",
-            "#BYTORDA=='little'",
-            "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
-          ]
-      },
-      {
-          "cmd": "np.dtype('int32').newbyteorder('>')",
-          "conditions": [
-            "#GO_raw_data_format=='GO_32BIT_SGN_INT'",
-            "#BYTORDA=='big'",
-            "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
-          ]
-      },
-      {
-          "cmd": "np.dtype('int16').newbyteorder('>')",
-          "conditions": [
-            "#GO_raw_data_format=='GO_16BIT_SGN_INT'",
-            "#BYTORDA=='big'",
-            "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
-          ]
-      },
-      {
-          "cmd": "np.dtype('float32').newbyteorder('>')",
-          "conditions": [
-            "#GO_raw_data_format=='GO_32BIT_FLOAT'",
-            "#BYTORDA=='big'",
-            "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
-          ]
-      },
-      {
-          "cmd": "np.dtype('i4').newbyteorder('<')",
-          "conditions": [
-            "#ACQ_word_size=='_32_BIT'",
-            "#BYTORDA=='little'",
-            ["#ACQ_sw_version",["<PV-360.1.1>", "<PV-360.3.5>"]]
-          ]
-      }
-    ],
-    "channels": [
-      {
-        "cmd": "1",
-        "conditions": [
-          "#ACQ_dim_desc[0]=='Spectroscopic'"
-        ]
-      },
-      {
-        "cmd": "#PVM_EncNReceivers",
-        "conditions": [
-          "#ACQ_dim_desc[0]!='Spectroscopic'"
-        ]
-      }
-    ],
-    "block_size": [
-      {
-        "cmd": "int((np.ceil(#ACQ_size.tuple[0] * @channels * @numpy_dtype.itemsize / 1024.) * 1024. / @numpy_dtype.itemsize))",
-        "conditions": [
-          "#GO_block_size=='Standard_KBlock_Format'",
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
-        ]
-      },
-      {
-        "cmd": "int(#ACQ_size.tuple[0] * @channels)",
-        "conditions": [
-          "#GO_block_size!='Standard_KBlock_Format'",
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
-        ]
-      },
-      {
-        "cmd": "int(2 * #PVM_SpecMatrix.tuple[0])",
-        "conditions": [
-          "#ACQ_sw_version=='<PV-360.1.1>'",
-          "#PULPROG[1:-1]=='mt_MEGA_sLASER_V35.ppg'"
-        ]
-      },
-      {
-        "cmd": "#ACQ_jobs[0][0]",
-        "conditions": [
-          ["#ACQ_sw_version",
-            [
-              "<PV-360.1.1>", "<PV-360.3.5>"
-            ]
-          ]
-        ]
-      }
-    ],
-    "acq_lenght": [
-      {
-        "cmd": "#ACQ_size.tuple[0] * @channels",
-        "conditions": [
-          ["#PULPROG", ["<SPIRAL.ppg>","<DtiSpiral.ppg>"]],
-          "#ACQ_sw_version=='<PV 5.1>'"
-        ]
-      },
-      {
-        "cmd": "#ACQ_size.tuple[0] * @channels",
-        "conditions": [
-          "#GO_block_size=='Standard_KBlock_Format'",
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
-        ]
-      },
-      {
-        "cmd": "int(2 * #PVM_DigNp * @channels // #NSegments)",
-        "conditions": [
-          "#GO_block_size!='Standard_KBlock_Format'",
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']",
-          "#PULPROG[1:-1]=='EPSI.ppg'"
-        ]
-      },
-      {
-        "cmd": "int(2 * #PVM_DigNp * @channels)",
-        "conditions": [
-          "#GO_block_size!='Standard_KBlock_Format'",
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']",
-          "#PULPROG[1:-1]!='EPSI.ppg'"
-        ]
-      },
-      {
-        "cmd": "int(2 * #PVM_SpecMatrix.tuple[0])",
-        "conditions": [
-          "#ACQ_sw_version=='<PV-360.1.1>'",
-          "#PULPROG[1:-1]=='mt_MEGA_sLASER_V35.ppg'"
-        ]
-      },
-      {
-        "cmd": "#ACQ_jobs[0][0]",
-        "conditions": [
-          ["#ACQ_sw_version",
-            [
-              "<PV-360.1.1>", "<PV-360.3.5>"
-            ]
-          ]
-        ]
-      }
-    ],
-    "scheme_id": [
-      {
-        "cmd": "'CART_2D'" ,
-        "conditions": [
-          ["#PULPROG",
-            [
-              "<FLASH.ppg>",
-              "<FLASHAngio.ppg>",
-              "<RAREVTR.ppg>",
-              "<MGE.ppg>",
-              "<RARE.ppg>",
-              "<FLASHAngio.ppg>",
-              "<FcFLASH.ppg>",
-              "<DtiStandard.ppg>",
-              "<FISP.ppg>",
-              "<MSME.ppg>",
-              "<FAIR_RARE.ppg>",
-              "<RAREst.ppg>",
-              "<FLOWMAP.ppg>",
-              "<MDEFT.ppg>",
-              "<igFLASH.ppg>",
-              "<B1Map.ppg>",
-              "<DESS.ppg>"
-            ]
-          ],
-          "#ACQ_dim==2",
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
-        ]
-      },
-      {
-        "cmd": "'CART_3D'" ,
-        "conditions": [
-          ["#PULPROG[1:-1]",
-            [
-              "FLASH.ppg",
-              "FLASHAngio.ppg",
-              "RAREVTR.ppg",
-              "MGE.ppg","RARE.ppg",
-              "FLASHAngio.ppg",
-              "FISP.ppg",
-              "MDEFT.ppg"
-            ]
-          ],
-          "#ACQ_dim==3",
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
-        ]
-      },
-      {
-        "cmd": "'FIELD_MAP'" ,
-        "conditions": [
-          ["#PULPROG[1:-1]",
-            [
-              "FieldMap.ppg"
-            ]
-          ],
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
-        ]
-      },
-      {
-        "cmd": "'RADIAL'" ,
-        "conditions": [
-          ["#PULPROG[1:-1]",
-            [
-              "UTE.ppg",
-              "UTE3D.ppg",
-              "ZTE.ppg"
-            ]
-          ],
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
-        ]
-      },
-      {
-        "cmd": "'EPI'" ,
-        "conditions": [
-          ["#PULPROG[1:-1]",
-            [
-              "EPI.ppg",
-              "DtiEpi.ppg",
-              "navigatorEPI_OM.ppg",
-              "EPSI.ppg",
-              "FAIR_EPI.ppg",
-              "CASL_EPI.ppg",
-              "T1_EPI.ppg",
-              "T2_EPI.ppg",
-              "T2S_EPI.ppg"
-            ]
-          ],
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
-        ]
-      },
-      {
-        "cmd": "'SPECTROSCOPY'" ,
-        "conditions": [
-          ["#PULPROG[1:-1]",
-            [
-              "PRESS.ppg",
-              "STEAM.ppg",
-              "SINGLEPULSE.ppg",
-              "NSPECT.ppg",
-              "ISIS.ppg",
-              "CPMG.ppg",
-              "RfProfile.ppg",
-              "fmap_fq.ppg",
-              "ste_laser_dIR_WSTM.ppg",
-              "mt_sLASER.ppg",
-              "mt_MEGA_sLASER_V35.ppg",
-              "cl_STELASER_PA360_b.ppg",
-              "cl_STELASER_PA_35.ppg"
-            ]
-          ],
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>', '<PV-360.1.1>', '<PV-360.3.5>']"
-        ]
-      },
-      {
-        "cmd": "'CSI'" ,
-        "conditions": [
-          ["#PULPROG[1:-1]",
-            [
-              "CSI.ppg"
-            ]
-          ],
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>', '<PV-360.1.1>']"
-        ]
-      },
-      {
-        "cmd": "'SPIRAL'" ,
-        "conditions": [
-          ["#PULPROG[1:-1]",
-            [
-              "SPIRAL.ppg",
-              "DtiSpiral.ppg"
-            ]
-          ],
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
-        ]
-      },
-      {
-        "cmd": "'ZTE'" ,
-        "conditions": [
-          ["#PULPROG[1:-1]",
-            [
-              "ZTE.ppg"
-            ]
-          ],
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
-        ]
-      },
-      {
-        "cmd": "'SPECTROSCOPY'",
-        "conditions": []
-      }
-    ],
-    "block_count": [
-      {
-        "cmd": "#NI*#NR*#PVM_EncMatrix[1]",
-        "conditions": [
-          "@scheme_id=='CART_2D'"
-        ]
-      },
-      {
-        "cmd": "#ACQ_size[1]*#ACQ_size[2]*#NR",
-        "conditions": [
-          "@scheme_id=='CART_3D'"
-        ]
-      },
-      {
-        "cmd": "#PVM_EncMatrix[1]*#PVM_EncMatrix[2]*#PVM_NEchoImages",
-        "conditions": [
-          "@scheme_id=='FIELD_MAP'"
-        ]
-      },
-      {
-        "cmd": "#NPro*#NI*#NR",
-        "conditions": [
-          "@scheme_id in ['RADIAL']"
-        ]
-      },
-      {
-        "cmd": "#NSegments*#NI*#NR",
-        "conditions": [
-          "@scheme_id=='EPI'"
-        ]
-      },
-      {
-        "cmd": "#NR",
-        "conditions": [
-          "@scheme_id=='SPECTROSCOPY'"
-        ]
-      },
-      {
-        "cmd": "#ACQ_size[1] * #ACQ_size[2]",
-        "conditions": [
-          "@scheme_id=='CSI'",
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
-        ]
-      },
-      {
-        "cmd": "#ACQ_spatial_size_0 * #ACQ_spatial_size_1",
-        "conditions": [
-          "@scheme_id=='CSI'",
-          ["#ACQ_sw_version",
-            [
-              "<PV-360.1.1>"
-            ]
-          ]
-        ]
-      },
-      {
-        "cmd": "#PVM_SpiralNbOfInterleaves*#NI*#NR",
-        "conditions": [
-          "@scheme_id=='SPIRAL'",
-          "#ACQ_sw_version in ['<PV 6.0.1>', '<PV-7.0.0>']"
-          ]
-      },
-      {
-        "cmd": "#ACQ_size[1]*#NI*#NR",
-        "conditions": [
-          "@scheme_id=='SPIRAL'",
-          "#ACQ_sw_version=='<PV 5.1>'"
-        ]
-      },
-      {
-        "cmd": "#NPro*#NI*#NR",
-        "conditions": [
-          "@scheme_id=='ZTE'"
-        ]
-      }
-    ],
-    "encoding_space": [
-      {
-        "cmd": [
-          "#PVM_EncMatrix[0]",
-          "#PVM_EncNReceivers",
-          "#ACQ_phase_factor",
-          "#NI",
-          "#PVM_EncMatrix[1] // #ACQ_phase_factor",
-          "#NR"
-        ],
-        "conditions": [
-          "@scheme_id=='CART_2D'"
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_size[0]//2",
-          "#PVM_EncNReceivers",
-          "#ACQ_phase_factor",
-          "#ACQ_size[1]//#ACQ_phase_factor",
-          "#ACQ_size[2]",
-          "#NR"
-        ],
-        "conditions": [
-          "@scheme_id=='CART_3D'"
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_size[0]//2",
-          "#PVM_EncNReceivers",
-          "#PVM_NEchoImages",
-          "#PVM_EncMatrix[1]",
-          "#PVM_EncMatrix[2]"
-        ],
-        "conditions": [
-          "@scheme_id=='FIELD_MAP'"
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_size[0]//2",
-          "#PVM_EncNReceivers",
-          "#ACQ_phase_factor",
-          "#NI",
-          "#NPro // #ACQ_phase_factor",
-          "#NR"
-        ],
-        "conditions": [
-          "@scheme_id=='RADIAL'"
-        ]
-      },
-      {
-        "cmd": [
-          "#PVM_EncMatrix[0] * #PVM_EncMatrix[1] // #NSegments",
-          "#PVM_EncNReceivers",
-          "#NSegments",
-          "#NI",
-          "#NR"
-        ],
-        "conditions": [
-          "@scheme_id=='EPI'"
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_size.tuple[0] * 2",
-          "#NR"
-        ],
-        "conditions": [["#PULPROG[1:-1]",
-            [
-                "cl_STELASER_PA360_b.ppg",
-                "cl_STELASER_PA_35.ppg",
-                "mt_sLASER.ppg",
-                "STEAM.ppg"
-            ]],
-          "@scheme_id=='SPECTROSCOPY'"
-        ]
-      },
-      {
-        "cmd": [
-          "#PVM_SpecMatrix.tuple[0] * 1",
-          "#NR"
-        ],
-        "conditions": [["#PULPROG[1:-1]",
-            [
-                "mt_MEGA_sLASER_V35.ppg"
-            ]],
-          "@scheme_id=='SPECTROSCOPY'"
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_size.tuple[0] // 2",
-          "#NR"
-        ],
-        "conditions": [
-          "@scheme_id=='SPECTROSCOPY'"
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_size[0]//2",
-          "#ACQ_size[1]",
-          "#ACQ_size[2]"
-        ],
-        "conditions": [
-          "@scheme_id=='CSI'",
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_jobs[0][0]//2",
-          "#ACQ_spatial_size_0",
-          "#ACQ_spatial_size_1"
-        ],
-        "conditions": [
-          "@scheme_id=='CSI'",
-          ["#ACQ_sw_version",
-            [
-              "<PV-360.1.1>"
-            ]
-          ]
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_size[0]//2",
-          "#PVM_EncNReceivers",
-          "#PVM_SpiralNbOfInterleaves",
-          "#NI",
-          "#NR"
-        ],
-        "conditions": [
-          "@scheme_id=='SPIRAL'",
-          "#ACQ_sw_version in ['<PV 6.0.1>', '<PV-7.0.0>']"
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_size[0]//2",
-          "#PVM_EncNReceivers",
-          "#ACQ_size[1]",
-          "#NI",
-          "#NR"
-        ],
-        "conditions": [
-          "@scheme_id=='SPIRAL'",
-          "#ACQ_sw_version=='<PV 5.1>'"
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_size[0]//2",
-          "#PVM_EncNReceivers",
-          "#ACQ_phase_factor",
-          "#NI",
-          "NPro / ACQ_phase_factor",
-          "#NR"
-        ],
-        "conditions": [
-          "@scheme_id=='ZTE'"
-        ]
-      }
-    ],
-    "permute": [
-      {
-        "cmd": [0,2,4,3,5,1],
-        "conditions": [
-          "@scheme_id in ['CART_2D', 'RADIAL']"
-        ]
-      },
-      {
-        "cmd": [0,2,3,4,5,1],
-        "conditions": [
-          "@scheme_id in ['CART_3D', 'ZTE']"
-        ]
-      },
-      {
-        "cmd": [0,3,4,2,1],
-        "conditions": [
-          "@scheme_id in ['FIELD_MAP']"
-        ]
-      },
-      {
-        "cmd": [0,2,3,4,1],
-        "conditions": [
-          "@scheme_id in ['EPI', 'SPIRAL']"
-        ]
-      },
-      {
-        "cmd": [0,1],
-        "conditions": [
-          "@scheme_id=='SPECTROSCOPY'"
-        ]
-      },
-      {
-        "cmd": [0,1,2],
-        "conditions": [
-          "@scheme_id in ['CSI']"
-        ]
-      }
-    ],
-    "k_space": [
-      {
-        "cmd": [
-          "#PVM_EncMatrix[0]",
-          "#PVM_EncMatrix[1]",
-          "#NI",
-          "#NR",
-          "#PVM_EncNReceivers"
-        ],
-        "conditions": [
-          "@scheme_id=='CART_2D'"
-        ]
-      },
-      {
-        "cmd": [
-          "#PVM_EncMatrix[0]",
-          "#ACQ_size[1]",
-          "#ACQ_size[2]",
-          "#NR",
-          "#PVM_EncNReceivers"
-        ],
-        "conditions": [
-          "@scheme_id=='CART_3D'"
-        ]
-      },
-      {
-        "cmd": [
-          "#PVM_EncMatrix[0]",
-          "#PVM_EncMatrix[1]",
-          "#PVM_EncMatrix[2]",
-          "#PVM_NEchoImages",
-          "#PVM_EncNReceivers"
-        ],
-        "conditions": [
-          "@scheme_id=='FIELD_MAP'"
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_size[0]//2",
-          "#NPro",
-          "#NI",
-          "#NR",
-          "#PVM_EncNReceivers"
-        ],
-        "conditions": [
-          "@scheme_id=='RADIAL'"
-        ]
-      },
-      {
-        "cmd": [
-          "#PVM_EncMatrix[0]",
-          "#PVM_EncMatrix[1]",
-          "#NI",
-          "#NR",
-          "#PVM_EncNReceivers"
-        ],
-        "conditions": [
-          "@scheme_id=='EPI'"
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_size.tuple[0] * 2",
-          "#NR"
-        ],
-        "conditions": [["#PULPROG[1:-1]",
-            [
-                "cl_STELASER_PA360_b.ppg",
-                "cl_STELASER_PA_35.ppg",
-                "mt_sLASER.ppg",
-                "STEAM.ppg"
-            ]],
-          "@scheme_id=='SPECTROSCOPY'"
-        ]
-      },
-      {
-        "cmd": [
-          "#PVM_SpecMatrix.tuple[0] * 1",
-          "#NR"
-        ],
-        "conditions": [["#PULPROG[1:-1]",
-            [
-                "mt_MEGA_sLASER_V35.ppg"
-            ]],
-          "@scheme_id=='SPECTROSCOPY'"
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_size.tuple[0] // 2",
-          "#NR"
-        ],
-        "conditions": [
-          "@scheme_id=='SPECTROSCOPY'"
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_size[0]//2",
-          "#ACQ_size[1]",
-          "#ACQ_size[2]"
-        ],
-        "conditions": [
-          "@scheme_id=='CSI'",
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_jobs[0][0]//2",
-          "#ACQ_spatial_size_0",
-          "#ACQ_spatial_size_1"
-        ],
-        "conditions": [
-          "@scheme_id=='CSI'",
-          ["#ACQ_sw_version",
-            [
-              "<PV-360.1.1>"
-            ]
-          ]
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_size[0]//2",
-          "#PVM_SpiralNbOfInterleaves",
-          "#NI",
-          "#NR",
-          "#PVM_EncNReceivers"
-        ],
-        "conditions": [
-          "@scheme_id=='SPIRAL'",
-          "#ACQ_sw_version in ['<PV 6.0.1>', '<PV-7.0.0>']"
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_size[0]//2",
-          "#ACQ_size[1]",
-          "#NI",
-          "#NR",
-          "#PVM_EncNReceivers"
-        ],
-        "conditions": [
-          "@scheme_id=='SPIRAL'",
-          "#ACQ_sw_version=='<PV 5.1>'"
-        ]
-      },
-      {
-        "cmd": [
-          "#ACQ_size[0]//2",
-          "#NPro",
-          "#NI",
-          "#NR",
-          "#PVM_EncNReceivers"
-        ],
-        "conditions": [
-          "@scheme_id=='ZTE'"
-        ]
-      }
-    ],
-    "encoded_dim": [
-      {
-        "cmd": "#ACQ_dim",
-        "conditions": []
-      }
-
-    ],
-    "shape_storage": [
-      {
-        "cmd": "(@block_size,) + (@block_count,)",
-        "conditions": []
-      }
-    ],
-    "dim_type": [
-          {
-        "cmd": [
-          "'k_space_encode_step_0'",
-          "'k_space_encode_step_1'",
-          "'slice'",
-          "'repetition'",
-          "'channel'"
-        ],
-        "conditions": [
-          ["@scheme_id",["CART_2D","RADIAL","EPI","SPIRAL","ZTE"]]
-        ]
-      },
-      {
-        "cmd": [
-          "'k_space_encode_step_0'",
-          "'k_space_encode_step_1'",
-          "'k_space_encode_step_2'",
-          "'repetition'",
-          "'channel'"
-        ],
-        "conditions": [
-          ["@scheme_id",["CART_3D","FIELD_MAP"]]
-        ]
-      },
-      {
-        "cmd": [
-          "'k_space_encode_step_0'",
-          "'repetition'"
-        ],
-        "conditions": [
-          "@scheme_id=='SPECTROSCOPY'"
-        ]
-      },
-      {
-        "cmd": [
-          "'k_space_encode_step_0'",
-          "'k_space_encode_step_1'",
-          "'k_space_encode_step_2'"
-        ],
-        "conditions": [
-          "@scheme_id=='CSI'"
-        ]
-      }
-    ],
-      "dwell_s": [
+  "numpy_dtype": [
     {
-      "cmd": "1./ @sw_hz / 2.",
+        "cmd": "np.dtype('int32').newbyteorder('<')",
+        "conditions": [
+          "#GO_raw_data_format=='GO_32BIT_SGN_INT'",
+          "#BYTORDA=='little'",
+          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+        ]
+    },
+    {
+        "cmd": "np.dtype('int16').newbyteorder('<')",
+        "conditions": [
+          "#GO_raw_data_format=='GO_16BIT_SGN_INT'",
+          "#BYTORDA=='little'",
+          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+        ]
+    },
+    {
+        "cmd": "np.dtype('float32').newbyteorder('<')",
+        "conditions": [
+          "#GO_raw_data_format=='GO_32BIT_FLOAT'",
+          "#BYTORDA=='little'",
+          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+        ]
+    },
+    {
+        "cmd": "np.dtype('int32').newbyteorder('>')",
+        "conditions": [
+          "#GO_raw_data_format=='GO_32BIT_SGN_INT'",
+          "#BYTORDA=='big'",
+          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+        ]
+    },
+    {
+        "cmd": "np.dtype('int16').newbyteorder('>')",
+        "conditions": [
+          "#GO_raw_data_format=='GO_16BIT_SGN_INT'",
+          "#BYTORDA=='big'",
+          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+        ]
+    },
+    {
+        "cmd": "np.dtype('float32').newbyteorder('>')",
+        "conditions": [
+          "#GO_raw_data_format=='GO_32BIT_FLOAT'",
+          "#BYTORDA=='big'",
+          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+        ]
+    },
+    {
+        "cmd": "np.dtype('i4').newbyteorder('<')",
+        "conditions": [
+          "#ACQ_word_size=='_32_BIT'",
+          "#BYTORDA=='little'",
+          ["#ACQ_sw_version",["<PV-360.1.1>", "<PV-360.3.5>"]]
+        ]
+    }
+  ],
+  "channels": [
+    {
+      "cmd": "1",
       "conditions": [
-        "@sw_hz!=0"
+        "#ACQ_dim_desc[0]=='Spectroscopic'"
       ]
     },
     {
-      "cmd": "1./ @ACQ_jobs[0][5] / 2.",
+      "cmd": "#PVM_EncNReceivers",
       "conditions": [
-        "@sw_hz==0"
+        "#ACQ_dim_desc[0]!='Spectroscopic'"
+      ]
+    }
+  ],
+  "block_size": [
+    {
+      "cmd": "int((np.ceil(#ACQ_size.tuple[0] * @channels * @numpy_dtype.itemsize / 1024.) * 1024. / @numpy_dtype.itemsize))",
+      "conditions": [
+        "#GO_block_size=='Standard_KBlock_Format'",
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+      ]
+    },
+    {
+      "cmd": "int(#ACQ_size.tuple[0] * @channels)",
+      "conditions": [
+        "#GO_block_size!='Standard_KBlock_Format'",
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+      ]
+    },
+    {
+      "cmd": "int(2 * #PVM_SpecMatrix.tuple[0])",
+      "conditions": [
+        "#ACQ_sw_version=='<PV-360.1.1>'",
+        "#PULPROG[1:-1]=='mt_MEGA_sLASER_V35.ppg'"
+      ]
+    },
+    {
+      "cmd": "#ACQ_jobs[0][0]",
+      "conditions": [
+        ["#ACQ_sw_version",
+          [
+            "<PV-360.1.1>", "<PV-360.3.5>"
+          ]
+        ]
+      ]
+    }
+  ],
+  "acq_lenght": [
+    {
+      "cmd": "#ACQ_size.tuple[0] * @channels",
+      "conditions": [
+        ["#PULPROG", ["<SPIRAL.ppg>","<DtiSpiral.ppg>"]],
+        "#ACQ_sw_version=='<PV 5.1>'"
+      ]
+    },
+    {
+      "cmd": "#ACQ_size.tuple[0] * @channels",
+      "conditions": [
+        "#GO_block_size=='Standard_KBlock_Format'",
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+      ]
+    },
+    {
+      "cmd": "int(2 * #PVM_DigNp * @channels // #NSegments)",
+      "conditions": [
+        "#GO_block_size!='Standard_KBlock_Format'",
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']",
+        "#PULPROG[1:-1]=='EPSI.ppg'"
+      ]
+    },
+    {
+      "cmd": "int(2 * #PVM_DigNp * @channels)",
+      "conditions": [
+        "#GO_block_size!='Standard_KBlock_Format'",
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']",
+        "#PULPROG[1:-1]!='EPSI.ppg'"
+      ]
+    },
+    {
+      "cmd": "int(2 * #PVM_SpecMatrix.tuple[0])",
+      "conditions": [
+        "#ACQ_sw_version=='<PV-360.1.1>'",
+        "#PULPROG[1:-1]=='mt_MEGA_sLASER_V35.ppg'"
+      ]
+    },
+    {
+      "cmd": "#ACQ_jobs[0][0]",
+      "conditions": [
+        ["#ACQ_sw_version",
+          [
+            "<PV-360.1.1>", "<PV-360.3.5>"
+          ]
+        ]
+      ]
+    }
+  ],
+  "scheme_id": [
+    {
+      "cmd": "'CART_2D'" ,
+      "conditions": [
+        ["#PULPROG",
+          [
+            "<FLASH.ppg>",
+            "<FLASHAngio.ppg>",
+            "<RAREVTR.ppg>",
+            "<MGE.ppg>",
+            "<RARE.ppg>",
+            "<FcFLASH.ppg>",
+            "<DtiStandard.ppg>",
+            "<FISP.ppg>",
+            "<MSME.ppg>",
+            "<FAIR_RARE.ppg>",
+            "<RAREst.ppg>",
+            "<FLOWMAP.ppg>",
+            "<MDEFT.ppg>",
+            "<igFLASH.ppg>",
+            "<B1Map.ppg>",
+            "<DESS.ppg>"
+          ]
+        ],
+        "#ACQ_dim==2",
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
+      ]
+    },
+    {
+      "cmd": "'CART_3D'" ,
+      "conditions": [
+        ["#PULPROG[1:-1]",
+          [
+            "FLASH.ppg",
+            "FLASHAngio.ppg",
+            "RAREVTR.ppg",
+            "MGE.ppg",
+            "RARE.ppg",
+            "FISP.ppg",
+            "MDEFT.ppg"
+          ]
+        ],
+        "#ACQ_dim==3",
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
+      ]
+    },
+    {
+      "cmd": "'FIELD_MAP'" ,
+      "conditions": [
+        ["#PULPROG[1:-1]",
+          [
+            "FieldMap.ppg"
+          ]
+        ],
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
+      ]
+    },
+    {
+      "cmd": "'RADIAL'" ,
+      "conditions": [
+        ["#PULPROG[1:-1]",
+          [
+            "UTE.ppg",
+            "UTE3D.ppg",
+            "ZTE.ppg"
+          ]
+        ],
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
+      ]
+    },
+    {
+      "cmd": "'EPI'" ,
+      "conditions": [
+        ["#PULPROG[1:-1]",
+          [
+            "EPI.ppg",
+            "DtiEpi.ppg",
+            "navigatorEPI_OM.ppg",
+            "EPSI.ppg",
+            "FAIR_EPI.ppg",
+            "CASL_EPI.ppg",
+            "T1_EPI.ppg",
+            "T2_EPI.ppg",
+            "T2S_EPI.ppg"
+          ]
+        ],
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
+      ]
+    },
+    {
+      "cmd": "'SPECTROSCOPY'" ,
+      "conditions": [
+        ["#PULPROG[1:-1]",
+          [
+            "PRESS.ppg",
+            "STEAM.ppg",
+            "SINGLEPULSE.ppg",
+            "NSPECT.ppg",
+            "ISIS.ppg",
+            "CPMG.ppg",
+            "RfProfile.ppg",
+            "fmap_fq.ppg",
+            "ste_laser_dIR_WSTM.ppg",
+            "mt_sLASER.ppg",
+            "mt_MEGA_sLASER_V35.ppg",
+            "cl_STELASER_PA360_b.ppg",
+            "cl_STELASER_PA_35.ppg"
+          ]
+        ],
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>', '<PV-360.1.1>', '<PV-360.3.5>']"
+      ]
+    },
+    {
+      "cmd": "'CSI'" ,
+      "conditions": [
+        ["#PULPROG[1:-1]",
+          [
+            "CSI.ppg"
+          ]
+        ],
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>', '<PV-360.1.1>']"
+      ]
+    },
+    {
+      "cmd": "'SPIRAL'" ,
+      "conditions": [
+        ["#PULPROG[1:-1]",
+          [
+            "SPIRAL.ppg",
+            "DtiSpiral.ppg"
+          ]
+        ],
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
+      ]
+    },
+    {
+      "cmd": "'ZTE'" ,
+      "conditions": [
+        ["#PULPROG[1:-1]",
+          [
+            "ZTE.ppg"
+          ]
+        ],
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
+      ]
+    },
+    {
+      "cmd": "'SPECTROSCOPY'",
+      "conditions": []
+    }
+  ],
+  "block_count": [
+    {
+      "cmd": "#NI*#NR*#PVM_EncMatrix[1]",
+      "conditions": [
+        "@scheme_id=='CART_2D'"
+      ]
+    },
+    {
+      "cmd": "#ACQ_size[1]*#ACQ_size[2]*#NR",
+      "conditions": [
+        "@scheme_id=='CART_3D'"
+      ]
+    },
+    {
+      "cmd": "#PVM_EncMatrix[1]*#PVM_EncMatrix[2]*#PVM_NEchoImages",
+      "conditions": [
+        "@scheme_id=='FIELD_MAP'"
+      ]
+    },
+    {
+      "cmd": "#NPro*#NI*#NR",
+      "conditions": [
+        "@scheme_id in ['RADIAL']"
+      ]
+    },
+    {
+      "cmd": "#NSegments*#NI*#NR",
+      "conditions": [
+        "@scheme_id=='EPI'"
+      ]
+    },
+    {
+      "cmd": "#NR",
+      "conditions": [
+        "@scheme_id=='SPECTROSCOPY'"
+      ]
+    },
+    {
+      "cmd": "#ACQ_size[1] * #ACQ_size[2]",
+      "conditions": [
+        "@scheme_id=='CSI'",
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+      ]
+    },
+    {
+      "cmd": "#ACQ_spatial_size_0 * #ACQ_spatial_size_1",
+      "conditions": [
+        "@scheme_id=='CSI'",
+        ["#ACQ_sw_version",
+          [
+            "<PV-360.1.1>"
+          ]
+        ]
+      ]
+    },
+    {
+      "cmd": "#PVM_SpiralNbOfInterleaves*#NI*#NR",
+      "conditions": [
+        "@scheme_id=='SPIRAL'",
+        "#ACQ_sw_version in ['<PV 6.0.1>', '<PV-7.0.0>']"
+        ]
+    },
+    {
+      "cmd": "#ACQ_size[1]*#NI*#NR",
+      "conditions": [
+        "@scheme_id=='SPIRAL'",
+        "#ACQ_sw_version=='<PV 5.1>'"
+      ]
+    },
+    {
+      "cmd": "#NPro*#NI*#NR",
+      "conditions": [
+        "@scheme_id=='ZTE'"
+      ]
+    }
+  ],
+  "encoding_space": [
+    {
+      "cmd": [
+        "#PVM_EncMatrix[0]",
+        "#PVM_EncNReceivers",
+        "#ACQ_phase_factor",
+        "#NI",
+        "#PVM_EncMatrix[1] // #ACQ_phase_factor",
+        "#NR"
+      ],
+      "conditions": [
+        "@scheme_id=='CART_2D'"
+      ]
+    },
+    {
+      "cmd": [
+        "#ACQ_size[0]//2",
+        "#PVM_EncNReceivers",
+        "#ACQ_phase_factor",
+        "#ACQ_size[1]//#ACQ_phase_factor",
+        "#ACQ_size[2]",
+        "#NR"
+      ],
+      "conditions": [
+        "@scheme_id=='CART_3D'"
+      ]
+    },
+    {
+      "cmd": [
+        "#ACQ_size[0]//2",
+        "#PVM_EncNReceivers",
+        "#PVM_NEchoImages",
+        "#PVM_EncMatrix[1]",
+        "#PVM_EncMatrix[2]"
+      ],
+      "conditions": [
+        "@scheme_id=='FIELD_MAP'"
+      ]
+    },
+    {
+      "cmd": [
+        "#ACQ_size[0]//2",
+        "#PVM_EncNReceivers",
+        "#ACQ_phase_factor",
+        "#NI",
+        "#NPro // #ACQ_phase_factor",
+        "#NR"
+      ],
+      "conditions": [
+        "@scheme_id=='RADIAL'"
+      ]
+    },
+    {
+      "cmd": [
+        "#PVM_EncMatrix[0] * #PVM_EncMatrix[1] // #NSegments",
+        "#PVM_EncNReceivers",
+        "#NSegments",
+        "#NI",
+        "#NR"
+      ],
+      "conditions": [
+        "@scheme_id=='EPI'"
+      ]
+    },
+    {
+      "cmd": [
+        "#ACQ_size.tuple[0] * 2",
+        "#NR"
+      ],
+      "conditions": [["#PULPROG[1:-1]",
+          [
+            "cl_STELASER_PA360_b.ppg",
+            "cl_STELASER_PA_35.ppg",
+            "mt_sLASER.ppg"
+          ]],
+        "@scheme_id=='SPECTROSCOPY'"
+      ]
+    },
+    {
+      "cmd": [
+        "#ACQ_size.tuple[0] * 2",
+        "#NR"
+      ],
+      "conditions": [["#PULPROG[1:-1]",
+          [
+              "STEAM.ppg"
+          ]],
+        "#ACQ_sw_version=='<PV-360.1.1>'",
+        "@scheme_id=='SPECTROSCOPY'"
+      ]
+    },
+    {
+      "cmd": [
+        "#PVM_SpecMatrix.tuple[0] * 1",
+        "#NR"
+      ],
+      "conditions": [["#PULPROG[1:-1]",
+          [
+              "mt_MEGA_sLASER_V35.ppg"
+          ]],
+        "@scheme_id=='SPECTROSCOPY'"
+      ]
+    },
+    {
+      "cmd": [
+        "#ACQ_size.tuple[0] // 2",
+        "#NR"
+      ],
+      "conditions": [
+        "@scheme_id=='SPECTROSCOPY'"
+      ]
+    },
+    {
+      "cmd": [
+        "#ACQ_size[0]//2",
+        "#ACQ_size[1]",
+        "#ACQ_size[2]"
+      ],
+      "conditions": [
+        "@scheme_id=='CSI'",
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+      ]
+    },
+    {
+      "cmd": [
+        "#ACQ_jobs[0][0]//2",
+        "#ACQ_spatial_size_0",
+        "#ACQ_spatial_size_1"
+      ],
+      "conditions": [
+        "@scheme_id=='CSI'",
+        ["#ACQ_sw_version",
+          [
+            "<PV-360.1.1>"
+          ]
+        ]
+      ]
+    },
+    {
+      "cmd": [
+        "#ACQ_size[0]//2",
+        "#PVM_EncNReceivers",
+        "#PVM_SpiralNbOfInterleaves",
+        "#NI",
+        "#NR"
+      ],
+      "conditions": [
+        "@scheme_id=='SPIRAL'",
+        "#ACQ_sw_version in ['<PV 6.0.1>', '<PV-7.0.0>']"
+      ]
+    },
+    {
+      "cmd": [
+        "#ACQ_size[0]//2",
+        "#PVM_EncNReceivers",
+        "#ACQ_size[1]",
+        "#NI",
+        "#NR"
+      ],
+      "conditions": [
+        "@scheme_id=='SPIRAL'",
+        "#ACQ_sw_version=='<PV 5.1>'"
+      ]
+    },
+    {
+      "cmd": [
+        "#ACQ_size[0]//2",
+        "#PVM_EncNReceivers",
+        "#ACQ_phase_factor",
+        "#NI",
+        "NPro / ACQ_phase_factor",
+        "#NR"
+      ],
+      "conditions": [
+        "@scheme_id=='ZTE'"
+      ]
+    }
+  ],
+  "permute": [
+    {
+      "cmd": [0,2,4,3,5,1],
+      "conditions": [
+        "@scheme_id in ['CART_2D', 'RADIAL']"
+      ]
+    },
+    {
+      "cmd": [0,2,3,4,5,1],
+      "conditions": [
+        "@scheme_id in ['CART_3D', 'ZTE']"
+      ]
+    },
+    {
+      "cmd": [0,3,4,2,1],
+      "conditions": [
+        "@scheme_id in ['FIELD_MAP']"
+      ]
+    },
+    {
+      "cmd": [0,2,3,4,1],
+      "conditions": [
+        "@scheme_id in ['EPI', 'SPIRAL']"
+      ]
+    },
+    {
+      "cmd": [0,1],
+      "conditions": [
+        "@scheme_id=='SPECTROSCOPY'"
+      ]
+    },
+    {
+      "cmd": [0,1,2],
+      "conditions": [
+        "@scheme_id in ['CSI']"
+      ]
+    }
+  ],
+  "k_space": [
+    {
+      "cmd": [
+        "#PVM_EncMatrix[0]",
+        "#PVM_EncMatrix[1]",
+        "#NI",
+        "#NR",
+        "#PVM_EncNReceivers"
+      ],
+      "conditions": [
+        "@scheme_id=='CART_2D'"
+      ]
+    },
+    {
+      "cmd": [
+        "#PVM_EncMatrix[0]",
+        "#ACQ_size[1]",
+        "#ACQ_size[2]",
+        "#NR",
+        "#PVM_EncNReceivers"
+      ],
+      "conditions": [
+        "@scheme_id=='CART_3D'"
+      ]
+    },
+    {
+      "cmd": [
+        "#PVM_EncMatrix[0]",
+        "#PVM_EncMatrix[1]",
+        "#PVM_EncMatrix[2]",
+        "#PVM_NEchoImages",
+        "#PVM_EncNReceivers"
+      ],
+      "conditions": [
+        "@scheme_id=='FIELD_MAP'"
+      ]
+    },
+    {
+      "cmd": [
+        "#ACQ_size[0]//2",
+        "#NPro",
+        "#NI",
+        "#NR",
+        "#PVM_EncNReceivers"
+      ],
+      "conditions": [
+        "@scheme_id=='RADIAL'"
+      ]
+    },
+    {
+      "cmd": [
+        "#PVM_EncMatrix[0]",
+        "#PVM_EncMatrix[1]",
+        "#NI",
+        "#NR",
+        "#PVM_EncNReceivers"
+      ],
+      "conditions": [
+        "@scheme_id=='EPI'"
+      ]
+    },
+    {
+      "cmd": [
+        "#ACQ_size.tuple[0] * 2",
+        "#NR"
+      ],
+      "conditions": [["#PULPROG[1:-1]",
+          [
+            "cl_STELASER_PA360_b.ppg",
+            "cl_STELASER_PA_35.ppg",
+            "mt_sLASER.ppg"
+          ]],
+        "@scheme_id=='SPECTROSCOPY'"
+      ]
+    },
+    {
+      "cmd": [
+        "#ACQ_size.tuple[0] * 2",
+        "#NR"
+      ],
+      "conditions": [["#PULPROG[1:-1]",
+          [
+              "STEAM.ppg"
+          ]],
+        "#ACQ_sw_version=='<PV-360.1.1>'",
+        "@scheme_id=='SPECTROSCOPY'"
+      ]
+    },
+    {
+      "cmd": [
+        "#PVM_SpecMatrix.tuple[0] * 1",
+        "#NR"
+      ],
+      "conditions": [["#PULPROG[1:-1]",
+          [
+              "mt_MEGA_sLASER_V35.ppg"
+          ]],
+        "@scheme_id=='SPECTROSCOPY'"
+      ]
+    },
+    {
+      "cmd": [
+        "#ACQ_size.tuple[0] // 2",
+        "#NR"
+      ],
+      "conditions": [
+        "@scheme_id=='SPECTROSCOPY'"
+      ]
+    },
+    {
+      "cmd": [
+        "#ACQ_size[0]//2",
+        "#ACQ_size[1]",
+        "#ACQ_size[2]"
+      ],
+      "conditions": [
+        "@scheme_id=='CSI'",
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+      ]
+    },
+    {
+      "cmd": [
+        "#ACQ_jobs[0][0]//2",
+        "#ACQ_spatial_size_0",
+        "#ACQ_spatial_size_1"
+      ],
+      "conditions": [
+        "@scheme_id=='CSI'",
+        ["#ACQ_sw_version",
+          [
+            "<PV-360.1.1>"
+          ]
+        ]
+      ]
+    },
+    {
+      "cmd": [
+        "#ACQ_size[0]//2",
+        "#PVM_SpiralNbOfInterleaves",
+        "#NI",
+        "#NR",
+        "#PVM_EncNReceivers"
+      ],
+      "conditions": [
+        "@scheme_id=='SPIRAL'",
+        "#ACQ_sw_version in ['<PV 6.0.1>', '<PV-7.0.0>']"
+      ]
+    },
+    {
+      "cmd": [
+        "#ACQ_size[0]//2",
+        "#ACQ_size[1]",
+        "#NI",
+        "#NR",
+        "#PVM_EncNReceivers"
+      ],
+      "conditions": [
+        "@scheme_id=='SPIRAL'",
+        "#ACQ_sw_version=='<PV 5.1>'"
+      ]
+    },
+    {
+      "cmd": [
+        "#ACQ_size[0]//2",
+        "#NPro",
+        "#NI",
+        "#NR",
+        "#PVM_EncNReceivers"
+      ],
+      "conditions": [
+        "@scheme_id=='ZTE'"
+      ]
+    }
+  ],
+  "encoded_dim": [
+    {
+      "cmd": "#ACQ_dim",
+      "conditions": []
+    }
+
+  ],
+  "shape_storage": [
+    {
+      "cmd": "(@block_size,) + (@block_count,)",
+      "conditions": []
+    }
+  ],
+  "dim_type": [
+        {
+      "cmd": [
+        "'k_space_encode_step_0'",
+        "'k_space_encode_step_1'",
+        "'slice'",
+        "'repetition'",
+        "'channel'"
+      ],
+      "conditions": [
+        ["@scheme_id",["CART_2D","RADIAL","EPI","SPIRAL","ZTE"]]
+      ]
+    },
+    {
+      "cmd": [
+        "'k_space_encode_step_0'",
+        "'k_space_encode_step_1'",
+        "'k_space_encode_step_2'",
+        "'repetition'",
+        "'channel'"
+      ],
+      "conditions": [
+        ["@scheme_id",["CART_3D","FIELD_MAP"]]
+      ]
+    },
+    {
+      "cmd": [
+        "'k_space_encode_step_0'",
+        "'repetition'"
+      ],
+      "conditions": [
+        "@scheme_id=='SPECTROSCOPY'"
+      ]
+    },
+    {
+      "cmd": [
+        "'k_space_encode_step_0'",
+        "'k_space_encode_step_1'",
+        "'k_space_encode_step_2'"
+      ],
+      "conditions": [
+        "@scheme_id=='CSI'"
+      ]
+    }
+  ],
+  "sw_hz": [
+  {
+      "cmd": "#SW_h",
+      "conditions": []
+  }
+  ],
+  "dwell_s": [
+  {
+    "cmd": "1./ @sw_hz / 2.",
+    "conditions": [
+      "@sw_hz!=0"
+    ]
+  },
+  {
+    "cmd": "1./ #ACQ_jobs[0][5] / 2.",
+    "conditions": [
+      "@sw_hz==0"
+    ]
+  }
+  ],
+  "subj_id": [
+    {
+      "cmd": "#SUBJECT_id[1:-1]",
+      "conditions": [
+
+      ]
+    },
+    {
+      "cmd": "''",
+      "conditions": [
+
+      ]
+    }
+  ],
+  "study_id": [
+    {
+      "cmd": "str(#SUBJECT_study_nr)",
+      "conditions": [
+
+      ]
+    },
+    {
+      "cmd": "''",
+      "conditions": [
+
+      ]
+    }
+  ],
+  "exp_id": [
+    {
+      "cmd": "@path.parent.name",
+      "conditions": [
+        "@type=='fid'"
+      ]
+    },
+    {
+      "cmd": "@path.parents[2].name",
+      "conditions": [
+        "@type=='fid_proc'"
+      ]
+    },
+    {
+      "cmd": "''",
+      "conditions": [
+
+      ]
+    }
+  ],
+  "proc_id": [
+      {
+        "cmd": "@path.parents[0].name",
+        "conditions": [
+          "@type=='fid_proc'"
+        ]
+      },
+      {
+        "cmd": "''",
+        "conditions": [
+        ]
+      }
+  ],
+  "id": [
+    {
+      "cmd": "'FID_{}_{}_{}'.format(@exp_id, @subj_id, @study_id)",
+      "conditions": [
+        "@type=='fid'"
+      ]
+    },
+    {
+      "cmd": "'FID_{}_{}_{}_{}'.format(@exp_id, @proc_id, @subj_id, @study_id)",
+      "conditions": [
+        "@type=='fid_proc'"
       ]
     }
   ]
-  }
+}

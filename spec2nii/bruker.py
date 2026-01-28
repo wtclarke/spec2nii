@@ -40,11 +40,15 @@ def inspect(path):
     files = [next(path.rglob('rawdata.job0')),
              next(f for f in path.rglob("fid*") if f.name in {"fid", "fid_proc.64"}),
              next(path.rglob('2dseq'))]
-    # set different colours for each format
+    property_files = [importlib_resources.files('spec2nii') / 'bruker_rawdata_override.json',
+                      importlib_resources.files('spec2nii') / 'bruker_fid_override.json',
+                      importlib_resources.files('spec2nii') / 'bruker_2dseq_override.json']
     colours = ['\033[96m', '\033[92m', '\033[91m', '\033[0m']
     # read and print data layout for each format
-    for i, (file, clr) in enumerate(zip(files, colours), 1):
-        d = Dataset(file)
+    for i, (file, clr, prf) in enumerate(zip(files, colours, property_files), 1):
+        if file == []:
+            continue
+        d = Dataset(file, property_files=[prf])
         print(f"\n{clr}[{i}] {file.stem.upper()} data layout")
         for key, val in d._schema.layouts.items():
             print(f"\t{key:20s}: {val}")
@@ -55,8 +59,8 @@ def inspect(path):
     print(f"\n✓ Selected: {files[user_choice - 1].stem}")
     filename = files[user_choice - 1]
     mode = files[user_choice - 1].stem.upper()
-    if mode == 'fid_proc':
-        mode = 'fid'
+    if mode == 'FID_PROC':
+        mode = 'FID'
     return filename, mode
 
 
@@ -131,7 +135,6 @@ def yield_bruker(args):
                     "property_files": [bruker_override_path, bruker_properties_path]},
                     dataset_index=[args.mode.lower()],
                 ).get_dataset_list_rec():
-                    print(dataset.to_dict()['type'])
                     with dataset as d:
                         try:
                             d.query(queries)
