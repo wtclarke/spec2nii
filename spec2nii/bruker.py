@@ -128,12 +128,14 @@ def yield_bruker(args):
 
             # case of folder containing Bruker datasets
             elif os.path.isdir(args.file):
-
+                dataset_index = [args.mode.lower()]
+                if args.mode == 'FID':
+                    dataset_index.append('fid_proc.64')
                 # process individual datasets
                 for dataset in Folder(args.file, dataset_state={
                     "parameter_files": ['method'],
                     "property_files": [bruker_override_path, bruker_properties_path]},
-                    dataset_index=[args.mode.lower()],
+                    dataset_index=dataset_index,
                 ).get_dataset_list_rec():
                     with dataset as d:
                         try:
