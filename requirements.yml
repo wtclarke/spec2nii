@@ -6,6 +6,6 @@ dependencies:
  - pyMapVBVD>=0.6.0
  - scipy>=1.13
 #  - brukerapi>=0.1.8
-#  - brukerapi @ git+ https://github.com/VKarlaftis/brukerapi-python
+ - brukerapi @ git+https://github.com/VKarlaftis/brukerapi-python
  - pandas
  - nifti-mrs>=1.3.2
