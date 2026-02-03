@@ -836,13 +836,13 @@
   ],
   "dwell_s": [
   {
-    "cmd": "1./ @sw_hz / 2.",
+    "cmd": "1./ @sw_hz",
     "conditions": [
       "@sw_hz!=0"
     ]
   },
   {
-    "cmd": "1./ #ACQ_jobs[0][5] / 2.",
+    "cmd": "1./ #ACQ_jobs[0][5]",
     "conditions": [
       "@sw_hz==0"
     ]

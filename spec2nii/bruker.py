@@ -192,11 +192,11 @@ def _proc_dataset(d, args):
     else:
         meta = _2dseq_meta(d, dump=args.dump_headers)
 
-    # Dwelltime - to do resolve this factor of 2 issue
+    # Dwelltime
     if d.type in ['fid', 'fid_proc']:
-        dwelltime = d.dwell_s * 2
+        dwelltime = d.dwell_s
     else:
-        dwelltime = d.dwell_s * 2
+        dwelltime = d.dwell_s
 
     if args.fileout:
         name = args.fileout + '_' + d.id.rstrip('_')

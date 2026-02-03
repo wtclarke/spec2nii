@@ -265,7 +265,7 @@
   ],
   "dwell_s": [
     {
-      "cmd": "1./ (#VisuAcqPixelBandwidth * #VisuCoreSize.list[0])  / 2.",
+      "cmd": "1./ (#VisuAcqPixelBandwidth * #VisuCoreSize.list[0])",
       "conditions": []
     },
     {
