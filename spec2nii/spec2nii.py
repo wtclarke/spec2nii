@@ -669,14 +669,37 @@ class spec2nii:
     def bruker(self, args):
         from spec2nii.bruker import read_bruker
         if args.inspect:
-            from spec2nii.bruker import inspect
-            if op.isdir(args.file):
-                args.file, args.mode = inspect(args.file)
-                if args.fileout is None:
-                    args.fileout = args.mode.lower()
-            else:
-                raise ValueError('Bruker inspect option requires a directory path instead of file as input.')
+            args = self.bruker_inspect(args)
         self.imageOut, self.fileoutNames = read_bruker(args)
+
+    # Helper function for Bruker inspect mode
+    def bruker_inspect(self, args):
+        folder = Path(args.file)
+        if op.isdir(folder):
+            # if folder is not a subject or a scan folder, raise an error
+            if (folder / 'method').exists():
+                start_folder = folder
+            elif (folder / 'subject').exists():
+                start_folder = None
+            else:
+                raise ValueError("""Selected directory is invalid - no 'subject' or 'method' files found.
+                                    Please select a 'subject' folder if you want to inspect all scans.
+                                    Please select a 'scan' folder if you want to inspect its files.""")
+            from spec2nii.bruker import DataFolderBrowser
+            root_path = folder
+            # run the textual app once with the one-call configuration
+            app = DataFolderBrowser(root_path=root_path, start_folder=start_folder)
+            app.run()
+            # after exit, app.selected should be set by DataFolderBrowser when the user chose a file
+            if not getattr(app, "selected", None):
+                raise SystemExit("No file selected in inspection UI; aborting.")
+            args.file, args.mode = app.selected
+            print(f"\n✓ Selected: {op.relpath(args.file, folder)}")
+            if args.fileout is None:
+                args.fileout = args.mode.lower()
+        else:
+            raise ValueError('Bruker inspect option requires a directory path instead of file as input.')
+        return args
 
     # Varian parser
     def varian(self, args):
