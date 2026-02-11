@@ -53,7 +53,7 @@
         "conditions": [
           "#ACQ_word_size=='_32_BIT'",
           "#BYTORDA=='little'",
-          ["#ACQ_sw_version",["<PV-360.1.1>", "<PV-360.3.5>"]]
+          "#ACQ_sw_version[0:8]=='<PV-360.'"
         ]
     }
   ],
@@ -96,11 +96,7 @@
     {
       "cmd": "#ACQ_jobs[0][0]",
       "conditions": [
-        ["#ACQ_sw_version",
-          [
-            "<PV-360.1.1>", "<PV-360.3.5>"
-          ]
-        ]
+        "#ACQ_sw_version[0:8]=='<PV-360.'"
       ]
     }
   ],
@@ -145,11 +141,7 @@
     {
       "cmd": "#ACQ_jobs[0][0]",
       "conditions": [
-        ["#ACQ_sw_version",
-          [
-            "<PV-360.1.1>", "<PV-360.3.5>"
-          ]
-        ]
+        "#ACQ_sw_version[0:8]=='<PV-360.'"
       ]
     }
   ],
@@ -178,7 +170,7 @@
           ]
         ],
         "#ACQ_dim==2",
-        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>', '<PV-360.1.1>']"
       ]
     },
     {
@@ -196,7 +188,7 @@
           ]
         ],
         "#ACQ_dim==3",
-        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>', '<PV-360.1.1>']"
       ]
     },
     {
@@ -207,7 +199,7 @@
             "FieldMap.ppg"
           ]
         ],
-        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>', '<PV-360.1.1>']"
       ]
     },
     {
@@ -220,7 +212,7 @@
             "ZTE.ppg"
           ]
         ],
-        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>', '<PV-360.1.1>']"
       ]
     },
     {
@@ -239,7 +231,7 @@
             "T2S_EPI.ppg"
           ]
         ],
-        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>', '<PV-360.1.1>']"
       ]
     },
     {
@@ -262,7 +254,30 @@
             "cl_STELASER_PA_35.ppg"
           ]
         ],
-        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>', '<PV-360.1.1>', '<PV-360.3.5>']"
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+      ]
+    },
+    {
+      "cmd": "'SPECTROSCOPY'" ,
+      "conditions": [
+        ["#PULPROG[1:-1]",
+          [
+            "PRESS.ppg",
+            "STEAM.ppg",
+            "SINGLEPULSE.ppg",
+            "NSPECT.ppg",
+            "ISIS.ppg",
+            "CPMG.ppg",
+            "RfProfile.ppg",
+            "fmap_fq.ppg",
+            "ste_laser_dIR_WSTM.ppg",
+            "mt_sLASER.ppg",
+            "mt_MEGA_sLASER_V35.ppg",
+            "cl_STELASER_PA360_b.ppg",
+            "cl_STELASER_PA_35.ppg"
+          ]
+        ],
+        "#ACQ_sw_version[0:8]=='<PV-360.'"
       ]
     },
     {
@@ -273,7 +288,18 @@
             "CSI.ppg"
           ]
         ],
-        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>', '<PV-360.1.1>']"
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+      ]
+    },
+        {
+      "cmd": "'CSI'" ,
+      "conditions": [
+        ["#PULPROG[1:-1]",
+          [
+            "CSI.ppg"
+          ]
+        ],
+        "#ACQ_sw_version[0:8]=='<PV-360.'"
       ]
     },
     {
@@ -285,7 +311,7 @@
             "DtiSpiral.ppg"
           ]
         ],
-        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>', '<PV-360.1.1>']"
       ]
     },
     {
@@ -296,7 +322,7 @@
             "ZTE.ppg"
           ]
         ],
-        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>',  '<PV-360.1.1>']"
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>', '<PV-360.1.1>']"
       ]
     },
     {

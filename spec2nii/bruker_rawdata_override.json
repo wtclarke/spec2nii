@@ -53,7 +53,7 @@
         "conditions": [
           "#ACQ_word_size=='_32_BIT'",
           "#BYTORDA=='little'",
-          ["#ACQ_sw_version",["<PV-360.1.1>","<PV-360.3.5>"]]
+          "#ACQ_sw_version[0:8]=='<PV-360.'"
         ]
     }
   ],
@@ -61,13 +61,13 @@
     {
       "cmd": "#ACQ_jobs.primed_dict(7)['<{}>'.format(@subtype)]",
       "conditions": [
-        "#ACQ_sw_version in ['<PV-360.1.1>','<PV-360.3.5>']"
+        "#ACQ_sw_version[0:8]=='<PV-360.'"
       ]
     },
     {
       "cmd": "#ACQ_jobs.nested[0][:-1]",
       "conditions": [
-        "#ACQ_sw_version in ['<PV-360.1.1>','<PV-360.3.5>']"
+        "#ACQ_sw_version[0:8]=='<PV-360.'"
       ]
     },
     {
