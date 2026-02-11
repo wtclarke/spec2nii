@@ -694,12 +694,40 @@ class spec2nii:
             if not getattr(app, "selected", None):
                 raise SystemExit("No file selected in inspection UI; aborting.")
             args.file, args.mode = app.selected
-            print(f"\n✓ Selected: {op.relpath(args.file, folder)}")
+            # print(f"✓ Selected: {op.relpath(args.file, folder)}")
             if args.fileout is None:
                 args.fileout = args.mode.lower()
+            # create command for printing
+            cmd = self._bruker_cmd_builder(args, folder)
+            print(f"Command:\n {cmd}\n")
         else:
             raise ValueError('Bruker inspect option requires a directory path instead of file as input.')
         return args
+    
+    def _bruker_cmd_builder(self, args, orig_file):
+        # start by adding the 'inspect' modified arguments
+        cmd = ['spec2nii',
+                'bruker',
+                args.file,
+                '-m', args.mode,
+                '-f', args.fileout]
+        # then add the arguments from sys.argv
+        flag = 0  # flag that indicates the previous argument was a '-' or '--' flag
+        for i in sys.argv:
+            # skip 'inspect' flag, previous folder input, 'mode' and 'fileout' arguments
+            if i in ['--inspect', str(orig_file), '-m', '--mode', '-f', '--fileout']:
+                flag = 0
+                continue
+            # otherwise, store the argument in the command
+            if i.startswith('-'):
+                cmd.append(i)
+                flag = 1
+            # also store the value following an argument if flag == 1
+            elif flag == 1:
+                cmd.append(i)
+                flag = 0
+
+        return " ".join(cmd)
 
     # Varian parser
     def varian(self, args):
