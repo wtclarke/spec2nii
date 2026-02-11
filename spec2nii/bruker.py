@@ -62,7 +62,10 @@ def inspect_files(path):
         for f in file:
             skip_file = False
             clr = colours[i]
-            d = Dataset(f, property_files=[prf])
+            try:
+                d = Dataset(f, property_files=[prf])
+            except:
+                continue
             if len(file) == 1:
                 text = f"\n[{cnt}] {f.stem.upper()} data layout"
             else:
