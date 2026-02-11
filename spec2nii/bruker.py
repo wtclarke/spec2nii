@@ -49,38 +49,50 @@ def inspect_files(path):
     property_files = [importlib_resources.files('spec2nii') / 'bruker_rawdata_override.json',
                       importlib_resources.files('spec2nii') / 'bruker_fid_override.json',
                       importlib_resources.files('spec2nii') / 'bruker_2dseq_override.json']
-    colours = ['\033[96m', '\033[92m', '\033[91m']
+    colours = ['\033[96m', '\033[92m', '\033[91m', '\033[90m']
+    clr_rst = '\033[0m'
     # read and print data layout for each format
-    files_to_select = []
+    files_list = []
+    num_list = []
     cnt = 1
     text_to_print = []
-    for file, clr, prf in zip(files, colours, property_files):
+    for i, (file, prf) in enumerate(zip(files, property_files)):
         if file == []:
             continue
         for f in file:
+            skip_file = False
+            clr = colours[i]
             d = Dataset(f, property_files=[prf])
             if len(file) == 1:
-                text = f"\n{clr}[{cnt}] {f.stem.upper()} data layout"
+                text = f"\n[{cnt}] {f.stem.upper()} data layout"
             else:
-                text = f"\n{clr}[{cnt}] {f.parent.stem + '/' + f.stem.upper()} data layout"
+                text = f"\n[{cnt}] {f.parent.stem + '/' + f.stem.upper()} data layout"
             # check if 2dseq is of a valid 'VisuCoreFrameType' for conversion
             if f.stem == '2dseq':
                 frame_type = d.parameters['visu_pars'].to_dict()['VisuCoreFrameType']['value']
                 if isinstance(frame_type, str) or 'REAL_IMAGE' not in frame_type or 'IMAGINARY_IMAGE' not in frame_type:
-                    text += " - INVALID FOR MRS NIfTI CONVERSION"
-                text += f"\n\t{clr}{'VisuCoreFrameType':20s}: {frame_type}"
+                    text += f" - INVALID FOR MRS NIfTI CONVERSION"
+                    # change colour to grey
+                    clr = colours[-1]
+                    # skip file from files_list
+                    skip_file = True
+                text += f"\n\t{'VisuCoreFrameType':20s}: {frame_type}"
             # check if fid is of MRSI data and print a warning that it might not be reconstructed
             if f.stem in ['fid', 'fid_proc']:
                 if d.scheme_id == 'CSI':
                     text += " - WARNING: MRSI FID data might not be reconstructed. Use '2dseq' if available."
+                    # change colour to grey
+                    clr = colours[-1]
             # universal printing
-            text_to_print.append(text)
+            text_to_print.append(clr+text+clr_rst)
             for key, val in d._schema.layouts.items():
-                text_to_print.append(f"\t{clr}{key:20s}: {val}")
-            # append list and bump counter
-            files_to_select.append(f)
+                text_to_print.append(f"\t{clr}{key:20s}: {val}{clr_rst}")
+            # append lists and bump counter
+            if not skip_file:
+                files_list.append(f)
+                num_list.append(cnt)
             cnt += 1
-    return files_to_select, text_to_print
+    return files_list, num_list, text_to_print
 
 
 def inspect_scans(scan_list):
@@ -93,12 +105,13 @@ def inspect_scans(scan_list):
     }
     text_to_print = []
     to_delete = []
-    for scan in scan_list:
+    updated_scan_list = scan_list.copy()
+    for scan in updated_scan_list:
         try:
             with open(scan / "acqp", "r", encoding="utf-8") as f:
                 readlines = list(f)
         except FileNotFoundError:
-            to_delete.append(scan_list.index(scan))
+            to_delete.append(updated_scan_list.index(scan))
             continue
         scan_text = [f"\n{scan.name}"]
         for i, line in enumerate(readlines):
@@ -115,7 +128,7 @@ def inspect_scans(scan_list):
 
         # update colour
         if any("Spectroscopic" in line for line in scan_text):
-            scan_text = [f"\033[91m{line}" for line in scan_text]
+            scan_text = [f"\033[96m{line}" for line in scan_text]
         else:
             scan_text = [f"\033[0m{line}" for line in scan_text]
         # add it to main text
@@ -123,9 +136,9 @@ def inspect_scans(scan_list):
 
     # remove scans that could not be read
     for idx in sorted(to_delete, reverse=True):
-        del scan_list[idx]
+        del updated_scan_list[idx]
 
-    return text_to_print
+    return updated_scan_list, text_to_print
 
 
 def read_bruker(args):
@@ -523,7 +536,6 @@ class DataFolderBrowser(App):
         self.root_path = Path(root_path).resolve()
         self.start_folder = Path(start_folder).resolve() if start_folder else None
         self.selected = None
-        self.current_files = []  # list[Path] shown in inspect mode
         self.allow_back = False  # toggled when entering inspect in subject mode
 
     def compose(self) -> ComposeResult:
@@ -556,7 +568,9 @@ class DataFolderBrowser(App):
         # immediate subfolders only (assume subject layout: each child is a scan)
         base = self.root_path
         try:
-            return [p for p in sorted(base.iterdir()) if p.is_dir()]
+            folders = sorted((p for p in base.iterdir() if p.is_dir()),
+                             key=lambda p: (p.name.isdigit(), int(p.name) if p.name.isdigit() else p.name))
+            return folders
         except Exception:
             return []
 
@@ -565,7 +579,7 @@ class DataFolderBrowser(App):
         self.current_mode = "browse"
         scan_list = self._list_subject_folders()
 
-        text_to_print = inspect_scans(scan_list)
+        scan_list, text_to_print = inspect_scans(scan_list)
 
         # render header text
         text_block = f"Subject: {self.root_path}\n\n"
@@ -608,7 +622,7 @@ class DataFolderBrowser(App):
             except Exception:
                 pass
 
-        files, text_to_print = inspect_files(folder_path)
+        files_list, num_list, text_to_print = inspect_files(folder_path)
 
         # render header text
         text_block = f"Scan: {folder_path}\n\n"
@@ -617,16 +631,11 @@ class DataFolderBrowser(App):
         self.header_static.update(Text.from_ansi(text_block))
 
         # populate main_list with selectable files (1..N)
-        self.current_files = files
         self.main_list.clear()
-        for i, p in enumerate(files, start=1):
-            if p.parent.name and p.parent.name != Path(folder_path).name:
-                label = f"[{i}] {p.parent.name}/{p.stem.upper()}"
-            else:
-                label = f"[{i}] {p.stem.upper()}"
-            it = ListItem(Static(label))
-            it.data = p
-            self.main_list.append(it)
+        for i, p in zip(num_list, files_list):
+            item = ListItem(Static(f"[{i}] {os.path.relpath(p, folder_path)}"))
+            item.data = p
+            self.main_list.append(item)
 
         # focus the list
         self.main_list.focus()
@@ -657,9 +666,8 @@ class DataFolderBrowser(App):
         if self.current_mode == "browse":
             # user clicked a subject -> enter inspect for that folder with back allowed
             folder_path = node.data
-            if folder_path is None:
-                return
-            await self.enter_inspect(folder_path, allow_back=True)
+            if folder_path is not None:
+                await self.enter_inspect(folder_path, allow_back=True)
             return
 
         # inspect mode -> finalise file selection
