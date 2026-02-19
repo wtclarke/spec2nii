@@ -682,9 +682,11 @@ class spec2nii:
             elif (folder / 'subject').exists():
                 start_folder = None
             else:
-                raise ValueError("""Selected directory is invalid - no 'subject' or 'method' files found.
-                                    Please select a 'subject' folder if you want to inspect all scans.
-                                    Please select a 'scan' folder if you want to inspect its files.""")
+                indent = " " * len("ValueError: ")
+                raise ValueError("Selected directory is invalid - no 'subject' or 'method' files found.\n"
+                                 f"{indent}Please select a 'subject' folder if you want to inspect all scans.\n"
+                                 f"{indent}Please select a 'scan' folder if you want to inspect its files."
+                                )
             from spec2nii.bruker import DataFolderBrowser
             root_path = folder
             # run the textual app once with the one-call configuration

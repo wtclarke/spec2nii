@@ -236,7 +236,7 @@ def _get_queries(args):
         queries = ["@type in ['fid', 'fid_proc']", "@is_spectroscopy==True"]
     # TODO review and update RAWDATA handling
     elif args.mode == 'RAWDATA':
-        queries = ["@type=='rawdata'"]
+        queries = ["@type=='rawdata'", "@is_spectroscopy==True"]
     return queries + args.query
 
 
@@ -273,10 +273,7 @@ def _proc_dataset(d, args):
         meta = _2dseq_meta(d, dump=args.dump_headers)
 
     # Dwelltime
-    if d.type in ['fid', 'fid_proc']:
-        dwelltime = d.dwell_s
-    else:
-        dwelltime = d.dwell_s
+    dwelltime = d.dwell_s
 
     if args.fileout:
         name = args.fileout + '_' + d.id.rstrip('_')

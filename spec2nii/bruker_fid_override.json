@@ -1,60 +1,70 @@
 {
   "numpy_dtype": [
     {
-        "cmd": "np.dtype('int32').newbyteorder('<')",
-        "conditions": [
-          "#GO_raw_data_format=='GO_32BIT_SGN_INT'",
-          "#BYTORDA=='little'",
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
-        ]
+      "cmd": "np.dtype('int32').newbyteorder('<')",
+      "conditions": [
+        "#GO_raw_data_format=='GO_32BIT_SGN_INT'",
+        "#BYTORDA=='little'",
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+      ]
     },
     {
-        "cmd": "np.dtype('int16').newbyteorder('<')",
-        "conditions": [
-          "#GO_raw_data_format=='GO_16BIT_SGN_INT'",
-          "#BYTORDA=='little'",
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
-        ]
+      "cmd": "np.dtype('int16').newbyteorder('<')",
+      "conditions": [
+        "#GO_raw_data_format=='GO_16BIT_SGN_INT'",
+        "#BYTORDA=='little'",
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+      ]
     },
     {
-        "cmd": "np.dtype('float32').newbyteorder('<')",
-        "conditions": [
-          "#GO_raw_data_format=='GO_32BIT_FLOAT'",
-          "#BYTORDA=='little'",
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
-        ]
+      "cmd": "np.dtype('float32').newbyteorder('<')",
+      "conditions": [
+        "#GO_raw_data_format=='GO_32BIT_FLOAT'",
+        "#BYTORDA=='little'",
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+      ]
     },
     {
-        "cmd": "np.dtype('int32').newbyteorder('>')",
-        "conditions": [
-          "#GO_raw_data_format=='GO_32BIT_SGN_INT'",
-          "#BYTORDA=='big'",
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
-        ]
+      "cmd": "np.dtype('int32').newbyteorder('>')",
+      "conditions": [
+        "#GO_raw_data_format=='GO_32BIT_SGN_INT'",
+        "#BYTORDA=='big'",
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+      ]
     },
     {
-        "cmd": "np.dtype('int16').newbyteorder('>')",
-        "conditions": [
-          "#GO_raw_data_format=='GO_16BIT_SGN_INT'",
-          "#BYTORDA=='big'",
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
-        ]
+      "cmd": "np.dtype('int16').newbyteorder('>')",
+      "conditions": [
+        "#GO_raw_data_format=='GO_16BIT_SGN_INT'",
+        "#BYTORDA=='big'",
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+      ]
     },
     {
-        "cmd": "np.dtype('float32').newbyteorder('>')",
-        "conditions": [
-          "#GO_raw_data_format=='GO_32BIT_FLOAT'",
-          "#BYTORDA=='big'",
-          "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
-        ]
+      "cmd": "np.dtype('float32').newbyteorder('>')",
+      "conditions": [
+        "#GO_raw_data_format=='GO_32BIT_FLOAT'",
+        "#BYTORDA=='big'",
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+      ]
     },
     {
-        "cmd": "np.dtype('i4').newbyteorder('<')",
-        "conditions": [
-          "#ACQ_word_size=='_32_BIT'",
-          "#BYTORDA=='little'",
-          "#ACQ_sw_version[0:8]=='<PV-360.'"
-        ]
+      "cmd": "np.dtype('i4').newbyteorder('<')",
+      "conditions": [
+        "#ACQ_word_size=='_32_BIT'",
+        "#BYTORDA=='little'",
+        "#ACQ_sw_version[0:8]=='<PV-360.'",
+        "@type=='fid'"
+      ]
+    },
+    {
+      "cmd": "np.dtype('f8').newbyteorder('<')",
+      "conditions": [
+        "#ACQ_word_size=='_32_BIT'",
+        "#BYTORDA=='little'",
+        "#ACQ_sw_version[0:8]=='<PV-360.'",
+        "@type=='fid_proc'"
+      ]
     }
   ],
   "channels": [
@@ -89,7 +99,7 @@
     {
       "cmd": "int(2 * #PVM_SpecMatrix.tuple[0])",
       "conditions": [
-        "#ACQ_sw_version=='<PV-360.1.1>'",
+        "#ACQ_sw_version[0:8]=='<PV-360.'",
         "#PULPROG[1:-1]=='mt_MEGA_sLASER_V35.ppg'"
       ]
     },
@@ -134,7 +144,7 @@
     {
       "cmd": "int(2 * #PVM_SpecMatrix.tuple[0])",
       "conditions": [
-        "#ACQ_sw_version=='<PV-360.1.1>'",
+        "#ACQ_sw_version[0:8]=='<PV-360.'",
         "#PULPROG[1:-1]=='mt_MEGA_sLASER_V35.ppg'"
       ]
     },
@@ -479,7 +489,8 @@
           [
             "cl_STELASER_PA360_b.ppg",
             "cl_STELASER_PA_35.ppg",
-            "mt_sLASER.ppg"
+            "mt_sLASER.ppg",
+            "PRESS.ppg"
           ]],
         "@scheme_id=='SPECTROSCOPY'"
       ]
@@ -692,7 +703,8 @@
           [
             "cl_STELASER_PA360_b.ppg",
             "cl_STELASER_PA_35.ppg",
-            "mt_sLASER.ppg"
+            "mt_sLASER.ppg",
+            "PRESS.ppg"
           ]],
         "@scheme_id=='SPECTROSCOPY'"
       ]

@@ -49,6 +49,14 @@
         ]
     },
     {
+      "cmd": "np.dtype('f8').newbyteorder('<')",
+      "conditions": [
+        "#ACQ_word_size=='_32_BIT'",
+        "#BYTORDA=='little'",
+        "#ACQ_sw_version=='<PV-360.3.6>'"
+      ]
+    },
+    {
         "cmd": "np.dtype('i4').newbyteorder('<')",
         "conditions": [
           "#ACQ_word_size=='_32_BIT'",
