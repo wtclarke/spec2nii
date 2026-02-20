@@ -296,6 +296,10 @@ def _prep_data_svs(d):
         # Remove points acquired before echo
         data = data[d.points_prior_to_echo:, ...]
 
+        # Correct data by the working_offset
+        if d.working_offset[0] != 0:
+            data = _correct_offset(data.T, d.dwell_time, d.working_offset[0] * d.freq_ref[0]).T
+
         # fid data appears to need to be conjugated for NIFTI-MRS convention
         data = data.conj()
 
@@ -513,6 +517,23 @@ def _fid_meta(d, dump=False):
             unknown_count += 1
 
     return obj
+
+
+def _correct_offset(data, dwell, offset_hz):
+    """Apply linear phase to correct a frequency offset
+
+    :param data: data (nfids * npoints)
+    :type data: np.ndarray
+    :param dwell: dwell time in seconds
+    :type dwell: float
+    :param offset_hz: Frequency offset to correct, in hertz
+    :type offset_hz: float
+    :return: shifted data
+    :rtype: np.ndarray
+    """
+    time_axis = np.arange(data.shape[1]) * dwell
+    lin_phase = np.exp(1j * time_axis * offset_hz * 2 * np.pi)
+    return data * lin_phase
 
 
 class DataFolderBrowser(App):

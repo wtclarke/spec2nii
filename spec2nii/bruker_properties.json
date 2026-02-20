@@ -129,6 +129,18 @@
         "conditions": []
       }
     ],
+    "freq_ref": [
+      {
+        "cmd": "#PVM_FrqRef",
+        "conditions": []
+      }
+    ],
+    "dwell_time": [
+      {
+        "cmd": "1./ #PVM_SpecSWH",
+        "conditions": []
+      }
+    ],
     "method_TE": [
       {
         "cmd": "#PVM_EchoTime",
