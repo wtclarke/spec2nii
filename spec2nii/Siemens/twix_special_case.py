@@ -129,13 +129,14 @@ def mgs_svs_ed_twix(twixObj, reord_data, meta_obj, dim_tags):
     try:
         seq_mode = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'alFree', '7')]
         pulse_length = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'alFree', '12')] / 1E6
+        edit_pulse_off = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'adFree', '11')]
     except KeyError:
         seq_mode = 0.0
         pulse_length = []
+        edit_pulse_off = []
     edit_pulse_1 = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'adFree', '8')]
     edit_pulse_2 = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'adFree', '9')]
     edit_pulse_3 = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'adFree', '10')]
-    edit_pulse_off = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'adFree', '11')]
 
     if seq_mode == 0.0:
         # MEGA-PRESS
