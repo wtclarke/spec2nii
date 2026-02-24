@@ -126,8 +126,12 @@ def mgs_svs_ed_twix(twixObj, reord_data, meta_obj, dim_tags):
 
     MEGA/HERCULES sequence (2/4 editing case)
     """
-    seq_mode = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'alFree', '7')]
-    pulse_length = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'alFree', '12')] / 1E6
+    try:
+        seq_mode = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'alFree', '7')]
+        pulse_length = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'alFree', '12')] / 1E6
+    except KeyError:
+        seq_mode = 0.0
+        pulse_length = []
     edit_pulse_1 = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'adFree', '8')]
     edit_pulse_2 = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'adFree', '9')]
     edit_pulse_3 = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'adFree', '10')]
