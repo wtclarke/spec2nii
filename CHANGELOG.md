@@ -3,6 +3,7 @@ This document contains the Spec2nii release history in reverse chronological ord
 0.8.8 (WIP)
 ----------------------------------
 - Special case handling of DICOM files for dkd_svs_slaser_moconav - awaiting test data.
+- Remove Python 3.9 (eol) from supported versions, add 3.14.
 
 0.8.7 (Wednesday 8th October 2025)
 ----------------------------------
