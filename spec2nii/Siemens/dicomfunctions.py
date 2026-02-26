@@ -738,9 +738,9 @@ def identify_integrated_references(img, inst_num):
     '''
     seq_file_name = xprot[('tSequenceFileName',)].strip('"').lower()
     if (re.search(r'svs_slaser(voi)?_dkd2$', seq_file_name)
-        and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0)\
-        or (re.search(r'svs_slaser(voi)?_dkd$', seq_file_name)
-            and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0):
+            and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0)\
+            or (re.search(r'svs_slaser(voi)?_dkd$', seq_file_name)
+                and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0):
         num_ref = int(xprot[('sSpecPara', 'lAutoRefScanNo')])
         num_dyn = int(xprot[('lAverages',)])
         total_dyn = num_dyn + (num_ref * 4)
@@ -797,6 +797,19 @@ def identify_integrated_references(img, inst_num):
         else:
             # print(f'no case: {inst_num}')
             return 0, ''
+    elif re.search(r'dkd_svs_slaser_moconav$', seq_file_name)\
+            and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0:
+        num_ref = int(xprot[('sSpecPara', 'lAutoRefScanNo')])
+        num_dyn = int(xprot[('lAverages',)])
+        total_dyn = num_dyn + (num_ref * 2)
+        if inst_num < num_ref:
+            # First WS
+            return 1, '_wref'
+        elif inst_num >= (total_dyn - num_ref):
+            # Second WS
+            return 1, '_wref'
+        else:
+            return 0, ''
     else:
         return 0, ''
 
@@ -810,11 +823,12 @@ def special_case_sequences(combined_data, meta_used, img, tag, ref_status):
     else:
         seq_file_name = ''
 
-    if re.search(r'dkd_svs_mslaser_msspnav$', seq_file_name)\
+    if re.search(r'dkd_svs_mslaser_(msspnav|moconav)$', seq_file_name)\
             and ref_status == 0:
         '''
         The dkd_svs_mslaser_msspnav sequence
         This sequence contains both MEGA j-difference editing and metabolite cycling
+        This should probably also check the editing flag status on the special card
         '''
         combined_data = np.reshape(
             combined_data,
@@ -824,6 +838,18 @@ def special_case_sequences(combined_data, meta_used, img, tag, ref_status):
         meta_used.set_dim_info(2, 'DIM_METCYCLE')
         meta_used.set_dim_info(1, 'DIM_DYN')
 
+    elif re.search(r'dkd_svs_slaser_(msspnav|moconav)$', seq_file_name)\
+            and ref_status == 0:
+        '''
+        The dkd_svs_slaser_moconav sequence
+        This sequence contains metabolite cycling
+        '''
+        combined_data = np.reshape(
+            combined_data,
+            combined_data.shape[:4] + (-1, 2,)
+        )
+        meta_used.set_dim_info(1, 'DIM_METCYCLE')
+        meta_used.set_dim_info(0, 'DIM_DYN')
     else:
         # Add dimension information (if not None for default)
         if tag:

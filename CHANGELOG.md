@@ -1,5 +1,9 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.8.8 (WIP)
+----------------------------------
+- Special case handling of DICOM files for dkd_svs_slaser_moconav - awaiting test data.
+
 0.8.7 (Wednesday 8th October 2025)
 ----------------------------------
 - Fixed issue with anonymised spar data
