@@ -93,8 +93,8 @@ def read_data_list_pair(data_file, list_file, aux_file, special_case=None):
 
         # Special cases
         if data_type == 'STD_0'\
-                and (special_case == 'hyper' or 'hyper' in meta['ProtocolName'].lower()):
-            print('\n{} Data         Dims:          '.format(data_type), out_data.shape)
+                and (special_case in ['hyper', 'hyper-4'] or 'hyper' in meta['ProtocolName'].lower()):
+
             out_hyper, meta_hyper = _special_case_hyper(out_data, meta)
             # Handle the main acquisition of the HYPER (short TE + editing) sequence
 
@@ -117,8 +117,8 @@ def read_data_list_pair(data_file, list_file, aux_file, special_case=None):
             continue
 
         elif data_type == 'STD_1'\
-                and (special_case == 'four_files'):
-            print('{} Data         Dims:          '.format(data_type), out_data.shape)
+                and (special_case == 'hyper-4'):
+            # Handle the water ref acquisition of the HYPER sequence but do not split (into short/long TE)
             out_ref, meta_ref = _special_case_hyper_ref(out_data, meta)
 
             data_out.append(
@@ -133,7 +133,7 @@ def read_data_list_pair(data_file, list_file, aux_file, special_case=None):
 
         elif data_type == 'STD_1'\
                 and (special_case == 'hyper' or 'hyper' in meta['ProtocolName'].lower()):
-            # Handle the water ref acquisition of the HYPER sequence
+            # Handle the water ref acquisition of the HYPER sequence but do not split (into short/long TE)
 
             meta.set_dim_info(
                 0,
