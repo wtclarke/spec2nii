@@ -1,4 +1,4 @@
-"""spec2nii module containing utility functions 
+"""spec2nii module containing utility functions
 Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
 Copyright (C) 2026 University of Oxford
 """
