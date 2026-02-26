@@ -6,6 +6,7 @@ import re
 from datetime import datetime
 
 import numpy as np
+import chardet
 
 from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
 from nifti_mrs.hdr_ext import Hdr_Ext
@@ -57,15 +58,16 @@ def convert_rda(rda_path, fname_out, verbose):
                     else:
                         hdr[match[1]] = match[2]
             except UnicodeDecodeError:
-                print('Trying latin-1 encoding.')
-                if hdr_st.search(line.decode('latin-1')):
+                print('Using automatic encoding detection.')
+                estimated_encoding = chardet.detect(line)['encoding']
+                if hdr_st.search(line.decode(estimated_encoding)):
                     pass
                     # print('header found')
-                elif hdr_end.search(line.decode('latin-1')):
+                elif hdr_end.search(line.decode(estimated_encoding)):
                     # print('header end')
                     break
                 else:
-                    match = hdr_val.search(line.decode('latin-1'))
+                    match = hdr_val.search(line.decode(estimated_encoding))
                     if len(match.groups()) < 2:
                         hdr[match[1]] = None
                     else:
