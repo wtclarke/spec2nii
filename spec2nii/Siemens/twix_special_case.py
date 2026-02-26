@@ -5,6 +5,7 @@ Will Clarke, University of Oxford, 2022
 """
 import numpy as np
 import re
+from typing import Any
 
 
 def smm_svs_herc_hyper(twixObj, reord_data, meta_obj, dim_tags, subseq, subseq_name):
@@ -121,17 +122,38 @@ def smm_svs_herc_hyper(twixObj, reord_data, meta_obj, dim_tags, subseq, subseq_n
     return reord_data, meta_obj, dim_tags
 
 
+def _try_header(hdr: dict, key: tuple, fallback: Any = None) -> Any:
+    try:
+        return hdr[key]
+    except KeyError:
+        return fallback
+
+
 def mgs_svs_ed_twix(twixObj, reord_data, meta_obj, dim_tags):
     """Special case handling for the mgs_svs_ed (VX) and smm_svs_herc (XA) sequence
 
     MEGA/HERCULES sequence (2/4 editing case)
     """
-    seq_mode = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'alFree', '7')]
-    pulse_length = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'alFree', '12')] / 1E6
+    seq_mode = _try_header(
+        twixObj['hdr']['Phoenix'],
+        ('sWipMemBlock', 'alFree', '7'),
+        fallback=0.0)
+
+    pulse_length = _try_header(
+        twixObj['hdr']['Phoenix'],
+        ('sWipMemBlock', 'alFree', '12'),
+        fallback=None)
+    if pulse_length:
+        pulse_length /= 1E6
+
+    edit_pulse_off = _try_header(
+        twixObj['hdr']['Phoenix'],
+        ('sWipMemBlock', 'adFree', '11'),
+        fallback=[])
+
     edit_pulse_1 = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'adFree', '8')]
     edit_pulse_2 = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'adFree', '9')]
     edit_pulse_3 = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'adFree', '10')]
-    edit_pulse_off = twixObj['hdr']['Phoenix'][('sWipMemBlock', 'adFree', '11')]
 
     if seq_mode == 0.0:
         # MEGA-PRESS
