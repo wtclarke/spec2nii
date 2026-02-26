@@ -108,6 +108,8 @@ def _process_svs_pfile(pfile):
 
     if psd in ('mrs-press', 'probe-p', 'probe-s', 'probe-p_ach'):
         data, meta, dwelltime, fname_suffix = _process_probe_p(pfile)
+    elif psd in ('fidcsi', 'fidall'):
+        data, meta, dwelltime, fname_suffix = _process_fidcsi_pa(pfile)  # Special case where MRSI dims = (1, 1, 1)
     elif psd in ('oslaser', 'slaser_cni') and numecho == 1:  # MM: If non-edited data, use _process_oslaser
         data, meta, dwelltime, fname_suffix = _process_oslaser(pfile)
     elif psd == 'oslaser' and numecho > 1:  # MM: If edited data, use _process_gaba
@@ -156,6 +158,29 @@ def _process_probe_p(pfile):
     meta_ref.set_dim_info(1, 'DIM_DYN')
 
     return [metab, water], [meta, meta_ref], dwelltime, ['', '_ref']
+
+
+def _process_fidcsi_pa(pfile):
+    """Extract metabolite data from a pulse-acquire fidcsi/fidall pfile - a special case of MRSI where dims = (1, 1, 1)
+
+    :param Pfile pfile: Pfile object
+    :return: List numpy data arrays
+    :return: List of file name suffixes
+    """
+
+    metab = pfile.map.raw_suppressed                    # typically (1,1,1,navg,ncoil,npts)
+    water = pfile.map.raw_unsuppressed                  # typically (1,1,1,navg,ncoil,npts)
+    metab = np.concat((water, metab), axis=3)
+    metab = np.transpose(metab, [0, 1, 2, 5, 4, 3])     # swap to (1,1,1,npts,ncoil,navg)
+
+    dwelltime = 1 / pfile.hdr.rhr_spectral_width
+
+    meta = _populate_metadata(pfile)
+
+    meta.set_dim_info(0, 'DIM_COIL')
+    meta.set_dim_info(1, 'DIM_DYN')
+
+    return [metab,], [meta,], dwelltime, ['',]
 
 
 def _process_oslaser(pfile):
