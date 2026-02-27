@@ -6,24 +6,21 @@ Package build and upload to Pypi is handled by `.github/workflows/publish.yml`. 
 
 ## Local build (recommended)
 
-Run from the repository root:
+Run from the top-level directory:
 
 ```bash
-python scripts/build_local.py --clean
+pip install -e .
 ```
 
-This command will:
+This command will build the package from source and install the project dependencies.
 
-- Create/reuse a local virtual environment (`.venv` by default).
-- Install build tooling and project dependencies.
-- Build both `sdist` and `wheel` into `dist/`.
+Alternatively:
 
-Useful options:
+```bash
+pip install --no-deps -e .
+```
 
-- `--skip-install-deps`: Skip dependency installation.
-- `--skip-venv`: Use the current Python interpreter instead of a local venv.
-- `--venv-dir PATH`: Use a custom virtual environment location.
-- `--out-dir PATH`: Write build artifacts to a custom output directory.
+This will do the same but won't install the dependencies.
 
 ## Old manual build process
 
