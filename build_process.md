@@ -1,9 +1,29 @@
 # Build Process
+
 Package build and upload to Pypi is handled by `.github/workflows/publish.yml`. This is triggered by publication of a new tagged release on the [Github releases page](https://github.com/wtclarke/spec2nii/releases). Upload access to Pypi is via stored secret.
 
 [Conda-forge](https://github.com/conda-forge/spec2nii-feedstock) then picks up the new Pypi package automatically.
 
+## Local build (recommended)
+
+Run from the top-level directory:
+
+```bash
+pip install -e .
+```
+
+This command will build the package from source and install the project dependencies.
+
+Alternatively:
+
+```bash
+pip install --no-deps -e .
+```
+
+This will do the same but won't install the dependencies.
+
 ## Old manual build process
+
 1. Commit, push and run CI tests
 2. git tag -m VX.X.X X.X.X
 3. git push github master --tags
