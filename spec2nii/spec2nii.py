@@ -215,6 +215,8 @@ class spec2nii:
         parser_bruker.add_argument('-d', '--dump_headers',
                                    help='Dump bruker header files into json header extension',
                                    action='store_true')
+        parser_bruker.add_argument('-zp', '--zeropad', action='store_true',
+                                   help='Zero pad the output data after removing points prior to echo')
         parser_bruker.add_argument('--inspect', action='store_true',
                                    help='Inspect input directory for available file formats to convert.')
         parser_bruker = add_common_parameters(parser_bruker)

@@ -1,14 +1,13 @@
 dependencies:
  - numpy>=1.26
  - nibabel
- - pydicom==3.*;python_version>="3.10"
- - pydicom==2.4.*;python_version<"3.10"
+ - pydicom==3.*
  - pyMapVBVD>=0.6.0
  - scipy>=1.13
-#  - brukerapi>=0.1.8
+ - brukerapi>=0.2.2
  - pandas
  - nifti-mrs>=1.3.2
  - textual>=7.4.0,<8
- - pip
- - pip:
-    - "brukerapi @ git+https://github.com/VKarlaftis/brukerapi-python"
+#  - pip
+#  - pip:
+#     - "brukerapi @ git+https://github.com/VKarlaftis/brukerapi-python"

@@ -161,7 +161,7 @@ def read_bruker(args):
                 data,
                 dwelltime,
                 meta,
-                orientation.Q44,
+                orientation.Q44 if orientation else None,
                 no_conj=True)
         )
         fileoutNames.append(name)
@@ -186,11 +186,15 @@ def yield_bruker(args):
     ref2 = ref1
     if args.mode == 'FID':
         ref2 = importlib_resources.files('spec2nii') / 'bruker_fid_override.json'
+        parameter_files = []
     elif args.mode == '2DSEQ':
         ref2 = importlib_resources.files('spec2nii') / 'bruker_2dseq_override.json'
+        # add the method and reco files in addition to defaults as needed in subsequent properties
+        parameter_files = ['method']
     elif args.mode == 'RAWDATA':
         ref2 = importlib_resources.files('spec2nii') / 'bruker_rawdata_override.json'
-
+        # add the visu_pars and reco files in addition to defaults as needed in subsequent properties
+        parameter_files = ['visu_pars']
     with importlib_resources.as_file(ref1) as bruker_properties_path:
         with importlib_resources.as_file(ref2) as bruker_override_path:
 
@@ -198,8 +202,8 @@ def yield_bruker(args):
             if os.path.isfile(args.file):
                 d = Dataset(
                     args.file,
-                    property_files=[bruker_override_path, bruker_properties_path],
-                    parameter_files=['method'])
+                    parameter_files=parameter_files,
+                    property_files=[bruker_override_path, bruker_properties_path])
                 try:
                     d.query(queries)
                 except FilterEvalFalse:
@@ -213,7 +217,7 @@ def yield_bruker(args):
                     dataset_index.append('fid_proc.64')
                 # process individual datasets
                 for dataset in Folder(args.file, dataset_state={
-                    "parameter_files": ['method'],
+                    "parameter_files": parameter_files,
                     "property_files": [bruker_override_path, bruker_properties_path]},
                     dataset_index=dataset_index,
                 ).get_dataset_list_rec():
@@ -248,32 +252,43 @@ def _proc_dataset(d, args):
     # merge 2dseq complex frame group if present
     if d.is_complex and d.type == '2dseq':
         d = FrameGroupMerger().merge(d, 'FG_COMPLEX')
-
     # prepare the data array
     if d.is_svs:
-        data = _prep_data_svs(d)
+        data = _prep_data_svs(d, args.zeropad)
     elif d.is_mrsi:
-        data = _prep_data_mrsi(d)
+        data = _prep_data_mrsi(d, args.zeropad)
     else:
         data = d.data
-
     # get properties
     properties = d.to_dict()
 
     # Orientation information
-    if d.type in ['fid', 'fid_proc']:
+    if d.type in ['fid', 'fid_proc', 'rawdata']:
         orientation = NIFTIOrient(_fid_affine_from_params(d))
-    else:
+    elif d.type == '2dseq':
         orientation = NIFTIOrient(np.reshape(np.array(properties['affine']), (4, 4)))
 
     # Meta data
     if d.type in ['fid', 'fid_proc']:
         meta = _fid_meta(d, dump=args.dump_headers)
-    else:
+    elif d.type == 'rawdata':
+        meta = _rawdata_meta(d, dump=args.dump_headers)
+    elif d.type == '2dseq':
         meta = _2dseq_meta(d, dump=args.dump_headers)
 
     # Dwelltime
-    dwelltime = d.dwell_s
+    if abs(d.dwell_s - d.dwell_time) >= 1:
+        # user select which of the two to use as dwelltime
+        print(f"Warning: dwell time in acqp file 'SW_h' and method file 'PVM_SpecSWH' differ significantly (>=1Hz).")
+        print("Please select which one to use as dwell time:")
+        print(f"1: 'SW_h'={d.dwell_s}")
+        print(f"2: 'PVM_SpecSWH'={d.dwell_time}")
+
+        dwelltime = input()
+        dwelltime = d.dwell_s if dwelltime == '1' else d.dwell_time
+    else:
+        dwelltime = d.dwell_s
+
 
     if args.fileout:
         name = args.fileout + '_' + d.id.rstrip('_')
@@ -283,7 +298,7 @@ def _proc_dataset(d, args):
     yield data, orientation, dwelltime, meta, name
 
 
-def _prep_data_svs(d):
+def _prep_data_svs(d, zeropad=False):
     """
     Push the spectral dimension of the data array to the 3rd position for SVS data
 
@@ -292,14 +307,18 @@ def _prep_data_svs(d):
 
     """
     data = d.data
-    if d.type in ['fid', 'fid_proc']:
+    if d.type in ['fid', 'fid_proc', 'rawdata']:
         # Remove points acquired before echo
-        data = data[d.points_prior_to_echo:, ...]
+        if zeropad:
+            padded_data = np.zeros_like(data)
+            padded_data[:-d.points_prior_to_echo] = data[d.points_prior_to_echo:]
+            data = padded_data
+        else:
+            data = data[d.points_prior_to_echo:, ...]
 
         # Correct data by the working_offset
         if d.working_offset[0] != 0:
-            data = _correct_offset(data.T, d.dwell_time, d.working_offset[0] * d.freq_ref[0]).T
-
+            data = _correct_offset(data, d.dwell_time, d.working_offset[0] * d.freq_ref[0])
         # fid data appears to need to be conjugated for NIFTI-MRS convention
         data = data.conj()
 
@@ -309,15 +328,22 @@ def _prep_data_svs(d):
     return data
 
 
-def _prep_data_mrsi(d):
+def _prep_data_mrsi(d, zeropad=False):
     """
     Push the spectral dimension of the data array to the 3rd position for CSI data
 
     """
     data = d.data
-    if d.type in ['fid', 'fid_proc']:
+    if d.type in ['fid', 'fid_proc', 'rawdata']:
         # Remove points acquired before echo
-        data = data[d.points_prior_to_echo:, ...]
+        if zeropad:
+            padded_data = np.zeros_like(data)
+            padded_data[:-d.points_prior_to_echo] = data[d.points_prior_to_echo:]
+            data = padded_data
+        else:
+            data = data[d.points_prior_to_echo:, ...]
+
+        # TODO what should we do with working_offset here?
 
         # fid data appears to need to be conjugated for NIFTI-MRS convention
         data = data.conj()
@@ -518,6 +544,95 @@ def _fid_meta(d, dump=False):
 
     return obj
 
+def _rawdata_meta(d, dump=False):
+    """ Extract information from method and acqp file into hdr_ext.
+
+    :param d: Dataset
+    :return: NIfTI MRS hdr ext object.
+    """
+
+    # Extract required metadata and create hdr_ext object
+    cf = d.SpectrometerFrequency
+    obj = Hdr_Ext(
+        cf,
+        d.ResonantNucleus)
+
+    # # 5.1 MRS specific Tags
+    # 'EchoTime'
+    obj.set_standard_def('EchoTime', float(d.TE * 1E-3))
+    # 'RepetitionTime'
+    obj.set_standard_def('RepetitionTime', float(d.TR / 1E3))
+    # 'InversionTime'
+    # 'MixingTime'
+    # 'ExcitationFlipAngle'
+    # 'TxOffset'
+    # Bit of a guess, not sure of units.
+    obj.set_standard_def('TxOffset', float(d.working_offset[0]))
+    # 'VOI'
+    # 'WaterSuppressed'
+    # No apparent parameter stored in the SPAR info.
+    # 'WaterSuppressionType'
+    # 'SequenceTriggered'
+    # # 5.2 Scanner information
+    # 'Manufacturer'
+    obj.set_standard_def('Manufacturer', 'Bruker')
+    # 'ManufacturersModelName'
+    # 'DeviceSerialNumber'
+    # 'SoftwareVersions'
+    obj.set_standard_def('SoftwareVersions', d.PV_version)
+    # 'InstitutionName'
+    # 'InstitutionAddress'
+    # 'TxCoil'
+    # 'RxCoil'
+    # # 5.3 Sequence information
+    # 'SequenceName'
+    obj.set_standard_def('SequenceName', d.method_desc)
+    # 'ProtocolName'
+    # # 5.4 Sequence information
+    # 'PatientPosition'
+    # 'PatientName'
+    obj.set_standard_def('PatientName', d.subj_id)
+    # 'PatientID'
+    # 'PatientWeight'
+    # 'PatientDoB'
+    # 'PatientSex'
+    # # 5.5 Provenance and conversion metadata
+    # 'ConversionMethod'
+    obj.set_standard_def('ConversionMethod', f'spec2nii v{spec2nii_ver}')
+    # 'ConversionTime'
+    conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')
+    obj.set_standard_def('ConversionTime', conversion_time)
+    # 'OriginalFile'
+    obj.set_standard_def('OriginalFile', [str(d.path), ])
+    # # 5.6 Spatial information
+    # 'kSpace'
+    obj.set_standard_def('kSpace', [False, False, False])
+
+    # Stuff full headers into user fields
+    if dump:
+        for hdr_file in d.parameters:
+            obj.set_user_def(key=hdr_file,
+                             doc=f'Bruker {hdr_file} file.',
+                             value=d.parameters[hdr_file].to_dict())
+
+    # Tags
+    unknown_count = 0
+    for ddx, dim in enumerate(d.dim_type):
+        if dim in fid_dimension_defaults:
+            if dim == 'channel' and d.data.shape[ddx+1] == d.channels:
+                obj.set_dim_info(ddx, fid_dimension_defaults[dim])
+            elif dim == 'repetition' and d.data.shape[ddx+1] == d.naverages:
+                obj.set_dim_info(ddx, fid_dimension_defaults[dim])
+            else:
+                # print(f"Didn't find a suitable '{dim}' dimension of size: {d.data.shape[ddx+1]}")
+                obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
+                unknown_count += 1
+
+        else:
+            obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
+            unknown_count += 1
+
+    return obj
 
 def _correct_offset(data, dwell, offset_hz):
     """Apply linear phase to correct a frequency offset
@@ -531,8 +646,10 @@ def _correct_offset(data, dwell, offset_hz):
     :return: shifted data
     :rtype: np.ndarray
     """
-    time_axis = np.arange(data.shape[1]) * dwell
+    time_axis = np.arange(data.shape[0]) * dwell
     lin_phase = np.exp(1j * time_axis * offset_hz * 2 * np.pi)
+    # reshape to match data dimensions
+    lin_phase = lin_phase.reshape((-1,) + (1,) * (data.ndim - 1))
     return data * lin_phase
 
 
