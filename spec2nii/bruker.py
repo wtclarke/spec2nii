@@ -71,7 +71,7 @@ def inspect_files(path):
             else:
                 text = f"\n[{cnt}] {f.parent.stem + '/' + f.stem.upper()} data layout"
             # check if 2dseq is of a valid 'VisuCoreFrameType' for conversion
-            if f.stem == '2dseq':
+            if d.type == '2dseq':
                 frame_type = d.parameters['visu_pars'].to_dict()['VisuCoreFrameType']['value']
                 if isinstance(frame_type, str) or 'REAL_IMAGE' not in frame_type or 'IMAGINARY_IMAGE' not in frame_type:
                     text += f" - INVALID FOR MRS NIfTI CONVERSION"
@@ -81,9 +81,9 @@ def inspect_files(path):
                     skip_file = True
                 text += f"\n\t{'VisuCoreFrameType':20s}: {frame_type}"
             # check if fid is of MRSI data and print a warning that it might not be reconstructed
-            if f.stem in ['fid', 'fid_proc']:
+            if d.type in ['fid', 'fid_proc', 'rawdata']:
                 if d.scheme_id == 'CSI':
-                    text += " - WARNING: MRSI FID data might not be reconstructed. Use '2dseq' if available."
+                    text += f" - WARNING: MRSI {d.type.upper()} data might not be reconstructed. Use '2dseq' if available."
                     # change colour to grey
                     clr = colours[-1]
             # universal printing
@@ -252,6 +252,9 @@ def _proc_dataset(d, args):
     # merge 2dseq complex frame group if present
     if d.is_complex and d.type == '2dseq':
         d = FrameGroupMerger().merge(d, 'FG_COMPLEX')
+    # raise warning for FID MRSI data
+    if d.type in ['fid', 'fid_proc', 'rawdata'] and d.scheme_id == 'CSI':
+        warnings.warn(f"MRSI {d.type.upper()} data might not be reconstructed. Interpret the results with caution! (use '2dseq' if available)")
     # prepare the data array
     if d.is_svs:
         data = _prep_data_svs(d, args.zeropad)
@@ -357,7 +360,7 @@ def _prep_data_mrsi(d, zeropad=False):
 
 def _fid_affine_from_params(d):
     """ First attempt to create 4x4 affine from fid headers"""
-    warnings.warn('The orientation of bruker fid data is mostly untested.')
+    warnings.warn(f"The orientation of bruker {d.type} data is mostly untested.")
 
     orientation = np.squeeze(d.parameters['method']['PVM_VoxArrGradOrient'].value)
     shift = np.squeeze(d.parameters['method']['PVM_VoxArrPosition'].value)
@@ -453,6 +456,9 @@ def _2dseq_meta(d, dump=False):
     # Tags
     unknown_count = 0
     for ddx, dim in enumerate(d.dim_type[1:]):
+        # have an early exit if you exhausted the data dimensions
+        if ddx >= d.dim -1:
+            break
         if dim in fid_dimension_defaults:
             obj.set_dim_info(ddx, fid_dimension_defaults[dim])
         else:
@@ -536,6 +542,9 @@ def _fid_meta(d, dump=False):
     # Tags
     unknown_count = 0
     for ddx, dim in enumerate(d.dim_type[1:]):
+        # have an early exit if you exhausted the data dimensions
+        if ddx >= d.dim -1:
+            break
         if dim in fid_dimension_defaults:
             obj.set_dim_info(ddx, fid_dimension_defaults[dim])
         else:
@@ -618,16 +627,17 @@ def _rawdata_meta(d, dump=False):
     # Tags
     unknown_count = 0
     for ddx, dim in enumerate(d.dim_type):
+        # have an early exit if you exhausted the data dimensions
+        if ddx >= d.dim -1:
+            break
         if dim in fid_dimension_defaults:
             if dim == 'channel' and d.data.shape[ddx+1] == d.channels:
                 obj.set_dim_info(ddx, fid_dimension_defaults[dim])
             elif dim == 'repetition' and d.data.shape[ddx+1] == d.naverages:
                 obj.set_dim_info(ddx, fid_dimension_defaults[dim])
             else:
-                # print(f"Didn't find a suitable '{dim}' dimension of size: {d.data.shape[ddx+1]}")
                 obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
                 unknown_count += 1
-
         else:
             obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
             unknown_count += 1
