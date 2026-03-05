@@ -1,5 +1,61 @@
 {
-    "scheme_id": [
+  "subj_id": [
+  {
+    "cmd": "#SUBJECT_id[1:-1]",
+    "conditions": [
+
+    ]
+  },
+  {
+    "cmd": "''",
+    "conditions": [
+
+    ]
+  }
+],
+"study_id": [
+  {
+    "cmd": "str(#SUBJECT_study_nr)",
+    "conditions": [
+
+    ]
+  },
+  {
+    "cmd": "''",
+    "conditions": [
+
+    ]
+  }
+],
+"exp_id": [
+  {
+    "cmd": "@path.parent.name",
+    "conditions": [
+
+    ]
+  },
+  {
+    "cmd": "''",
+    "conditions": [
+
+    ]
+  }
+],
+"id": [
+  {
+    "cmd": "f'Rawdata_{@exp_id}_{@subj_id}_{@study_id}'",
+    "conditions": [
+      "@subtype=='job0'"
+    ]
+  },
+  {
+    "cmd": "f'Rawdata_{@subtype}_{@exp_id}_{@subj_id}_{@study_id}'",
+    "conditions": [
+      "@subtype!='job0'"
+    ]
+  }
+],
+  "scheme_id": [
     {
       "cmd": "'CART_2D'" ,
       "conditions": [
@@ -215,7 +271,31 @@
   "shape_storage": [
     {
       "cmd": "(@job_desc[0],) + (#PVM_EncNReceivers,) + (@job_desc[3],)",
-      "conditions": []
+      "conditions": [
+        "#PVM_EncNReceivers>1",
+        "@job_desc[3]>1"
+      ]
+    },
+    {
+      "cmd": "(@job_desc[0],) + (#PVM_EncNReceivers,)",
+      "conditions": [
+        "#PVM_EncNReceivers>1",
+        "@job_desc[3]==1"
+      ]
+    },
+    {
+      "cmd": "(@job_desc[0],) + (@job_desc[3],)",
+      "conditions": [
+        "#PVM_EncNReceivers==1",
+        "@job_desc[3]>1"
+      ]
+    },
+    {
+      "cmd": "(@job_desc[0],)",
+      "conditions": [
+        "#PVM_EncNReceivers==1",
+        "@job_desc[3]==1"
+      ]
     }
   ],
   "dwell_s": [
