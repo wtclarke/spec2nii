@@ -217,6 +217,8 @@ class spec2nii:
                                    action='store_true')
         parser_bruker.add_argument('-zp', '--zeropad', action='store_true',
                                    help='Zero pad the output data after removing points prior to echo')
+        parser_bruker.add_argument('--nospectrum', action='store_true',
+                                   help='2dseq data in time domain (default is frequency domain for MRSI)')
         parser_bruker.add_argument('--inspect', action='store_true',
                                    help='Inspect input directory for available file formats to convert.')
         parser_bruker = add_common_parameters(parser_bruker)

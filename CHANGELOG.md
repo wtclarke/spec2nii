@@ -1,12 +1,13 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
-0.8.8 (WIP)
+0.8.x (WIP)
 ----------------------------------
 - Added ability to 'inspect' Bruker data folders, printing some useful information about available data formats
 - Added support on Bruker fid_proc.64 files
 - Added support on Bruker rawdata files
 - Apply ppm offset correction on FID and rawdata
 - Added zero padding option for FID and rawdata
+- Bug fix on MRSI 2dseq being in frequency domain
 
 0.8.7 (Wednesday 8th October 2025)
 ----------------------------------

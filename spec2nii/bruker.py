@@ -81,11 +81,14 @@ def inspect_files(path):
                     skip_file = True
                 text += f"\n\t{'VisuCoreFrameType':20s}: {frame_type}"
             # check if fid is of MRSI data and print a warning that it might not be reconstructed
-            if d.type in ['fid', 'fid_proc', 'rawdata']:
+            elif d.type in ['fid', 'fid_proc', 'rawdata']:
                 if d.scheme_id == 'CSI':
                     text += f" - WARNING: MRSI {d.type.upper()} data might not be reconstructed. Use '2dseq' if available."
                     # change colour to grey
                     clr = colours[-1]
+            # skip any other formats
+            else:
+                continue
             # universal printing
             text_to_print.append(clr+text+clr_rst)
             for key, val in d._schema.layouts.items():
@@ -259,7 +262,7 @@ def _proc_dataset(d, args):
     if d.is_svs:
         data = _prep_data_svs(d, args.zeropad)
     elif d.is_mrsi:
-        data = _prep_data_mrsi(d, args.zeropad)
+        data = _prep_data_mrsi(d, args.zeropad, args.nospectrum)
     else:
         data = d.data
     # get properties
@@ -270,6 +273,8 @@ def _proc_dataset(d, args):
         orientation = NIFTIOrient(_fid_affine_from_params(d))
     elif d.type == '2dseq':
         orientation = NIFTIOrient(np.reshape(np.array(properties['affine']), (4, 4)))
+    else:
+        orientation = None
 
     # Meta data
     if d.type in ['fid', 'fid_proc']:
@@ -278,6 +283,8 @@ def _proc_dataset(d, args):
         meta = _rawdata_meta(d, dump=args.dump_headers)
     elif d.type == '2dseq':
         meta = _2dseq_meta(d, dump=args.dump_headers)
+    else:
+        meta = None
 
     # Dwelltime
     if abs(d.dwell_s - d.dwell_time) >= 1:
@@ -331,7 +338,7 @@ def _prep_data_svs(d, zeropad=False):
     return data
 
 
-def _prep_data_mrsi(d, zeropad=False):
+def _prep_data_mrsi(d, zeropad=False, nospectrum=False):
     """
     Push the spectral dimension of the data array to the 3rd position for CSI data
 
@@ -350,6 +357,15 @@ def _prep_data_mrsi(d, zeropad=False):
 
         # fid data appears to need to be conjugated for NIFTI-MRS convention
         data = data.conj()
+    elif d.type == '2dseq' and not nospectrum:
+        warnings.warn(f"MRSI {d.type} data are assumed to be stored in frequency space.\n"
+                      f"If this is not true, please use the '--nospectrum' flag.")
+        # invert frequency shift
+        data = np.fft.ifftshift(data, axes=0)
+        # invert frequency order
+        data = np.flip(data, axis=0)
+        # invert FFT
+        data = np.fft.ifft(data, axis=0)
 
     # push the spectral dimension to position 2
     data = np.moveaxis(data, 0, 2)
