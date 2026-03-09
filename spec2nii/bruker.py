@@ -669,8 +669,6 @@ def _rawdata_meta(d, dump=False):
                 obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
                 unknown_count += 1
             dim_count += 1
-        else:
-            print(d.path, d.data.shape)
 
     return obj
 
