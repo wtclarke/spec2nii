@@ -218,6 +218,9 @@ def yield_bruker(args):
                 dataset_index = [args.mode.lower()]
                 if args.mode == 'FID':
                     dataset_index.append('fid_proc.64')
+                # Code excludes any rawdata.navigator files, explicitly selecting rawdata.job0 files
+                if args.mode == 'RAWDATA':
+                    dataset_index = ['rawdata.job0']
                 # process individual datasets
                 for dataset in Folder(args.file, dataset_state={
                     "parameter_files": parameter_files,
@@ -471,15 +474,18 @@ def _2dseq_meta(d, dump=False):
 
     # Tags
     unknown_count = 0
-    for ddx, dim in enumerate(d.dim_type[1:]):
+    dim_count = 0
+    for dim in d.dim_type[1:]:
         # have an early exit if you exhausted the data dimensions
-        if ddx >= d.dim -1:
+        if dim_count >= d.dim - 1:
             break
-        if dim in fid_dimension_defaults:
-            obj.set_dim_info(ddx, fid_dimension_defaults[dim])
-        else:
-            obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
-            unknown_count += 1
+        if d.data.shape[dim_count+1] > 1:
+            if dim in fid_dimension_defaults:
+                obj.set_dim_info(dim_count, fid_dimension_defaults[dim])
+            else:
+                obj.set_dim_info(dim_count, f'DIM_USER_{unknown_count}')
+                unknown_count += 1
+            dim_count += 1
 
     return obj
 
@@ -557,15 +563,18 @@ def _fid_meta(d, dump=False):
 
     # Tags
     unknown_count = 0
-    for ddx, dim in enumerate(d.dim_type[1:]):
+    dim_count = 0
+    for dim in d.dim_type[1:]:
         # have an early exit if you exhausted the data dimensions
-        if ddx >= d.dim -1:
+        if dim_count >= d.dim - 1:
             break
-        if dim in fid_dimension_defaults:
-            obj.set_dim_info(ddx, fid_dimension_defaults[dim])
-        else:
-            obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
-            unknown_count += 1
+        if d.data.shape[dim_count+1] > 1:
+            if dim in fid_dimension_defaults:
+                obj.set_dim_info(dim_count, fid_dimension_defaults[dim])
+            else:
+                obj.set_dim_info(dim_count, f'DIM_USER_{unknown_count}')
+                unknown_count += 1
+            dim_count += 1
 
     return obj
 
@@ -642,21 +651,26 @@ def _rawdata_meta(d, dump=False):
 
     # Tags
     unknown_count = 0
+    dim_count = 0
     for ddx, dim in enumerate(d.dim_type):
         # have an early exit if you exhausted the data dimensions
-        if ddx >= d.dim -1:
+        if ddx >= d.dim - 1:
             break
-        if dim in fid_dimension_defaults:
-            if dim == 'channel' and d.data.shape[ddx+1] == d.channels:
-                obj.set_dim_info(ddx, fid_dimension_defaults[dim])
-            elif dim == 'repetition' and d.data.shape[ddx+1] == d.naverages:
-                obj.set_dim_info(ddx, fid_dimension_defaults[dim])
+        if d.data.shape[dim_count+1] > 1:
+            if dim in fid_dimension_defaults:
+                if dim == 'channel' and d.data.shape[ddx+1] == d.channels:
+                    obj.set_dim_info(ddx, fid_dimension_defaults[dim])
+                elif dim == 'repetition' and d.data.shape[ddx+1] == d.naverages:
+                    obj.set_dim_info(ddx, fid_dimension_defaults[dim])
+                else:
+                    obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
+                    unknown_count += 1
             else:
                 obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
                 unknown_count += 1
+            dim_count += 1
         else:
-            obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
-            unknown_count += 1
+            print(d.path, d.data.shape)
 
     return obj
 

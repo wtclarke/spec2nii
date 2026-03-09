@@ -271,31 +271,11 @@
   "shape_storage": [
     {
       "cmd": "(@job_desc[0],) + (#PVM_EncNReceivers,) + (@job_desc[3],)",
-      "conditions": [
-        "#PVM_EncNReceivers>1",
-        "@job_desc[3]>1"
-      ]
-    },
-    {
-      "cmd": "(@job_desc[0],) + (#PVM_EncNReceivers,)",
-      "conditions": [
-        "#PVM_EncNReceivers>1",
-        "@job_desc[3]==1"
-      ]
+      "conditions": ["#PVM_EncNReceivers>1"]
     },
     {
       "cmd": "(@job_desc[0],) + (@job_desc[3],)",
-      "conditions": [
-        "#PVM_EncNReceivers==1",
-        "@job_desc[3]>1"
-      ]
-    },
-    {
-      "cmd": "(@job_desc[0],)",
-      "conditions": [
-        "#PVM_EncNReceivers==1",
-        "@job_desc[3]==1"
-      ]
+      "conditions": ["#PVM_EncNReceivers==1"]
     }
   ],
   "dwell_s": [
