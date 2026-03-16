@@ -304,7 +304,18 @@
         "'k_space_encode_step_0'"
       ],
       "conditions": [
-        "@scheme_id=='SPECTROSCOPY'"
+        "@scheme_id=='SPECTROSCOPY'",
+        "#PVM_EncNReceivers>1"
+      ]
+    },
+    {
+      "cmd": [
+        "'repetition'",
+        "'k_space_encode_step_0'"
+      ],
+      "conditions": [
+        "@scheme_id=='SPECTROSCOPY'",
+        "#PVM_EncNReceivers==1"
       ]
     },
     {

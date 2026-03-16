@@ -731,7 +731,7 @@ class DataFolderBrowser(App):
             self.current_mode = "browse"
             self.allow_back = False
             self.show_browse()
-        # focus the list (synchronous for textual==7.4.0)
+        # focus the list
         self.main_list.focus()
 
     # ---------- browse helpers ----------
