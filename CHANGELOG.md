@@ -8,6 +8,7 @@ This document contains the Spec2nii release history in reverse chronological ord
 - Apply ppm offset correction on FID and rawdata
 - Added zero padding option for FID and rawdata
 - Bug fix on MRSI 2dseq being in frequency domain
+- Bumped dependency to Brukerapi 0.2.3
 
 0.8.7 (Wednesday 8th October 2025)
 ----------------------------------
