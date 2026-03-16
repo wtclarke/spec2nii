@@ -279,18 +279,18 @@
     }
   ],
   "dwell_s": [
-  {
-    "cmd": "1./ #SW_h",
-    "conditions": [
-      "#SW_h!=0"
-    ]
-  },
-  {
-    "cmd": "1./ #ACQ_jobs[0][5]",
-    "conditions": [
-      "#SW_h==0"
-    ]
-  }
+    {
+      "cmd": "1./#SW_h",
+      "conditions": [
+        "#SW_h!=0"
+      ]
+    },
+    {
+      "cmd": "1./@job_desc[5]",
+      "conditions": [
+        "#SW_h==0"
+      ]
+    }
   ],
   "dim_type": [
     {
@@ -316,7 +316,7 @@
   ],
   "npoints": [
     {
-      "cmd": "int(#VisuCoreSize)",
+      "cmd": "#PVM_SpecMatrix.tuple[0]",
       "conditions": []
     }
   ],

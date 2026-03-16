@@ -14,7 +14,7 @@ from .io_for_tests import read_nifti_mrs
 
 # Data paths
 bruker_path = Path(__file__).parent / 'spec2nii_test_data' / 'bruker'
-data_path = bruker_path / '20201208_105201_lego_rod_1_3'
+data_path = bruker_path / 'PV-6.0.1'
 
 
 def test_fid(tmp_path):

@@ -196,8 +196,7 @@ def yield_bruker(args):
         parameter_files = ['method']
     elif args.mode == 'RAWDATA':
         ref2 = importlib_resources.files('spec2nii') / 'bruker_rawdata_override.json'
-        # add the visu_pars and reco files in addition to defaults as needed in subsequent properties
-        parameter_files = ['visu_pars']
+        parameter_files = []
     with importlib_resources.as_file(ref1) as bruker_properties_path:
         with importlib_resources.as_file(ref2) as bruker_override_path:
 
@@ -222,11 +221,12 @@ def yield_bruker(args):
                 if args.mode == 'RAWDATA':
                     dataset_index = ['rawdata.job0']
                 # process individual datasets
-                for dataset in Folder(args.file, dataset_state={
-                    "parameter_files": parameter_files,
-                    "property_files": [bruker_override_path, bruker_properties_path]},
-                    dataset_index=dataset_index,
-                ).get_dataset_list_rec():
+                folder_list = Folder(args.file, dataset_state={
+                                     "parameter_files": parameter_files,
+                                     "property_files": [bruker_override_path, bruker_properties_path]},
+                                     dataset_index=dataset_index,
+                )
+                for dataset in folder_list.get_dataset_list_rec():
                     with dataset as d:
                         try:
                             d.query(queries)
@@ -660,7 +660,7 @@ def _rawdata_meta(d, dump=False):
             if dim in fid_dimension_defaults:
                 if dim == 'channel' and d.data.shape[ddx+1] == d.channels:
                     obj.set_dim_info(ddx, fid_dimension_defaults[dim])
-                elif dim == 'repetition' and d.data.shape[ddx+1] == d.naverages:
+                elif dim == 'repetition' and d.data.shape[ddx+1] == d.nreps:
                     obj.set_dim_info(ddx, fid_dimension_defaults[dim])
                 else:
                     obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
