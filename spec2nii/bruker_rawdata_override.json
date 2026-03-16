@@ -271,6 +271,10 @@
   "shape_storage": [
     {
       "cmd": "(@job_desc[0],) + (#PVM_EncNReceivers,) + (@job_desc[3],)",
+      "conditions": ["@scheme_id=='CSI'"]
+    },
+    {
+      "cmd": "(@job_desc[0],) + (#PVM_EncNReceivers,) + (@job_desc[3],)",
       "conditions": ["#PVM_EncNReceivers>1"]
     },
     {

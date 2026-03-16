@@ -268,6 +268,7 @@ def _proc_dataset(d, args):
         data = _prep_data_mrsi(d, args.zeropad, args.nospectrum)
     else:
         data = d.data
+    d.data = data
     # get properties
     properties = d.to_dict()
 
@@ -322,7 +323,7 @@ def _prep_data_svs(d, zeropad=False):
     data = d.data
     if d.type in ['fid', 'fid_proc', 'rawdata']:
         # Remove points acquired before echo
-        if zeropad:
+        if zeropad and d.points_prior_to_echo > 0:
             padded_data = np.zeros_like(data)
             padded_data[:-d.points_prior_to_echo] = data[d.points_prior_to_echo:]
             data = padded_data
@@ -349,7 +350,7 @@ def _prep_data_mrsi(d, zeropad=False, nospectrum=False):
     data = d.data
     if d.type in ['fid', 'fid_proc', 'rawdata']:
         # Remove points acquired before echo
-        if zeropad:
+        if zeropad and d.points_prior_to_echo > 0:
             padded_data = np.zeros_like(data)
             padded_data[:-d.points_prior_to_echo] = data[d.points_prior_to_echo:]
             data = padded_data
@@ -369,10 +370,9 @@ def _prep_data_mrsi(d, zeropad=False, nospectrum=False):
         data = np.flip(data, axis=0)
         # invert FFT
         data = np.fft.ifft(data, axis=0)
-
-    # push the spectral dimension to position 2
-    data = np.moveaxis(data, 0, 2)
-    # add empty dimensions to push the spectral dimension to the 3rd index
+    # push the spectral dimension to last position
+    data = np.moveaxis(data, 0, -1)
+   # add empty dimensions to push the spectral dimension to the 3rd index
     data = np.expand_dims(data, axis=2)
     return data
 
@@ -474,18 +474,16 @@ def _2dseq_meta(d, dump=False):
 
     # Tags
     unknown_count = 0
-    dim_count = 0
-    for dim in d.dim_type[1:]:
+    for ddx, dim in enumerate(d.dim_type):
         # have an early exit if you exhausted the data dimensions
-        if dim_count >= d.dim - 1:
+        if ddx >= d.dim - 4:
             break
-        if d.data.shape[dim_count+1] > 1:
+        if d.data.shape[ddx+4] > 1:
             if dim in fid_dimension_defaults:
-                obj.set_dim_info(dim_count, fid_dimension_defaults[dim])
+                obj.set_dim_info(ddx, fid_dimension_defaults[dim])
             else:
-                obj.set_dim_info(dim_count, f'DIM_USER_{unknown_count}')
+                obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
                 unknown_count += 1
-            dim_count += 1
 
     return obj
 
@@ -563,18 +561,17 @@ def _fid_meta(d, dump=False):
 
     # Tags
     unknown_count = 0
-    dim_count = 0
-    for dim in d.dim_type[1:]:
+    # skip first dim_type as it is defined to be: k_space_encode_step_0
+    for ddx, dim in enumerate(d.dim_type[1:]):
         # have an early exit if you exhausted the data dimensions
-        if dim_count >= d.dim - 1:
+        if ddx >= d.dim - 4:
             break
-        if d.data.shape[dim_count+1] > 1:
+        if d.data.shape[ddx+4] > 1:
             if dim in fid_dimension_defaults:
-                obj.set_dim_info(dim_count, fid_dimension_defaults[dim])
+                obj.set_dim_info(ddx, fid_dimension_defaults[dim])
             else:
-                obj.set_dim_info(dim_count, f'DIM_USER_{unknown_count}')
+                obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
                 unknown_count += 1
-            dim_count += 1
 
     return obj
 
@@ -651,16 +648,15 @@ def _rawdata_meta(d, dump=False):
 
     # Tags
     unknown_count = 0
-    dim_count = 0
     for ddx, dim in enumerate(d.dim_type):
         # have an early exit if you exhausted the data dimensions
-        if ddx >= d.dim - 1:
+        if ddx >= d.dim - 4:
             break
-        if d.data.shape[dim_count+1] > 1:
+        if d.data.shape[ddx+4] > 1:
             if dim in fid_dimension_defaults:
-                if dim == 'channel' and d.data.shape[ddx+1] == d.channels:
+                if dim == 'channel' and d.data.shape[ddx+4] == d.channels:
                     obj.set_dim_info(ddx, fid_dimension_defaults[dim])
-                elif dim == 'repetition' and d.data.shape[ddx+1] == d.nreps:
+                elif dim == 'repetition' and d.data.shape[ddx+4] == d.nreps:
                     obj.set_dim_info(ddx, fid_dimension_defaults[dim])
                 else:
                     obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
@@ -668,7 +664,6 @@ def _rawdata_meta(d, dump=False):
             else:
                 obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
                 unknown_count += 1
-            dim_count += 1
 
     return obj
 
