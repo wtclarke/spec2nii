@@ -93,18 +93,9 @@
         "conditions": ["@type in ['fid', 'fid_proc', 'rawdata']"]
       },
       {
-        "cmd": "int(np.round(np.asarray(#ACQ_RxFilterInfo[0][0]).reshape(-1)[0]))",
+        "cmd": "int(np.round(#ACQ_RxFilterInfo[0][0]))",
         "conditions": ["@type in ['fid', 'fid_proc', 'rawdata']",
                       "#ACQ_sw_version[0:8]=='<PV-360.'",
-                      "#len(ACQ_RxFilterInfo.shape)>1",
-                      "@is_spectroscopy"
-        ]
-      },
-      {
-        "cmd": "int(np.round(np.asarray(#ACQ_RxFilterInfo[0]).reshape(-1)[0]))",
-        "conditions": ["@type in ['fid', 'fid_proc', 'rawdata']",
-                      "#ACQ_sw_version[0:8]=='<PV-360.'",
-                      "#len(ACQ_RxFilterInfo.shape)==1",
                       "@is_spectroscopy"
         ]
       },
