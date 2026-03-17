@@ -41,6 +41,8 @@ fid_dimension_defaults = {
 def inspect_files(path):
     """Inspect scan folder to provide options for processing.
     """
+    from brukerapi.exceptions import UnsuportedDatasetType, IncompleteDataset, NotADatasetDir, InvalidDataset
+
     path = Path(path)
     # find all valid file formats
     files = [[f for f in path.rglob('rawdata.job0')],
@@ -64,7 +66,7 @@ def inspect_files(path):
             clr = colours[i]
             try:
                 d = Dataset(f, property_files=[prf])
-            except:
+            except (UnsuportedDatasetType, IncompleteDataset, NotADatasetDir, InvalidDataset):
                 continue
             if len(file) == 1:
                 text = f"\n[{cnt}] {f.stem.upper()} data layout"
@@ -74,7 +76,7 @@ def inspect_files(path):
             if d.type == '2dseq':
                 frame_type = d.parameters['visu_pars'].to_dict()['VisuCoreFrameType']['value']
                 if isinstance(frame_type, str) or 'REAL_IMAGE' not in frame_type or 'IMAGINARY_IMAGE' not in frame_type:
-                    text += f" - INVALID FOR MRS NIfTI CONVERSION"
+                    text += " - INVALID FOR MRS NIfTI CONVERSION"
                     # change colour to grey
                     clr = colours[-1]
                     # skip file from files_list
@@ -83,14 +85,15 @@ def inspect_files(path):
             # check if fid is of MRSI data and print a warning that it might not be reconstructed
             elif d.type in ['fid', 'fid_proc', 'rawdata']:
                 if d.scheme_id == 'CSI':
-                    text += f" - WARNING: MRSI {d.type.upper()} data might not be reconstructed. Use '2dseq' if available."
+                    text += f" - WARNING: MRSI {d.type.upper()} data might not be reconstructed. " \
+                            "Use '2dseq' if available."
                     # change colour to grey
                     clr = colours[-1]
             # skip any other formats
             else:
                 continue
             # universal printing
-            text_to_print.append(clr+text+clr_rst)
+            text_to_print.append(clr + text + clr_rst)
             for key, val in d._schema.layouts.items():
                 text_to_print.append(f"\t{clr}{key:20s}: {val}{clr_rst}")
             # append lists and bump counter
@@ -224,8 +227,7 @@ def yield_bruker(args):
                 folder_list = Folder(args.file, dataset_state={
                                      "parameter_files": parameter_files,
                                      "property_files": [bruker_override_path, bruker_properties_path]},
-                                     dataset_index=dataset_index,
-                )
+                                     dataset_index=dataset_index)
                 for dataset in folder_list.get_dataset_list_rec():
                     with dataset as d:
                         try:
@@ -260,7 +262,8 @@ def _proc_dataset(d, args):
         d = FrameGroupMerger().merge(d, 'FG_COMPLEX')
     # raise warning for FID MRSI data
     if d.type in ['fid', 'fid_proc', 'rawdata'] and d.scheme_id == 'CSI':
-        warnings.warn(f"MRSI {d.type.upper()} data might not be reconstructed. Interpret the results with caution! (use '2dseq' if available)")
+        warnings.warn(f"MRSI {d.type.upper()} data might not be reconstructed. "
+                      "Interpret the results with caution! (use '2dseq' if available)")
     # prepare the data array
     if d.is_svs:
         data = _prep_data_svs(d, args.zeropad)
@@ -293,7 +296,7 @@ def _proc_dataset(d, args):
     # Dwelltime
     if abs(d.dwell_s - d.dwell_time) >= 1:
         # user select which of the two to use as dwelltime
-        print(f"Warning: dwell time in acqp file 'SW_h' and method file 'PVM_SpecSWH' differ significantly (>=1Hz).")
+        print("Warning: dwell time in acqp file 'SW_h' and method file 'PVM_SpecSWH' differ significantly (>=1Hz).")
         print("Please select which one to use as dwell time:")
         print(f"1: 'SW_h'={d.dwell_s}")
         print(f"2: 'PVM_SpecSWH'={d.dwell_time}")
@@ -302,7 +305,6 @@ def _proc_dataset(d, args):
         dwelltime = d.dwell_s if dwelltime == '1' else d.dwell_time
     else:
         dwelltime = d.dwell_s
-
 
     if args.fileout:
         name = args.fileout + '_' + d.id.rstrip('_')
@@ -372,7 +374,7 @@ def _prep_data_mrsi(d, zeropad=False, nospectrum=False):
         data = np.fft.ifft(data, axis=0)
     # push the spectral dimension to last position
     data = np.moveaxis(data, 0, -1)
-   # add empty dimensions to push the spectral dimension to the 3rd index
+    # add empty dimensions to push the spectral dimension to the 3rd index
     data = np.expand_dims(data, axis=2)
     return data
 
@@ -478,7 +480,7 @@ def _2dseq_meta(d, dump=False):
         # have an early exit if you exhausted the data dimensions
         if ddx >= d.dim - 4:
             break
-        if d.data.shape[ddx+4] > 1:
+        if d.data.shape[ddx + 4] > 1:
             if dim in fid_dimension_defaults:
                 obj.set_dim_info(ddx, fid_dimension_defaults[dim])
             else:
@@ -566,7 +568,7 @@ def _fid_meta(d, dump=False):
         # have an early exit if you exhausted the data dimensions
         if ddx >= d.dim - 4:
             break
-        if d.data.shape[ddx+4] > 1:
+        if d.data.shape[ddx + 4] > 1:
             if dim in fid_dimension_defaults:
                 obj.set_dim_info(ddx, fid_dimension_defaults[dim])
             else:
@@ -574,6 +576,7 @@ def _fid_meta(d, dump=False):
                 unknown_count += 1
 
     return obj
+
 
 def _rawdata_meta(d, dump=False):
     """ Extract information from method and acqp file into hdr_ext.
@@ -652,11 +655,11 @@ def _rawdata_meta(d, dump=False):
         # have an early exit if you exhausted the data dimensions
         if ddx >= d.dim - 4:
             break
-        if d.data.shape[ddx+4] > 1:
+        if d.data.shape[ddx + 4] > 1:
             if dim in fid_dimension_defaults:
-                if dim == 'channel' and d.data.shape[ddx+4] == d.channels:
+                if dim == 'channel' and d.data.shape[ddx + 4] == d.channels:
                     obj.set_dim_info(ddx, fid_dimension_defaults[dim])
-                elif dim == 'repetition' and d.data.shape[ddx+4] == d.nreps:
+                elif dim == 'repetition' and d.data.shape[ddx + 4] == d.nreps:
                     obj.set_dim_info(ddx, fid_dimension_defaults[dim])
                 else:
                     obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
@@ -666,6 +669,7 @@ def _rawdata_meta(d, dump=False):
                 unknown_count += 1
 
     return obj
+
 
 def _correct_offset(data, dwell, offset_hz):
     """Apply linear phase to correct a frequency offset

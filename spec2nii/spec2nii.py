@@ -689,8 +689,7 @@ class spec2nii:
                 indent = " " * len("ValueError: ")
                 raise ValueError("Selected directory is invalid - no 'subject' or 'method' files found.\n"
                                  f"{indent}Please select a 'subject' folder if you want to inspect all scans.\n"
-                                 f"{indent}Please select a 'scan' folder if you want to inspect its files."
-                                )
+                                 f"{indent}Please select a 'scan' folder if you want to inspect its files.")
             from spec2nii.bruker import DataFolderBrowser
             root_path = folder
             # run the textual app once with the one-call configuration
@@ -709,14 +708,14 @@ class spec2nii:
         else:
             raise ValueError('Bruker inspect option requires a directory path instead of file as input.')
         return args
-    
+
     def _bruker_cmd_builder(self, args, orig_file):
         # start by adding the 'inspect' modified arguments
         cmd = ['spec2nii',
-                'bruker',
-                args.file,
-                '-m', args.mode,
-                '-f', args.fileout]
+               'bruker',
+               args.file,
+               '-m', args.mode,
+               '-f', args.fileout]
         # then add the arguments from sys.argv
         flag = 0  # flag that indicates the previous argument was a '-' or '--' flag
         for i in sys.argv:
