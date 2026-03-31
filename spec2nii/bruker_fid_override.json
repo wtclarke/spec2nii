@@ -602,7 +602,7 @@
       ],
       "conditions": [
         "@scheme_id=='SPECTROSCOPY'",
-        "#ACQ_sw_version=='<PV-360.3.5>'"
+        "#ACQ_sw_version[0:8]=='<PV-360.'"
       ]
     },
     {
@@ -826,7 +826,7 @@
       ],
       "conditions": [
         "@scheme_id=='SPECTROSCOPY'",
-        "#ACQ_sw_version=='<PV-360.3.5>'"
+        "#ACQ_sw_version[0:8]=='<PV-360.'"
       ]
     },
     {
