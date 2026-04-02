@@ -280,6 +280,18 @@ class spec2nii:
                                    verbose=False,
                                    anon=False)
 
+        parser_clean = subparsers.add_parser('clean', help='Update invalid fields in NIfTI-MRS header.')
+        parser_clean.add_argument('file', help='NIfTI-MRS file', type=Path)
+        parser_clean = add_common_parameters(parser_clean)
+        parser_clean.set_defaults(func=self.clean,
+                                  nifti1=False,
+                                  json=False,
+                                  override_nucleus=None,
+                                  override_frequency=None,
+                                  override_dwelltime=None,
+                                  verbose=False,
+                                  anon=False)
+
         if len(sys.argv) == 1:
             parser.print_usage(sys.stderr)
             sys.exit(1)
@@ -695,6 +707,11 @@ class spec2nii:
     def insert(self, args):
         from spec2nii.other import insert_hdr_ext
         self.imageOut, self.fileoutNames = insert_hdr_ext(args)
+
+    # Clean function
+    def clean(self, args):
+        from spec2nii.other import clean_hdr_ext
+        self.imageOut, self.fileoutNames = clean_hdr_ext(args)
 
 
 def main(*args):
