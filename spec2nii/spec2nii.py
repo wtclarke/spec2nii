@@ -330,7 +330,7 @@ class spec2nii:
         """Implement any command line overrides for essential parameters."""
         for nifti_mrs_img in self.imageOut:
             if args.override_dwelltime:
-                nifti_mrs_img.set_dwell_time(args.override_dwelltime)
+                nifti_mrs_img.dwelltime(args.override_dwelltime)
 
             if args.override_nucleus or args.override_frequency:
                 from nibabel.nifti1 import Nifti1Extension

@@ -103,17 +103,6 @@ def clean_hdr_ext(args):
     nifti_mrs_img = NIFTI_MRS(args.file, validate_on_creation=False)
     new_hdr = nifti_mrs_img.hdr_ext.copy()
 
-    # override SpectrometerFrequency if 'args.override_frequency' is specified
-    if args.override_frequency is not None:
-        new_hdr.SpectrometerFrequency = args.override_frequency
-    # override ResonantNucleus if 'args.override_nucleus' is specified
-    if args.override_nucleus is not None:
-        new_hdr.ResonantNucleus = args.override_nucleus
-    # override dwelltime if 'args.override_dwelltime' is specified
-    if args.override_dwelltime is not None:
-        nifti_mrs_img.dwelltime = args.override_dwelltime
-        nifti_mrs_img.header['pixdim'][4] = args.override_dwelltime
-
     # check that 'SpectrometerFrequency' is an array of floats
     val = new_hdr.SpectrometerFrequency
     if not isinstance(val, (list, tuple, ndarray)) or (isinstance(val, ndarray) and val.ndim == 0):
