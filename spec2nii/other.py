@@ -102,7 +102,46 @@ def clean_hdr_ext(args):
     from numpy import isclose, ndarray
     from nifti_mrs.definitions import standard_defined
 
-    nifti_mrs_img = NIFTI_MRS(args.file, validate_on_creation=False)
+    # Try reading the file as NIfTI-MRS
+    try:
+        nifti_mrs_img = NIFTI_MRS(args.file, validate_on_creation=False)
+        print("'intent_name' is valid.")
+    except NotNIFTI_MRS as exc:
+        if str(exc) != 'NIFTI-MRS intent code not set.':
+            raise
+        # if failed, read as a regular NIfTI, update intent and re-save
+        from fsl.data.image import Image
+        from nifti_mrs.hdr_ext import Hdr_Ext
+        img = Image(args.file)
+        hdr_ext_codes = img.header.extensions.get_codes()
+        if 44 not in hdr_ext_codes:
+            raise NotNIFTI_MRS('NIFTI-MRS must have a header extension.')
+        img._hdr_ext = Hdr_Ext.from_header_ext(
+            img.header.extensions[hdr_ext_codes.index(44)].json())
+
+        # 1. check that intent is of a valid format
+        intent_ptrn = re.compile(r'mrs_v\d+_\d+')
+        intent_str = img.header.get_intent()[2]
+        if intent_str is None or intent_str == '' or intent_ptrn.match(intent_str) is None:
+            import json
+            from importlib.resources import files
+            data_text = files('nifti_mrs.standard').joinpath('definitions.json').read_text(encoding='utf-8')
+            json_def = json.loads(data_text)
+
+            v_major = json_def['nifti_mrs_version']['major']
+            v_minor = json_def['nifti_mrs_version']['minor']
+            img.header['intent_name'] = f'mrs_v{v_major}_{v_minor}'.encode()
+            print(f"'intent_name' is updated to 'mrs_v{v_major}_{v_minor}'.")
+        
+        # save file to output and re-read it
+        args.outdir.mkdir(parents=True, exist_ok=True)
+        if args.fileout:
+            args.file = args.outdir / args.fileout
+        else:
+            args.file = args.outdir / args.file.with_suffix('').with_suffix('').name
+        img.save(args.file)
+        nifti_mrs_img = NIFTI_MRS(args.file, validate_on_creation=False)
+
     new_hdr = nifti_mrs_img.hdr_ext.copy()
 
     # # override SpectrometerFrequency if 'args.override_frequency' is specified
@@ -115,21 +154,21 @@ def clean_hdr_ext(args):
     # if args.override_dwelltime:
     #     nifti_mrs_img.dwelltime = args.override_dwelltime
 
-    # 1. check that 'SpectrometerFrequency' is an array of floats
+    # 2. check that 'SpectrometerFrequency' is an array of floats
     val = new_hdr.SpectrometerFrequency
     if not isinstance(val, (list, tuple, ndarray)) or (isinstance(val, ndarray) and val.ndim == 0):
         val = [val]
     new_hdr.SpectrometerFrequency = [float(v) for v in val]
     print("'SpectrometerFrequency' is updated.")
 
-    # 2. check that 'ResonantNucleus' is an array of strings
+    # 3. check that 'ResonantNucleus' is an array of strings
     val = new_hdr.ResonantNucleus
     if not isinstance(val, (list, tuple, ndarray)) or (isinstance(val, ndarray) and val.ndim == 0):
         val = [val]
     new_hdr.ResonantNucleus = [str(v) for v in val]
     print("'ResonantNucleus' is updated.")
 
-    # 3. check that 'SpectralWidth' is equal to 1/pixdim[4]
+    # 4. check that 'SpectralWidth' is equal to 1/pixdim[4]
     if 'SpectralWidth' in new_hdr:
         spec_width = new_hdr['SpectralWidth']
         if not isclose(spec_width, 1 / nifti_mrs_img.dwelltime, atol=1E-2):
@@ -137,22 +176,6 @@ def clean_hdr_ext(args):
                   f"Replacing with the latter: {1 / nifti_mrs_img.dwelltime}")
     new_hdr.set_standard_def('SpectralWidth', 1 / nifti_mrs_img.dwelltime)
     print("'SpectralWidth' is updated.")
-
-    # 4. check that intent is of a valid format
-    intent_ptrn = re.compile(r'mrs_v\d+_\d+')
-    intent_str = nifti_mrs_img.header.get_intent()[2]
-    if intent_str is None or intent_str == '' or intent_ptrn.match(intent_str) is None:
-        import json
-        from importlib.resources import files
-        data_text = files('nifti_mrs.standard').joinpath('definitions.json').read_text(encoding='utf-8')
-        json_def = json.loads(data_text)
-
-        v_major = json_def['nifti_mrs_version']['major']
-        v_minor = json_def['nifti_mrs_version']['minor']
-        nifti_mrs_img.header['intent_name'] = f'mrs_v{v_major}_{v_minor}'.encode()
-        print(f"'intent_name' is updated to 'mrs_v{v_major}_{v_minor}'.")
-    else:
-        print("'intent_name' is valid.")
 
     # 5. check that user-defined fields are dictionary with a 'Description' field
     dim_re = re.compile(r"^dim_[567](_((info)|(header)))?$")

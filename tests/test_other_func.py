@@ -10,12 +10,11 @@ Subject to the BSD 3-Clause License.
 import subprocess
 from pathlib import Path
 import json
-
+from importlib.resources import files
 import nibabel as nib
 import numpy as np
 import pytest
 from fsl.data.image import Image
-
 from .io_for_tests import read_nifti_mrs, read_nifti_mrs_with_hdr
 
 # Data paths
@@ -131,7 +130,7 @@ def test_insert_not_nmrs(tmp_path):
 
 def test_clean_outputs(tmp_path):
 
-    # test a call with -o and -f arguments
+    # Test a call with -o and -f arguments
     subprocess.check_call(['spec2nii', 'clean',
                            '-o', tmp_path,
                            '-f', 'cleaned',
@@ -140,7 +139,7 @@ def test_clean_outputs(tmp_path):
     assert (tmp_path / 'cleaned.nii.gz').exists()
     img1, hdr1 = read_nifti_mrs_with_hdr(tmp_path / 'cleaned.nii.gz')
 
-    # test a call with -o argument
+    # Test a call with -o argument
     subprocess.check_call(['spec2nii', 'clean',
                            '-o', tmp_path,
                            str(data_clean_path)])
@@ -148,7 +147,7 @@ def test_clean_outputs(tmp_path):
     assert (tmp_path / data_clean_path.name).exists()
     img2, hdr2 = read_nifti_mrs_with_hdr(tmp_path / data_clean_path.name)
 
-    # test a call with -f argument
+    # Test a call with -f argument
     subprocess.check_call(['spec2nii', 'clean',
                            '-f', 'cleaned',
                            str(data_clean_path)])
@@ -156,7 +155,7 @@ def test_clean_outputs(tmp_path):
     assert Path('cleaned.nii.gz').exists()
     img3, hdr3 = read_nifti_mrs_with_hdr('cleaned.nii.gz')
 
-    # test a call with no arguments
+    # Test a call with no arguments
     subprocess.check_call(['spec2nii', 'clean',
                            str(data_clean_path)])
 
@@ -174,7 +173,7 @@ def test_clean_outputs(tmp_path):
     assert hdr1 == hdr2 == hdr3 == hdr4
     assert hdr1 != orig_hdr
 
-    # cleanup files created in current directory
+    # Cleanup files created in current directory
     Path('cleaned.nii.gz').unlink()
     Path(data_clean_path.name).unlink()
 
@@ -213,6 +212,48 @@ def test_clean_invalid_file(tmp_path):
     assert cln_hdr_ext['SpectralWidth']         == 1 / cln_img.header['pixdim'][4]
     assert cln_hdr_ext['BadUserField']          == {'Value': 7, 'Description': ''}
     assert cln_hdr_ext['UserFieldNoDesc']       == {'Value': 'abc', 'Description': ''}
+
+
+def test_clean_intent(tmp_path):
+    # Create files with invalid intents to be "cleaned"
+    img = read_nifti_mrs(data_clean_path)
+    img.header['intent_name'] = 'mrs_v2_1'.encode()
+    nib.save(img, tmp_path / 'invalid1.nii.gz')
+    img.header['intent_name'] = ''.encode()
+    nib.save(img, tmp_path / 'invalid2.nii.gz')
+    img.header['intent_name'] = None
+    nib.save(img, tmp_path / 'invalid3.nii.gz')
+
+    # Create reference intent_name
+    data_text = files('nifti_mrs.standard').joinpath('definitions.json').read_text(encoding='utf-8')
+    json_def = json.loads(data_text)
+    v_major = json_def['nifti_mrs_version']['major']
+    v_minor = json_def['nifti_mrs_version']['minor']
+    intent_name = f'mrs_v{v_major}_{v_minor}'.encode()
+
+    # Test clean call on this file
+    for file, intent in zip(['invalid1.nii.gz', 'invalid2.nii.gz', 'invalid3.nii.gz'],
+                            ['mrs_v2_1'.encode(), intent_name, intent_name]):
+        subprocess.check_call(['spec2nii', 'clean',
+                            '-o', tmp_path,
+                            '-f', 'cleaned',
+                            str(tmp_path / file)])
+
+        orig_img, orig_hdr_ext  = read_nifti_mrs_with_hdr(data_clean_path)
+        cln_img, cln_hdr_ext    = read_nifti_mrs_with_hdr(tmp_path / 'cleaned.nii.gz')
+
+        assert cln_img.shape == orig_img.shape
+        assert np.allclose(cln_img.get_fdata(dtype=complex), orig_img.get_fdata(dtype=complex))
+        # make sure the only difference in the header is the 'intent_name' field
+        assert cln_img.header['intent_name'] != orig_img.header['intent_name']
+        assert cln_img.header['intent_name'] == intent
+        orig_img.header['intent_name']  = cln_img.header['intent_name']
+        assert cln_img.header == orig_img.header
+        # make sure the only difference in hdr_ext is the 'dim_5_use' and 'SpectralWidth' fields
+        assert cln_hdr_ext != orig_hdr_ext
+        orig_hdr_ext['dim_5_use']       = cln_hdr_ext['dim_5_use']
+        orig_hdr_ext['SpectralWidth']   = cln_hdr_ext['SpectralWidth']
+        assert cln_hdr_ext == orig_hdr_ext
 
 
 def test_clean_overrides(tmp_path):
