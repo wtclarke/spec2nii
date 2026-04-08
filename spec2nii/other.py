@@ -132,7 +132,7 @@ def clean_hdr_ext(args):
             v_minor = json_def['nifti_mrs_version']['minor']
             img.header['intent_name'] = f'mrs_v{v_major}_{v_minor}'.encode()
             print(f"'intent_name' is updated to 'mrs_v{v_major}_{v_minor}'.")
-        
+
         # save file to output and re-read it
         args.outdir.mkdir(parents=True, exist_ok=True)
         if args.fileout:
