@@ -15,7 +15,10 @@ import nibabel as nib
 import numpy as np
 import pytest
 from fsl.data.image import Image
+from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
+from nifti_mrs.hdr_ext import Hdr_Ext
 from .io_for_tests import read_nifti_mrs, read_nifti_mrs_with_hdr
+from spec2nii.spec2nii import remove_zero_higher_dim_indices
 
 # Data paths
 siemens_path = Path(__file__).parent / 'spec2nii_test_data' / 'Siemens'
@@ -276,3 +279,25 @@ def test_clean_overrides(tmp_path):
     assert not np.isclose(orig_img.header['pixdim'][4], 0.0001)
     assert np.isclose(cln_img.header['pixdim'][4], 0.0001)
     assert np.isclose(cln_hdr_ext['SpectralWidth'], 1/0.0001)
+
+
+def test_remove_zero_higher_dim_indices():
+    data = np.zeros((1, 1, 1, 16, 3, 2), dtype=complex)
+    data[..., 0, 0] = 1.0 + 0.0j
+    data[..., 2, 1] = 2.0 + 0.0j
+
+    hdr_ext = Hdr_Ext(123.0, '1H')
+    hdr_ext.set_dim_info(0, 'DIM_EDIT', hdr={'EditCondition': ['ON', 'ZERO', 'OFF']})
+    hdr_ext.set_dim_info(1, 'DIM_DYN')
+
+    nifti_mrs_img = gen_nifti_mrs_hdr_ext(data, 0.001, hdr_ext, np.eye(4), no_conj=True)
+
+    _, zero_indices = remove_zero_higher_dim_indices(nifti_mrs_img, remove=False)
+    assert zero_indices == {5: [1], 6: []}
+
+    pruned_img, _ = remove_zero_higher_dim_indices(nifti_mrs_img)
+
+    assert pruned_img.shape == (1, 1, 1, 16, 2, 2)
+    assert np.allclose(pruned_img[:], data[..., [0, 2], :])
+    assert pruned_img.hdr_ext.to_dict()['dim_5_header'] == {'EditCondition': ['ON', 'OFF']}
+    assert pruned_img.hdr_ext.to_dict()['dim_6'] == 'DIM_DYN'

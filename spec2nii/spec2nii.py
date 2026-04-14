@@ -13,6 +13,7 @@ import sys
 import os.path as op
 from pathlib import Path
 import json
+import numpy as np
 from nibabel.nifti2 import Nifti2Image
 from spec2nii import __version__ as spec2nii_ver
 from numpy import isclose
@@ -21,6 +22,76 @@ from numpy import isclose
 
 class Spec2niiError(Exception):
     pass
+
+
+def _subset_dim_header_value(value, keep_indices, original_size):
+    """Subset dimension header values that track a pruned higher dimension."""
+    if isinstance(value, dict):
+        return {key: _subset_dim_header_value(val, keep_indices, original_size)
+                for key, val in value.items()}
+
+    if isinstance(value, list) and len(value) == original_size:
+        return [value[idx] for idx in keep_indices]
+
+    if isinstance(value, tuple) and len(value) == original_size:
+        return tuple(value[idx] for idx in keep_indices)
+
+    if isinstance(value, np.ndarray) and value.ndim > 0 and value.shape[0] == original_size:
+        return value[keep_indices].tolist()
+
+    return value
+
+
+def remove_zero_higher_dim_indices(nifti_mrs_img, remove=True):
+    """Identify and optionally remove fully zero indices in dimensions 5+.
+
+    An index in a higher dimension is only removed when every value at that index
+    is zero across the spectral dimension and all remaining higher dimensions.
+
+    :param nifti_mrs_img: Input NIfTI-MRS object.
+    :param remove: If True remove the detected zero indices, otherwise only report them.
+    :return: Tuple of (possibly updated image, zero index map keyed by dimension number).
+    """
+    data = nifti_mrs_img[:]
+
+    if data.ndim <= 4:
+        return nifti_mrs_img, {}
+
+    zero_indices = {}
+    keep_indices = {}
+    original_shape = data.shape
+
+    for axis in range(4, data.ndim):
+        reduce_axes = tuple(idx for idx in range(data.ndim) if idx != axis)
+        axis_zero_mask = np.all(data == 0, axis=reduce_axes)
+        zero_indices[axis + 1] = np.flatnonzero(axis_zero_mask).tolist()
+
+        if remove and np.any(axis_zero_mask) and not np.all(axis_zero_mask):
+            keep_indices[axis] = np.flatnonzero(~axis_zero_mask)
+
+    if not keep_indices:
+        return nifti_mrs_img, zero_indices
+
+    for axis, keep in keep_indices.items():
+        data = np.take(data, keep, axis=axis)
+
+    hdr_ext = nifti_mrs_img.hdr_ext.to_dict()
+    for axis, keep in keep_indices.items():
+        dim_header_key = f'dim_{axis + 1}_header'
+        if dim_header_key in hdr_ext:
+            hdr_ext[dim_header_key] = _subset_dim_header_value(
+                hdr_ext[dim_header_key],
+                keep,
+                original_shape[axis])
+
+    from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
+    from nifti_mrs.hdr_ext import Hdr_Ext
+
+    return gen_nifti_mrs_hdr_ext(
+        data,
+        nifti_mrs_img.dwelltime,
+        Hdr_Ext.from_header_ext(hdr_ext),
+        affine=nifti_mrs_img.getAffine('voxel', 'world')), zero_indices
 
 
 class spec2nii:
@@ -43,6 +114,10 @@ class spec2nii:
             subparser.add_argument("-o", "--outdir", type=Path,
                                    help="Output location (default = .)", default='.')
             subparser.add_argument('--nifti1', action='store_true')
+            subparser.add_argument(
+                '--keep_zero_valued',
+                action='store_true',
+                help=argparse.SUPPRESS)
             subparser.add_argument("--override_nucleus", type=str, nargs='+',
                                    help="Override ResonantNucleus field with input(s). E.g. '2H'.")
             subparser.add_argument("--override_frequency", type=float, nargs='+',
@@ -314,6 +389,17 @@ class spec2nii:
             self.implement_overrides(args)
 
             self.insert_spectralwidth()
+
+            for idx, (f_out, nifti_mrs_img) in enumerate(zip(self.fileoutNames, self.imageOut)):
+                self.imageOut[idx], removed_indices = remove_zero_higher_dim_indices(
+                    nifti_mrs_img,
+                    remove=not args.keep_zero_valued)
+                if args.verbose:
+                    removed_str = ', '.join(
+                        f'dim {dim}: {indices}'
+                        for dim, indices in removed_indices.items() if indices)
+                    if removed_str:
+                        print(f'Removed zero-valued higher-dimension indices from {f_out}: {removed_str}')
 
             if args.anon:
                 from spec2nii.anonymise import anon_nifti_mrs
