@@ -144,29 +144,19 @@ def clean_hdr_ext(args):
 
     new_hdr = nifti_mrs_img.hdr_ext.copy()
 
-    # # override SpectrometerFrequency if 'args.override_frequency' is specified
-    # if args.override_frequency:
-    #     new_hdr.SpectrometerFrequency = args.override_frequency
-    # # override ResonantNucleus if 'args.override_nucleus' is specified
-    # if args.override_nucleus:
-    #     new_hdr.ResonantNucleus = args.override_nucleus
-    # # override dwelltime if 'args.override_dwelltime' is specified
-    # if args.override_dwelltime:
-    #     nifti_mrs_img.dwelltime = args.override_dwelltime
-
     # 2. check that 'SpectrometerFrequency' is an array of floats
     val = new_hdr.SpectrometerFrequency
     if not isinstance(val, (list, tuple, ndarray)) or (isinstance(val, ndarray) and val.ndim == 0):
         val = [val]
     new_hdr.SpectrometerFrequency = [float(v) for v in val]
-    print("'SpectrometerFrequency' is updated.")
+    print("'SpectrometerFrequency' format is updated.")
 
     # 3. check that 'ResonantNucleus' is an array of strings
     val = new_hdr.ResonantNucleus
     if not isinstance(val, (list, tuple, ndarray)) or (isinstance(val, ndarray) and val.ndim == 0):
         val = [val]
     new_hdr.ResonantNucleus = [str(v) for v in val]
-    print("'ResonantNucleus' is updated.")
+    print("'ResonantNucleus' format is updated.")
 
     # 4. check that 'SpectralWidth' is equal to 1/pixdim[4]
     if 'SpectralWidth' in new_hdr:
@@ -174,8 +164,9 @@ def clean_hdr_ext(args):
         if not isclose(spec_width, 1 / nifti_mrs_img.dwelltime, atol=1E-2):
             print("Warning: 'SpectralWidth' does not match '1/dwelltime'! "
                   f"Replacing with the latter: {1 / nifti_mrs_img.dwelltime}")
+    else:
+        print("'SpectralWidth' is added.")
     new_hdr.set_standard_def('SpectralWidth', 1 / nifti_mrs_img.dwelltime)
-    print("'SpectralWidth' is updated.")
 
     # 5. check that user-defined fields are dictionary with a 'Description' field
     dim_re = re.compile(r"^dim_[567](_((info)|(header)))?$")

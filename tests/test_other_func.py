@@ -218,11 +218,11 @@ def test_clean_intent(tmp_path):
     # Create files with invalid intents to be "cleaned"
     img = read_nifti_mrs(data_clean_path)
     img.header['intent_name'] = 'mrs_v2_1'.encode()
-    nib.save(img, tmp_path / 'invalid1.nii.gz')
+    nib.save(img, tmp_path / 'valid.nii.gz')
     img.header['intent_name'] = ''.encode()
-    nib.save(img, tmp_path / 'invalid2.nii.gz')
+    nib.save(img, tmp_path / 'invalid1.nii.gz')
     img.header['intent_name'] = None
-    nib.save(img, tmp_path / 'invalid3.nii.gz')
+    nib.save(img, tmp_path / 'invalid2.nii.gz')
 
     # Create reference intent_name
     data_text = files('nifti_mrs.standard').joinpath('definitions.json').read_text(encoding='utf-8')
@@ -232,7 +232,7 @@ def test_clean_intent(tmp_path):
     intent_name = f'mrs_v{v_major}_{v_minor}'.encode()
 
     # Test clean call on this file
-    for file, intent in zip(['invalid1.nii.gz', 'invalid2.nii.gz', 'invalid3.nii.gz'],
+    for file, intent in zip(['valid', 'invalid1', 'invalid2'],
                             ['mrs_v2_1'.encode(), intent_name, intent_name]):
         subprocess.check_call(['spec2nii', 'clean',
                             '-o', tmp_path,
