@@ -390,10 +390,11 @@ class spec2nii:
 
             self.insert_spectralwidth()
 
+            keep_zero_valued = getattr(args, 'keep_zero_valued', False)
             for idx, (f_out, nifti_mrs_img) in enumerate(zip(self.fileoutNames, self.imageOut)):
                 self.imageOut[idx], removed_indices = remove_zero_higher_dim_indices(
                     nifti_mrs_img,
-                    remove=not args.keep_zero_valued)
+                    remove=not keep_zero_valued)
                 if args.verbose:
                     removed_str = ', '.join(
                         f'dim {dim}: {indices}'
