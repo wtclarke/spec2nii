@@ -70,6 +70,8 @@ By default, spec2nii generates NIfTI files using the NIfTI-2 header format. Use 
 
 Manual overrides can be provided for incorrectly interpreted required header fields, namely SpectrometerFrequency, ResonantNucleus and dwell-time, by using the `--override_frequency`, `--override_nucleus`, and `--override_dwelltime` command line options.
 
+During conversion, `spec2nii` will automatically remove zero-valued elements from the 5th and higher dimensions when an index is entirely zero across the spectral dimension and all other higher dimensions. This is intended to avoid issues in preprocessing that arise when there is zero-valued data. If you need to keep these elements, a hidden `--keep_zero_valued` option is available.
+
 ### Automatic detection
 `spec2nii auto FILE` will attempt an automatic conversion of the following formats: Twix, RDA, SPAR/SDAT, GE p-file, DICOM. Note that many features of the individual converters are not implemented in this automatic pathway. This feature should be regarded as somewhat experimental. For finer-grained control see the specific subcommands listed below.
 

@@ -1,5 +1,10 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.8.9 (Unreleased)
+----------------------------------
+- Automatically remove zero-valued elements from the 5th and higher dimensions when those indices are entirely empty across the spectral and remaining higher dimensions.
+- Added a hidden `--keep_zero_valued` option to preserve zero-valued higher-dimension elements when needed.
+
 0.8.8 (Tuesday 14th April 2026)
 ----------------------------------
 - Added 'clean' subcommand for updating invalid header extensions 
