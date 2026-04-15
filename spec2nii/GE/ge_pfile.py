@@ -112,7 +112,7 @@ def _process_svs_pfile(pfile):
         data, meta, dwelltime, fname_suffix = _process_oslaser(pfile)
     elif psd == 'oslaser' and numecho > 1:  # MM: If edited data, use _process_gaba
         data, meta, dwelltime, fname_suffix = _process_gaba(pfile)
-    elif psd == 'slaser':
+    elif psd in ('slaser', 'probe-sl'):
         data, meta, dwelltime, fname_suffix = _process_slaser(pfile)
     elif psd in ('hbcd', 'jpress', 'jpress_ac', 'gaba', 'probe-p-mega_rml', 'repress7'):
         data, meta, dwelltime, fname_suffix = _process_gaba(pfile)
@@ -196,7 +196,7 @@ def _process_oslaser(pfile):
 def _process_slaser(pfile):
     """Extract metabolite and reference data from a slaser format pfile
 
-    This seems to be like a standard probe-p. Maybe slaser is the canonical vendor implementation.
+    Handles slaser (Ralph Noeske's WIP slaser) and official (MR30 in research mode and MR30.1 in clinical mode) PROBE-sL sequence
 
     :param Pfile pfile: Pfile object
     :return: List numpy data arrays

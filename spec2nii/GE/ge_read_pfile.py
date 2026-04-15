@@ -223,7 +223,7 @@ class Pfile:
                     'mrs-press'          # ATG - Added for GE ShortTE in hbcd
                 ):
             mapper = PfileMapper
-        elif psd in ('oslaser', 'slaser_cni', 'slaser') and numecho == 1:
+        elif psd in ('oslaser', 'slaser_cni', 'slaser', 'probe-sl') and numecho == 1:
             mapper = PfileMapperSlaser  # MM: If non-edited data, use PfileMapperSlaser
         elif psd == 'oslaser' and numecho > 1:
             mapper = PfileMapperGaba  # MM: If edited data, use PfileMapperGaba
