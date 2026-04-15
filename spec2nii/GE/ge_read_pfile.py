@@ -157,7 +157,8 @@ class Pfile:
                         157276,  # v24 empirical
                         213684,  # 26.002
                         219828,  # 27.000
-                        228020   # 28.003,29.1,30.0
+                        228020,  # 28.003,29.1,30.0
+                        228324   # 31.0
                     ):
                 return True
             else:
@@ -302,6 +303,10 @@ class Pfile:
 
         self.version = version
         self.hdr = hdr
+        # for field in self.hdr._fields_:
+        #     if field[0] == 'pad_xx':
+        #         continue
+        #     print(f'{field[0]}: {getattr(self.hdr, field[0])}')
 
     def map_data(self):
         """
@@ -348,7 +353,8 @@ class Pfile:
                 27.000, 27.001,
                 28.000, 28.002, 28.003,
                 29.1,
-                30.0
+                30.0, 30.1,
+                31.0
             ]
 
         # Note that caution is needed for float comparisons, given the
