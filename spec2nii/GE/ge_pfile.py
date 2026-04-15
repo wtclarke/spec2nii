@@ -196,7 +196,8 @@ def _process_oslaser(pfile):
 def _process_slaser(pfile):
     """Extract metabolite and reference data from a slaser format pfile
 
-    Handles slaser (Ralph Noeske's WIP slaser) and official (MR30 in research mode and MR30.1 in clinical mode) PROBE-sL sequence
+    Handles slaser (Ralph Noeske's WIP slaser) and official
+    (MR30 in research mode and MR30.1 in clinical mode) PROBE-sL sequence
 
     :param Pfile pfile: Pfile object
     :return: List numpy data arrays
@@ -209,12 +210,19 @@ def _process_slaser(pfile):
     water = pfile.map.raw_unsuppressed                  # typically (1,1,1,navg,ncoil,npts)
     water = np.transpose(water, [0, 1, 2, 5, 4, 3])     # swap to (1,1,1,npts,ncoil,navg)
 
+    waterecc = water[..., [0, 1, 4, 5]]
+    waterquant = water[..., [2, 3, 6, 7]]
+
     dwelltime = 1 / pfile.hdr.rhr_spectral_width
 
     meta = _populate_metadata(pfile, water_suppressed=True, data_dimensions=metab.ndim)
-    meta_ref = _populate_metadata(pfile, water_suppressed=False, data_dimensions=water.ndim)
+    meta_ref_ecc = _populate_metadata(pfile, water_suppressed=False, data_dimensions=water.ndim)
+    meta_ref_quant = _populate_metadata(pfile, water_suppressed=False, data_dimensions=water.ndim)
 
-    return [metab, water], [meta, meta_ref], dwelltime, ['', '_ref']
+    return [metab, waterecc, waterquant], \
+        [meta, meta_ref_ecc, meta_ref_quant], \
+        dwelltime, \
+        ['', '_ref_ecc', '_ref_no_ovs']
 
 
 def _add_editing_info(pfile, meta, data):

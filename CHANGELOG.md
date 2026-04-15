@@ -4,6 +4,8 @@ This document contains the Spec2nii release history in reverse chronological ord
 ----------------------------------
 - Automatically remove zero-valued elements from the 5th and higher dimensions when those indices are entirely empty across the spectral and remaining higher dimensions.
 - Added a hidden `--keep_zero_valued` option to preserve zero-valued higher-dimension elements when needed.
+- Added handling for GE `PROBE-sL` sequence. This sequence and the prior `slaser` WIP will generate separated (ecc vs quantification) water references.
+- GE p-file pipeline now handles MR31 data.
 
 0.8.8 (Tuesday 14th April 2026)
 ----------------------------------
