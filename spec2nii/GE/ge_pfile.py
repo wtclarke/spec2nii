@@ -210,19 +210,29 @@ def _process_slaser(pfile):
     water = pfile.map.raw_unsuppressed                  # typically (1,1,1,navg,ncoil,npts)
     water = np.transpose(water, [0, 1, 2, 5, 4, 3])     # swap to (1,1,1,npts,ncoil,navg)
 
-    waterecc = water[..., [0, 1, 4, 5]]
-    waterquant = water[..., [2, 3, 6, 7]]
-
     dwelltime = 1 / pfile.hdr.rhr_spectral_width
 
     meta = _populate_metadata(pfile, water_suppressed=True, data_dimensions=metab.ndim)
+    meta.set_standard_def('TxOffset', -2.0)
     meta_ref_ecc = _populate_metadata(pfile, water_suppressed=False, data_dimensions=water.ndim)
+    meta_ref_ecc.set_standard_def('TxOffset', -2.0)
     meta_ref_quant = _populate_metadata(pfile, water_suppressed=False, data_dimensions=water.ndim)
+    meta_ref_quant.set_standard_def('TxOffset', 0.0)
 
-    return [metab, waterecc, waterquant], \
-        [meta, meta_ref_ecc, meta_ref_quant], \
-        dwelltime, \
-        ['', '_ref_ecc', '_ref_no_ovs']
+    if not np.isclose(pfile.hdr.rhr_rh_user19, 8.0):
+        return [metab, water], \
+            [meta, meta_ref_ecc], \
+            dwelltime, \
+            ['', '_ref_ecc']
+    else:
+
+        waterecc = water[..., [0, 1, 4, 5]]
+        waterquant = water[..., [2, 3, 6, 7]]
+
+        return [metab, waterecc, waterquant], \
+            [meta, meta_ref_ecc, meta_ref_quant], \
+            dwelltime, \
+            ['', '_ref_ecc', '_ref_no_ovs']
 
 
 def _add_editing_info(pfile, meta, data):
