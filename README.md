@@ -26,6 +26,8 @@ Visualisation of MRS data converted by spec2nii to NIfTI-MRS can be carried out 
 `conda install -c conda-forge spec2nii`
 or
 `pip install spec2nii`
+or, for local development/builds,
+`pixi run build`
 
 ### Installing Conda (option #1)
 Miniconda can be installed by following the instructions on the [Conda website](https://docs.conda.io/en/latest/miniconda.html). To create a suitable environment run the following three commands after installing Conda.
@@ -34,6 +36,15 @@ Miniconda can be installed by following the instructions on the [Conda website](
     conda create -c conda-forge -n my_env python=3.8
     conda activate my_env
     conda install -c conda-forge spec2nii
+```
+
+### Local development with Pixi
+For a local editable environment, linting, testing, and package builds:
+
+```bash
+pixi run lint
+pixi run test
+pixi run build
 ```
 
 ## Currently supported formats

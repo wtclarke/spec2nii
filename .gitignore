@@ -9,3 +9,5 @@ __pycache__
 *.png
 prototyping
 .idea/
+.pixi/
+test_*
