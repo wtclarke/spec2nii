@@ -22,8 +22,8 @@ jobs:
         with:
           manifest-path: pyproject.toml
           environments: ${{ matrix.environment }}
-          cache: true
-          activate-environment: true
+          cache: false
+          activate-environment: false
       - name: Lint
         if: matrix.environment == 'py312'
         run: |
