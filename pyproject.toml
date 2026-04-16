@@ -123,11 +123,11 @@ spec2nii = { path = ".", editable = true, extras = ["dev"] }
 
 [tool.pixi.environments]
 default = { features = [], solve-group = "python" }
-py310 = { features = ["py310"], solve-group = "python" }
-py311 = { features = ["py311"], solve-group = "python" }
-py312 = { features = ["py312"], solve-group = "python" }
-py313 = { features = ["py313"], solve-group = "python" }
-py314 = { features = ["py314"], solve-group = "python" }
+py310 = { features = ["py310"], solve-group = "py310" }
+py311 = { features = ["py311"], solve-group = "py311" }
+py312 = { features = ["py312"], solve-group = "py312" }
+py313 = { features = ["py313"], solve-group = "py313" }
+py314 = { features = ["py314"], solve-group = "py314" }
 
 [tool.pixi.tasks]
 lint = "flake8 spec2nii"
