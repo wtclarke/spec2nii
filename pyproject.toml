@@ -101,10 +101,33 @@ channels = ["conda-forge"]
 platforms = ["linux-64", "osx-64", "osx-arm64"]
 
 [tool.pixi.dependencies]
-python = ">=3.10,<3.15"
+python = "3.12.*"
+
+[tool.pixi.feature.py310.dependencies]
+python = "3.10.*"
+
+[tool.pixi.feature.py311.dependencies]
+python = "3.11.*"
+
+[tool.pixi.feature.py312.dependencies]
+python = "3.12.*"
+
+[tool.pixi.feature.py313.dependencies]
+python = "3.13.*"
+
+[tool.pixi.feature.py314.dependencies]
+python = "3.14.*"
 
 [tool.pixi.pypi-dependencies]
 spec2nii = { path = ".", editable = true, extras = ["dev"] }
+
+[tool.pixi.environments]
+default = { features = [], solve-group = "python" }
+py310 = { features = ["py310"], solve-group = "python" }
+py311 = { features = ["py311"], solve-group = "python" }
+py312 = { features = ["py312"], solve-group = "python" }
+py313 = { features = ["py313"], solve-group = "python" }
+py314 = { features = ["py314"], solve-group = "python" }
 
 [tool.pixi.tasks]
 lint = "flake8 spec2nii"
