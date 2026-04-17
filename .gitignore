@@ -10,4 +10,5 @@ __pycache__
 prototyping
 .idea/
 .pixi/
+pixi.lock
 test_*
