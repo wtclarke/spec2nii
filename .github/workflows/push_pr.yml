@@ -6,8 +6,30 @@ on:
   workflow_dispatch:
 
 jobs:
-  tests:
-    if: github.event_name == 'pull_request' || matrix.environment == 'py312'
+  push-tests:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    name: Pixi (py312, ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+          lfs: true
+      - uses: prefix-dev/setup-pixi@v0.9.4
+        with:
+          manifest-path: pyproject.toml
+          environments: py312
+          cache: false
+          activate-environment: false
+      - name: Lint
+        run: |
+          pixi run lint
+      - name: Run pytest
+        run: |
+          pixi run -e py312 test
+
+  pr-tests:
+    if: github.event_name == 'pull_request'
     name: Pixi (${{ matrix.environment }}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
