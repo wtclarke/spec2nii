@@ -6,6 +6,7 @@ This document contains the Spec2nii release history in reverse chronological ord
 - Added a hidden `--keep_zero_valued` option to preserve zero-valued higher-dimension elements when needed.
 - Added handling for GE `PROBE-sL` sequence. This sequence and the prior `slaser` WIP will generate separated (ecc vs quantification) water references.
 - GE p-file pipeline now handles MR31 data.
+- Local build now available using [pixi](https://pixi.prefix.dev/latest/installation/)
 
 0.8.8 (Tuesday 14th April 2026)
 ----------------------------------
