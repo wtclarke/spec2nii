@@ -461,8 +461,14 @@ def _detect_and_fill_voi_enh(img, meta):
 
     imageOrientationPatient = _get_enhanced_dcm_img_orientation_pat(img)
 
-    # VoiPosition - this does not have the FOV shift that imagePositionPatient has
-    vol_loc_seq = img.dcm_data.VolumeLocalizationSequence
+    try:
+        # VoiPosition - this does not have the FOV shift that imagePositionPatient has
+        vol_loc_seq = img.dcm_data.VolumeLocalizationSequence
+    except AttributeError:
+        # If VolumeLocalizationSequence doesn't exist return unmodifed meta
+        # It's possible we might be able to inspect
+        # img.dcm_data.VolumeLocalizationTechnique as a flag
+        return meta
     imagePositionPatient = vol_loc_seq[0].MidSlabPosition
 
     # This order needs validating!!
