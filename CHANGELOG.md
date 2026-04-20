@@ -1,12 +1,14 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
-0.8.9 (Thursday 16th April 2026)
+0.8.9 (Monday 20th April 2026)
 ----------------------------------
 - Automatically remove zero-valued elements from the 5th and higher dimensions when those indices are entirely empty across the spectral and remaining higher dimensions.
 - Added a hidden `--keep_zero_valued` option to preserve zero-valued higher-dimension elements when needed.
 - Added handling for GE `PROBE-sL` sequence. This sequence and the prior `slaser` WIP will generate separated (ecc vs quantification) water references.
 - GE p-file pipeline now handles MR31 data.
 - Local build now available using [pixi](https://pixi.prefix.dev/latest/installation/)
+- Added creation of OFF/ON file from UIH `svs_mega` sequence
+- UIH svs with wref in DICOM tag `'0065', 'ff07'` will generate a water reference.
 
 0.8.8 (Tuesday 14th April 2026)
 ----------------------------------
