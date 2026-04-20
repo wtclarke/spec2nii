@@ -126,7 +126,7 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
                 meta_list,
                 name_list)):
             if len(files_in) > 1:
-                fnames_out.append(f'{mainStr}_{idx:03}'+nn)
+                fnames_out.append(f'{mainStr}_{idx:03}' + nn)
             else:
                 fnames_out.append(mainStr + nn)
             nifti_mrs_out.append(
