@@ -2,7 +2,7 @@ This document contains the Spec2nii release history in reverse chronological ord
 
 0.8.10 (Monday 20th April 2026)
 ----------------------------------
-- Backend only: moved from versioneer to setuptools_scm
+- Backend only: moved from `versioneer` to `setuptools_scm`
 
 0.8.9 (Monday 20th April 2026)
 ----------------------------------
