@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=69", "versioneer[toml]"]
+requires = ["setuptools>=77", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,8 @@ name = "spec2nii"
 description = "Multi-format in vivo MR spectroscopy conversion to NIFTI"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { file = "LICENSE" }
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
 authors = [
   { name = "Will Clarke", email = "william.clarke@ndcn.ox.ac.uk" },
 ]
@@ -31,7 +32,6 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
-  "License :: OSI Approved :: BSD License",
   "Operating System :: OS Independent",
 ]
 
@@ -49,10 +49,8 @@ dev = [
   "h5py",
   "pillow",
   "pytest",
+  "setuptools-scm>=8",
 ]
-
-[tool.setuptools.dynamic]
-version = { attr = "spec2nii.__version__" }
 
 [tool.setuptools.packages.find]
 exclude = ["tests*"]
@@ -61,13 +59,8 @@ exclude = ["tests*"]
 spec2nii = ["bruker_properties.json", "bruker_fid_override.json"]
 "spec2nii.GE" = ["VESPA_LICENSE"]
 
-[tool.versioneer]
-VCS = "git"
-style = "pep440"
-versionfile_source = "spec2nii/_version.py"
-versionfile_build = "spec2nii/_version.py"
-tag_prefix = ""
-parentdir_prefix = ""
+[tool.setuptools_scm]
+fallback_version = "0+unknown"
 
 [tool.flake8]
 ignore = [
@@ -89,7 +82,7 @@ exclude = [
 max-line-length = 120
 
 [tool.codespell]
-skip = "versioneer.py,_version.py,ge_hdr_fields.py,ge_pfile.py,ge_read_pfile.py,fileiobase.py,varian.py"
+skip = "ge_hdr_fields.py,ge_pfile.py,ge_read_pfile.py,fileiobase.py,varian.py"
 ignore-words-list = "te,varian"
 
 [tool.pytest.ini_options]
