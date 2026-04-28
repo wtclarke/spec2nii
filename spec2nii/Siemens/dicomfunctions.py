@@ -354,8 +354,6 @@ def process_siemens_csi_xa(img, verbose):
 
     specDataCmplx = specDataCmplx.reshape((slices, rows, cols, spectral_points))
     specDataCmplx = np.moveaxis(specDataCmplx, (0, 1, 2), (2, 1, 0))
-    import matplotlib.pyplot as plt
-    breakpoint()
 
     dcm_hdrs = img.dcm_data.PerFrameFunctionalGroupsSequence[0]
     dcm_hdrs1 = img.dcm_data.SharedFunctionalGroupsSequence[0]
