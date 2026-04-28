@@ -1,5 +1,9 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.8.12 (WIP)
+------------
+- Handle DICOMs missing series and intance numbers (generated through Siemens retrorecon).
+
 0.8.11 (Monday 20th April 2026)
 ----------------------------------
 - Fix issues arising in coil names and 31P Siemens CSI with missing DICOM VOI fields.
