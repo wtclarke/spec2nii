@@ -123,8 +123,21 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         dwelltime_list.append(dwelltime)
         meta_list.append(meta_obj)
 
-        series_num.append(int(img.dcm_data.SeriesNumber))
-        inst_num.append(int(img.dcm_data.InstanceNumber))
+        try:
+            series_num.append(int(img.dcm_data.SeriesNumber))
+        except TypeError:
+            # If offline reconstruction has been used, it is possible that
+            # SeriesNumber (and InstanceNumber) are None.
+            # Set series_num to the SeriesInstanceUID with dots removed
+            pass
+            series_num.append(
+                int(img.dcm_data.SeriesInstanceUID.replace('.', '')))
+
+        try:
+            inst_num.append(int(img.dcm_data.InstanceNumber))
+        except TypeError:
+            # Set inst_num number to idx
+            inst_num.append(idx)
 
         ref_ind, str_suf = identify_integrated_references(img, img.dcm_data.InstanceNumber)
         reference.append(ref_ind)
