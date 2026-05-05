@@ -78,6 +78,13 @@ def svs_or_CSI(img):
         return 'SVS'
 
 
+def _is_vienna_crt(img):
+    """Returns True if sequence is identified as Vienna's CRT sequence
+    """
+    ptrn = re.compile(r'_ViennaCrt_')
+    return True if ptrn.search(img.dcm_data.ProtocolName) else False
+
+
 def multi_file_dicom(files_in, fname_out, tag, verbose):
     """Parse a list of Siemens DICOM files"""
 
@@ -214,6 +221,13 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         data_in_gr = data_list[gr]
         if len(data_in_gr) > 1:
             combined_data = np.stack(data_in_gr, axis=-1)
+
+            if _is_vienna_crt(img):
+                print('Vienna CRT')
+                combined_data = np.moveaxis(
+                    combined_data,
+                    (0, 1, 2, 3, 4),
+                    (0, 1, 4, 3, 2))
         else:
             combined_data = data_in_gr[0]
 
@@ -406,7 +420,10 @@ def process_siemens_csi_vx(img, verbose):
     # slices = int(xprot[('sSpecPara', 'lFinalMatrixSizeSlice')])
     # spectral_points = int(xprot[('sSpecPara', 'lVectorSize')])
 
-    specDataCmplx = specDataCmplx.reshape((slices, rows, cols, spectral_points))
+    if _is_vienna_crt(img):
+        specDataCmplx = specDataCmplx.reshape((1, rows, cols, spectral_points))
+    else:
+        specDataCmplx = specDataCmplx.reshape((slices, rows, cols, spectral_points))
     specDataCmplx = np.moveaxis(specDataCmplx, (0, 1, 2), (2, 1, 0))
 
     # 1) Extract dicom parameters
