@@ -226,6 +226,8 @@ def test_clean_intent(tmp_path):
     nib.save(img, tmp_path / 'invalid1.nii.gz')
     img.header['intent_name'] = None
     nib.save(img, tmp_path / 'invalid2.nii.gz')
+    img.header['intent_name'] = 'test_v2_1'.encode()
+    nib.save(img, tmp_path / 'invalid3.nii.gz')
 
     # Create reference intent_name
     data_text = files('nifti_mrs.standard').joinpath('definitions.json').read_text(encoding='utf-8')
@@ -235,8 +237,8 @@ def test_clean_intent(tmp_path):
     intent_name = f'mrs_v{v_major}_{v_minor}'.encode()
 
     # Test clean call on this file
-    for file, intent in zip(['valid', 'invalid1', 'invalid2'],
-                            ['mrs_v2_1'.encode(), intent_name, intent_name]):
+    for file, intent in zip(['valid', 'invalid1', 'invalid2', 'invalid3'],
+                            ['mrs_v2_1'.encode(), intent_name, intent_name, intent_name]):
         subprocess.check_call(['spec2nii', 'clean',
                             '-o', tmp_path,
                             '-f', 'cleaned',

@@ -107,7 +107,7 @@ def clean_hdr_ext(args):
         nifti_mrs_img = NIFTI_MRS(args.file, validate_on_creation=False)
         print("'intent_name' is valid.")
     except NotNIFTI_MRS as exc:
-        if str(exc) != 'NIFTI-MRS intent code not set.':
+        if 'NIFTI-MRS intent code not valid' not in str(exc):
             raise
         # if failed, read as a regular NIfTI, update intent and re-save
         from fsl.data.image import Image
