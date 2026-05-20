@@ -1,9 +1,10 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
-0.8.12 (WIP)
+0.8.12 (Wednesday 20th May 2026)
 ------------
 - Handle DICOMs missing series and instance numbers (generated through Siemens retrorecon).
 - Special case handling of ViennaCrt sequence for VE DICOM.
+- Bumped dependency to nifti-mrs 1.4.1
 
 0.8.11 (Monday 20th April 2026)
 ----------------------------------
