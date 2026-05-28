@@ -67,6 +67,8 @@ def test_svs(tmp_path):
     assert hdr_ext['SpectrometerFrequency'][0] == 127.76365
     assert hdr_ext['ResonantNucleus'][0] == '1H'
     assert hdr_ext['OriginalFile'][0] == svs_path.name
+    assert isinstance(hdr_ext['RxCoil'], str)
+    assert 'ReceiveCoilName' not in hdr_ext
 
     assert np.isclose(hdr_ext['EchoTime'], 0.27)
     assert np.isclose(hdr_ext['RepetitionTime'], 2.0)
