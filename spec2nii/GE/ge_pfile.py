@@ -609,11 +609,7 @@ def _populate_metadata(pfile, water_suppressed=True, data_dimensions=None):
     # 'TxCoil'
     # Not Known
     # 'RxCoil'
-    meta.set_user_def(
-        key="ReceiveCoilName",
-        value=hdr.rhi_cname.decode(pfile.encoding, errors="replace"),
-        doc="Rx coil name.",
-    )
+    meta.set_standard_def('RxCoil', hdr.rhi_cname.decode(pfile.encoding, errors='replace'))
 
     # # 5.3 Sequence information
     # 'SequenceName'
