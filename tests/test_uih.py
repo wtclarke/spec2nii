@@ -15,9 +15,10 @@ from .io_for_tests import read_nifti_mrs
 # Data paths
 data_base = Path(__file__).parent / 'spec2nii_test_data' / 'UIH'
 
-data_paths = {'svs': data_base / 'mrs_data/dicom/svs_press_te144_SVS_801/00000001.dcm',
-              'csi_2d': data_base / 'mrs_data/dicom/csi_hise_te144_CSI_1201/00000000.dcm',
-              'csi_3d': data_base / 'mrs_3d/dicom/csi_hise_3d_te144_CSI_1301/00000000.dcm'}
+data_paths = {
+    'svs': data_base / 'mrs_data/dicom/svs_press_te144_SVS_801/00000001.dcm',
+    'csi_2d': data_base / 'mrs_data/dicom/csi_hise_te144_CSI_1201/00000000.dcm',
+    'csi_3d': data_base / 'mrs_3d/dicom/csi_hise_3d_te144_CSI_1301/00000000.dcm'}
 
 
 def test_svs(tmp_path):

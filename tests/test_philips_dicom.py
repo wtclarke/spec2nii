@@ -10,7 +10,7 @@ import json
 
 import numpy as np
 
-from .io_for_tests import read_nifti_mrs
+from .io_for_tests import read_nifti_mrs, read_nifti_mrs_with_hdr
 
 # Data paths
 philips_path = Path(__file__).parent / 'spec2nii_test_data' / 'philips'
@@ -42,6 +42,30 @@ def test_svs(tmp_path):
     assert hdr_ext['ResonantNucleus'][0] == '1H'
     assert hdr_ext['OriginalFile'][0] == data_path.name
 
+    assert (tmp_path / 'svs_ref.nii.gz').is_file()
+
+
+def test_svs_overrides(tmp_path):
+
+    subprocess.check_call(['spec2nii', 'philips_dcm',
+                           '-f', 'svs',
+                           '-o', tmp_path,
+                           '-j',
+                           str(data_path),
+                           '--override_frequency', '100',
+                           '--override_nucleus', '31P',
+                           '--override_dwelltime', '0.0001'])
+
+    img_t, hdr_ext = read_nifti_mrs_with_hdr(tmp_path / 'svs.nii.gz')
+
+    assert img_t.shape == (1, 1, 1, 1024)
+    assert np.iscomplexobj(img_t.dataobj)
+
+    assert hdr_ext['SpectrometerFrequency'] == [100.0, ]
+    assert hdr_ext['ResonantNucleus'] == ['31P']
+    assert np.isclose(img_t.header['pixdim'][4], 0.0001)
+
+    assert hdr_ext['OriginalFile'][0] == data_path.name
     assert (tmp_path / 'svs_ref.nii.gz').is_file()
 
 

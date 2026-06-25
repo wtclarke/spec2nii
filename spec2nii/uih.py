@@ -35,6 +35,7 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
     orientation_list = []
     dwelltime_list = []
     meta_list = []
+    name_list = []
     mainStr = ''
     for idx, fn in enumerate(files_in):
         if verbose:
@@ -45,18 +46,28 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         mrs_type = svs_or_CSI(img)
 
         if mrs_type == 'SVS':
-            specDataCmplx, orientation, dwelltime, meta_obj = process_uih_svs(img, verbose)
+            specDataCmplx, \
+                orientation, \
+                dwelltime, \
+                meta_obj, \
+                name_suffix = process_uih_svs(img, verbose)
 
-            newshape = (1, 1, 1) + specDataCmplx.shape
-            specDataCmplx = specDataCmplx.reshape(newshape)
+            # Add original files to nifti meta information.
+            for mm in meta_obj:
+                mm.set_standard_def('OriginalFile', [str(fn.name), ])
 
         else:
             specDataCmplx, orientation, dwelltime, meta_obj = process_uih_csi(img, verbose)
+            name_suffix = []
+            # Add original files to nifti meta information.
+            for mm in meta_obj:
+                mm.set_standard_def('OriginalFile', [str(fn.name), ])
 
-        data_list.append(specDataCmplx)
-        orientation_list.append(orientation)
-        dwelltime_list.append(dwelltime)
-        meta_list.append(meta_obj)
+        data_list.extend(specDataCmplx)
+        orientation_list.extend(orientation)
+        dwelltime_list.extend(dwelltime)
+        meta_list.extend(meta_obj)
+        name_list.extend(name_suffix)
 
         if idx == 0:
             if fname_out:
@@ -72,7 +83,8 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
 
     combine = all_equal([d.shape for d in data_list])\
         and all_equal([o.Q44.tolist() for o in orientation_list])\
-        and all_equal(dwelltime_list)
+        and all_equal(dwelltime_list)\
+        and all_equal(name_list)
 
     nifti_mrs_out, fnames_out = [], []
     if combine:
@@ -106,20 +118,23 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
                 or_used.Q44,
                 no_conj=True))
     else:
-        for idx, (dd, oo, dt, mm, ff) in enumerate(zip(data_list,
-                                                   orientation_list,
-                                                   dwelltime_list,
-                                                   meta_list,
-                                                   files_in)):
-            # Add original files to nifti meta information.
-            mm.set_standard_def('OriginalFile', [str(ff.name), ])
-            fnames_out.append(f'{mainStr}_{idx:03}')
+        for idx, (dd, oo, dt, mm, nn) in enumerate(
+            zip(
+                data_list,
+                orientation_list,
+                dwelltime_list,
+                meta_list,
+                name_list)):
+            if len(files_in) > 1:
+                fnames_out.append(f'{mainStr}_{idx:03}' + nn)
+            else:
+                fnames_out.append(mainStr + nn)
             nifti_mrs_out.append(
                 gen_nifti_mrs_hdr_ext(
                     dd,
                     dt,
                     mm,
-                    oo.Q44oo.Q44,
+                    oo.Q44,
                     no_conj=True))
 
     return nifti_mrs_out, fnames_out
@@ -128,24 +143,68 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
 def process_uih_svs(img, verbose):
     """Process UIH DICOM SVS data"""
 
-    specData = np.frombuffer(img.dcm_data[('5600', '0020')].value, dtype=np.single)
-    specDataCmplx = specData[0::2] + 1j * specData[1::2]
+    specDataCmplx = []
+    meta = []
+    dwelltime = []
+    orientation = []
+    name_suffix = []
 
+    def read_data(tag):
+        specData = np.frombuffer(
+            img.dcm_data[tag].value,
+            dtype=np.single)
+        return specData[0::2] + 1j * specData[1::2]
+
+    specDataCmplx.append(read_data(('5600', '0020')))
+
+    # Orientation
     # 1) Extract dicom parameters
     imageOrientationPatient = img.image_orient_patient.T
     imagePositionPatient = img.image_position
     xyzMM = np.asarray(img.voxel_sizes)
 
+    # 2) To nifti
     currNiftiOrientation = dcm_to_nifti_orientation(imageOrientationPatient,
                                                     imagePositionPatient,
                                                     xyzMM,
                                                     (1, 1, 1),
                                                     half_shift=True,
                                                     verbose=verbose)
-    dwelltime = 1.0 / img.dcm_data.SpectralWidth
-    meta = extractDicomMetadata(img)
 
-    return specDataCmplx, currNiftiOrientation, dwelltime, meta
+    base_meta = extractDicomMetadata(img)
+
+    wsupp_meta = base_meta.copy()
+    wsupp_meta.set_standard_def('WaterSuppressed', True)
+    orientation.append(currNiftiOrientation)
+    dwelltime.append(1.0 / img.dcm_data.SpectralWidth)
+    meta.append(base_meta.copy())
+    name_suffix.append('')
+
+    specDataCmplx.append(read_data(('0065', 'ff07')))
+    orientation.append(currNiftiOrientation)
+    dwelltime.append(1.0 / img.dcm_data.SpectralWidth)
+    wref_meta = base_meta.copy()
+    wref_meta.set_standard_def('WaterSuppressed', False)
+    meta.append(wref_meta)
+    name_suffix.append('_wref')
+
+    if img.dcm_data[('0018', '0024')].value == 'svs_mega':
+        name_suffix[0] = '_diff'
+
+        off = read_data(('0065', 'ff11'))
+        on = read_data(('0065', 'ff10'))
+        specDataCmplx.append(np.stack([off, on], axis=-1))
+        name_suffix.append('_off_on')
+        orientation.append(currNiftiOrientation)
+        dwelltime.append(1.0 / img.dcm_data.SpectralWidth)
+        off_on_meta = base_meta.copy()
+        off_on_meta.set_standard_def('WaterSuppressed', True)
+        off_on_meta.set_dim_info(0, 'DIM_EDIT', hdr={"EditCondition": ["OFF", "ON"]})
+        meta.append(off_on_meta)
+
+    specDataCmplx = [data.reshape((1, 1, 1) + data.shape) for data in specDataCmplx]
+
+    return specDataCmplx, orientation, dwelltime, meta, name_suffix
 
 
 def process_uih_csi(img, verbose):
@@ -193,10 +252,10 @@ def process_uih_csi(img, verbose):
     dwelltime = 1.0 / img.dcm_data.SpectralWidth
     meta = extractDicomMetadata(img)
 
-    return specDataCmplx, currNiftiOrientation, dwelltime, meta
+    return [specDataCmplx], [currNiftiOrientation], [dwelltime], [meta]
 
 
-def extractDicomMetadata(dcmdata):
+def extractDicomMetadata(dcmdata) -> Hdr_Ext:
     """ Extract information from the nibabel DICOM object to insert into the json header ext.
 
     There seems to be a large 'uprotocol' in tag 0065,1007 but I don't know how to interpret it.

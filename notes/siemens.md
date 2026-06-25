@@ -103,3 +103,5 @@ This means that the sequence and reconstruction match: for a sequence with an ev
 Special cased for twix data. See spec2nii/Siemens/twix_special_case.py mgs_svs_ed_twix
 
 Used for MEGA and HERCULES editing.
+
+### dkd_svs_slaser_moconav and dkd_svs_mslaser_msspnav

@@ -32,7 +32,8 @@ def test_svs_hyper(tmp_path):
 
     img_1 = read_nifti_mrs(tmp_path / 'svs_hyper_short_te.nii.gz')
     img_2 = read_nifti_mrs(tmp_path / 'svs_hyper_edited.nii.gz')
-    img_3 = read_nifti_mrs(tmp_path / 'svs_NOI.nii.gz')
+    img_3 = read_nifti_mrs(tmp_path / 'svs_hyper_water_ref.nii.gz')
+    img_4 = read_nifti_mrs(tmp_path / 'svs_NOI.nii.gz')
 
     assert img_1.shape == (1, 1, 1, 2048, 15, 32)
     assert np.iscomplexobj(img_1.dataobj)
@@ -42,8 +43,68 @@ def test_svs_hyper(tmp_path):
     assert np.iscomplexobj(img_2.dataobj)
     assert 1 / img_2.header['pixdim'][4] == 2000.0
 
-    assert img_3.shape == (1, 1, 1, 2048, 15)
+    assert img_3.shape == (1, 1, 1, 2048, 15, 8)
+    assert np.iscomplexobj(img_3.dataobj)
+    assert 1 / img_3.header['pixdim'][4] == 2000.0
+
+    assert img_4.shape == (1, 1, 1, 2048, 15)
+    assert np.iscomplexobj(img_4.dataobj)
+    assert 1 / img_4.header['pixdim'][4] == 2000.0
+
+    hdr_ext_codes = img_1.header.extensions.get_codes()
+    hdr_ext = json.loads(img_1.header.extensions[hdr_ext_codes.index(44)].get_content())
+
+    assert hdr_ext['SpectrometerFrequency'][0] == 127.74876
+    assert hdr_ext['ResonantNucleus'][0] == '1H'
+    assert hdr_ext['OriginalFile'][0] == data_path.name
+    assert hdr_ext['dim_5'] == 'DIM_COIL'
+    assert hdr_ext['dim_6'] == 'DIM_DYN'
+
+    hdr_ext_codes = img_2.header.extensions.get_codes()
+    hdr_ext = json.loads(img_2.header.extensions[hdr_ext_codes.index(44)].get_content())
+
+    assert hdr_ext['dim_5'] == 'DIM_COIL'
+    assert hdr_ext['dim_6'] == 'DIM_EDIT'
+    assert hdr_ext['dim_6_header'] == {'EditCondition': ['A', 'B', 'C', 'D']}
+    assert hdr_ext['dim_7'] == 'DIM_DYN'
+
+
+def test_svs_hyper_4files(tmp_path):
+
+    subprocess.check_call(['spec2nii', 'philips_dl',
+                           '-f', 'svs',
+                           '-o', tmp_path,
+                           '-j',
+                           '--special', 'hyper-4',
+                           str(data_path),
+                           str(list_path),
+                           str(aux_path)])
+
+    print(tmp_path)
+    img_1 = read_nifti_mrs(tmp_path / 'svs_hyper_short_te.nii.gz')
+    img_2 = read_nifti_mrs(tmp_path / 'svs_hyper_edited.nii.gz')
+    img_3 = read_nifti_mrs(tmp_path / 'svs_hyper_ref_short_te.nii.gz')
+    img_4 = read_nifti_mrs(tmp_path / 'svs_hyper_ref_edited.nii.gz')
+    img_5 = read_nifti_mrs(tmp_path / 'svs_NOI.nii.gz')
+
+    assert img_1.shape == (1, 1, 1, 2048, 15, 32)
+    assert np.iscomplexobj(img_1.dataobj)
+    assert 1 / img_1.header['pixdim'][4] == 2000.0
+
+    assert img_2.shape == (1, 1, 1, 2048, 15, 4, 56)
     assert np.iscomplexobj(img_2.dataobj)
+    assert 1 / img_2.header['pixdim'][4] == 2000.0
+
+    assert img_3.shape == (1, 1, 1, 2048, 15, 4)
+    assert np.iscomplexobj(img_3.dataobj)
+    assert 1 / img_3.header['pixdim'][4] == 2000.0
+
+    assert img_4.shape == (1, 1, 1, 2048, 15, 4)
+    assert np.iscomplexobj(img_4.dataobj)
+    assert 1 / img_2.header['pixdim'][4] == 2000.0
+
+    assert img_5.shape == (1, 1, 1, 2048, 15)
+    assert np.iscomplexobj(img_5.dataobj)
     assert 1 / img_2.header['pixdim'][4] == 2000.0
 
     hdr_ext_codes = img_1.header.extensions.get_codes()

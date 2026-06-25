@@ -964,8 +964,11 @@ def extractTwixMetadata_xa(mapVBVDHdr, original_file):
     # 'InstitutionAddress'
     obj.set_standard_def('InstitutionAddress', mapVBVDHdr['Dicom'][('InstitutionAddress')])
     # 'TxCoil'
-    tx_coil_tuple = ('sCoilSelectMeas', 'aTxCoilSelectData', '0', 'asList', '0', 'sCoilElementID', 'tCoilID')
-    obj.set_standard_def('TxCoil', mapVBVDHdr['MeasYaps'][tx_coil_tuple])
+    try:
+        tx_coil_tuple = ('sCoilSelectMeas', 'aTxCoilSelectData', '0', 'asList', '0', 'sCoilElementID', 'tCoilID')
+        obj.set_standard_def('TxCoil', mapVBVDHdr['MeasYaps'][tx_coil_tuple])
+    except KeyError:
+        pass
     # 'RxCoil'
     rx_coil_1 = ('sCoilSelectMeas', 'aRxCoilSelectData', '0', 'asList', '0', 'sCoilElementID', 'tCoilID')
     rx_coil_2 = ('asCoilSelectMeas', '0', 'asList', '0', 'sCoilElementID', 'tCoilID')

@@ -78,6 +78,13 @@ def svs_or_CSI(img):
         return 'SVS'
 
 
+def _is_vienna_crt(img):
+    """Returns True if sequence is identified as Vienna's CRT sequence
+    """
+    ptrn = re.compile(r'_ViennaCrt_')
+    return True if ptrn.search(img.dcm_data.ProtocolName) else False
+
+
 def multi_file_dicom(files_in, fname_out, tag, verbose):
     """Parse a list of Siemens DICOM files"""
 
@@ -123,8 +130,21 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         dwelltime_list.append(dwelltime)
         meta_list.append(meta_obj)
 
-        series_num.append(int(img.dcm_data.SeriesNumber))
-        inst_num.append(int(img.dcm_data.InstanceNumber))
+        try:
+            series_num.append(int(img.dcm_data.SeriesNumber))
+        except TypeError:
+            # If offline reconstruction has been used, it is possible that
+            # SeriesNumber (and InstanceNumber) are None.
+            # Set series_num to the SeriesInstanceUID with dots removed
+            pass
+            series_num.append(
+                int(img.dcm_data.SeriesInstanceUID.replace('.', '')))
+
+        try:
+            inst_num.append(int(img.dcm_data.InstanceNumber))
+        except TypeError:
+            # Set inst_num number to idx
+            inst_num.append(idx)
 
         ref_ind, str_suf = identify_integrated_references(img, img.dcm_data.InstanceNumber)
         reference.append(ref_ind)
@@ -201,6 +221,13 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         data_in_gr = data_list[gr]
         if len(data_in_gr) > 1:
             combined_data = np.stack(data_in_gr, axis=-1)
+
+            if _is_vienna_crt(img):
+                print('Vienna CRT')
+                combined_data = np.moveaxis(
+                    combined_data,
+                    (0, 1, 2, 3, 4),
+                    (0, 1, 4, 3, 2))
         else:
             combined_data = data_in_gr[0]
 
@@ -393,7 +420,10 @@ def process_siemens_csi_vx(img, verbose):
     # slices = int(xprot[('sSpecPara', 'lFinalMatrixSizeSlice')])
     # spectral_points = int(xprot[('sSpecPara', 'lVectorSize')])
 
-    specDataCmplx = specDataCmplx.reshape((slices, rows, cols, spectral_points))
+    if _is_vienna_crt(img):
+        specDataCmplx = specDataCmplx.reshape((1, rows, cols, spectral_points))
+    else:
+        specDataCmplx = specDataCmplx.reshape((slices, rows, cols, spectral_points))
     specDataCmplx = np.moveaxis(specDataCmplx, (0, 1, 2), (2, 1, 0))
 
     # 1) Extract dicom parameters
@@ -461,8 +491,14 @@ def _detect_and_fill_voi_enh(img, meta):
 
     imageOrientationPatient = _get_enhanced_dcm_img_orientation_pat(img)
 
-    # VoiPosition - this does not have the FOV shift that imagePositionPatient has
-    vol_loc_seq = img.dcm_data.VolumeLocalizationSequence
+    try:
+        # VoiPosition - this does not have the FOV shift that imagePositionPatient has
+        vol_loc_seq = img.dcm_data.VolumeLocalizationSequence
+    except AttributeError:
+        # If VolumeLocalizationSequence doesn't exist return unmodifed meta
+        # It's possible we might be able to inspect
+        # img.dcm_data.VolumeLocalizationTechnique as a flag
+        return meta
     imagePositionPatient = vol_loc_seq[0].MidSlabPosition
 
     # This order needs validating!!
@@ -738,9 +774,9 @@ def identify_integrated_references(img, inst_num):
     '''
     seq_file_name = xprot[('tSequenceFileName',)].strip('"').lower()
     if (re.search(r'svs_slaser(voi)?_dkd2$', seq_file_name)
-        and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0)\
-        or (re.search(r'svs_slaser(voi)?_dkd$', seq_file_name)
-            and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0):
+            and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0)\
+            or (re.search(r'svs_slaser(voi)?_dkd$', seq_file_name)
+                and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0):
         num_ref = int(xprot[('sSpecPara', 'lAutoRefScanNo')])
         num_dyn = int(xprot[('lAverages',)])
         total_dyn = num_dyn + (num_ref * 4)
@@ -797,6 +833,19 @@ def identify_integrated_references(img, inst_num):
         else:
             # print(f'no case: {inst_num}')
             return 0, ''
+    elif re.search(r'dkd_svs_slaser_moconav$', seq_file_name)\
+            and xprot[('sSpecPara', 'lAutoRefScanMode')] == 8.0:
+        num_ref = int(xprot[('sSpecPara', 'lAutoRefScanNo')])
+        num_dyn = int(xprot[('lAverages',)])
+        total_dyn = num_dyn + (num_ref * 2)
+        if inst_num < num_ref:
+            # First WS
+            return 1, '_wref'
+        elif inst_num >= (total_dyn - num_ref):
+            # Second WS
+            return 1, '_wref'
+        else:
+            return 0, ''
     else:
         return 0, ''
 
@@ -810,11 +859,12 @@ def special_case_sequences(combined_data, meta_used, img, tag, ref_status):
     else:
         seq_file_name = ''
 
-    if re.search(r'dkd_svs_mslaser_msspnav$', seq_file_name)\
+    if re.search(r'dkd_svs_mslaser_(msspnav|moconav)$', seq_file_name)\
             and ref_status == 0:
         '''
         The dkd_svs_mslaser_msspnav sequence
         This sequence contains both MEGA j-difference editing and metabolite cycling
+        This should probably also check the editing flag status on the special card
         '''
         combined_data = np.reshape(
             combined_data,
@@ -824,6 +874,18 @@ def special_case_sequences(combined_data, meta_used, img, tag, ref_status):
         meta_used.set_dim_info(2, 'DIM_METCYCLE')
         meta_used.set_dim_info(1, 'DIM_DYN')
 
+    elif re.search(r'dkd_svs_slaser_(msspnav|moconav)$', seq_file_name)\
+            and ref_status == 0:
+        '''
+        The dkd_svs_slaser_moconav sequence
+        This sequence contains metabolite cycling
+        '''
+        combined_data = np.reshape(
+            combined_data,
+            combined_data.shape[:4] + (-1, 2,)
+        )
+        meta_used.set_dim_info(1, 'DIM_METCYCLE')
+        meta_used.set_dim_info(0, 'DIM_DYN')
     else:
         # Add dimension information (if not None for default)
         if tag:

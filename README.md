@@ -24,8 +24,14 @@ Visualisation of MRS data converted by spec2nii to NIfTI-MRS can be carried out 
 
 ## Installation
 `conda install -c conda-forge spec2nii`
+
 or
+
 `pip install spec2nii`
+
+or, for local development/builds, first clone this repo and then run using [pixi](https://pixi.prefix.dev/latest/installation/)
+
+`pixi run spec2nii ...`
 
 ### Installing Conda (option #1)
 Miniconda can be installed by following the instructions on the [Conda website](https://docs.conda.io/en/latest/miniconda.html). To create a suitable environment run the following three commands after installing Conda.
@@ -34,6 +40,16 @@ Miniconda can be installed by following the instructions on the [Conda website](
     conda create -c conda-forge -n my_env python=3.8
     conda activate my_env
     conda install -c conda-forge spec2nii
+```
+
+### Local development with Pixi
+For a local editable environment, linting, testing, and package builds use the following `pixi` commands.
+Pixi is a package manager, with simple installation instructions available online at [https://pixi.prefix.dev](https://pixi.prefix.dev/latest/installation/).
+
+```bash
+pixi run lint
+pixi run test
+pixi run build
 ```
 
 ## Currently supported formats
@@ -69,6 +85,8 @@ If -j is specified the NIfTI MRS header extension will also be generated as a JS
 By default, spec2nii generates NIfTI files using the NIfTI-2 header format. Use the `--nifti1` option to generate files using the NIfTI-1 format.
 
 Manual overrides can be provided for incorrectly interpreted required header fields, namely SpectrometerFrequency, ResonantNucleus and dwell-time, by using the `--override_frequency`, `--override_nucleus`, and `--override_dwelltime` command line options.
+
+During conversion, `spec2nii` will automatically remove zero-valued elements from the 5th and higher dimensions when an index is entirely zero across the spectral dimension and all other higher dimensions. This is intended to avoid issues in preprocessing that arise when there is zero-valued data. If you need to keep these elements, a hidden `--keep_zero_valued` option is available.
 
 ### Automatic detection
 `spec2nii auto FILE` will attempt an automatic conversion of the following formats: Twix, RDA, SPAR/SDAT, GE p-file, DICOM. Note that many features of the individual converters are not implemented in this automatic pathway. This feature should be regarded as somewhat experimental. For finer-grained control see the specific subcommands listed below.

@@ -93,7 +93,8 @@ def read_data_list_pair(data_file, list_file, aux_file, special_case=None):
 
         # Special cases
         if data_type == 'STD_0'\
-                and (special_case == 'hyper' or 'hyper' in meta['ProtocolName'].lower()):
+                and (special_case in ['hyper', 'hyper-4'] or 'hyper' in meta['ProtocolName'].lower()):
+
             out_hyper, meta_hyper = _special_case_hyper(out_data, meta)
             # Handle the main acquisition of the HYPER (short TE + editing) sequence
 
@@ -116,8 +117,23 @@ def read_data_list_pair(data_file, list_file, aux_file, special_case=None):
             continue
 
         elif data_type == 'STD_1'\
+                and (special_case == 'hyper-4'):
+            # Handle the water ref acquisition of the HYPER sequence but do not split (into short/long TE)
+            out_ref, meta_ref = _special_case_hyper_ref(out_data, meta)
+
+            data_out.append(
+                gen_nifti_mrs_hdr_ext(out_ref[0], dwelltime, meta_ref[0], orientation.Q44, no_conj=True))
+            name_out.append('hyper_ref_short_te')
+
+            data_out.append(
+                gen_nifti_mrs_hdr_ext(out_ref[1], dwelltime, meta_ref[1], orientation.Q44, no_conj=True))
+            name_out.append('hyper_ref_edited')
+
+            continue
+
+        elif data_type == 'STD_1'\
                 and (special_case == 'hyper' or 'hyper' in meta['ProtocolName'].lower()):
-            # Handle the water ref acquisition of the HYPER sequence
+            # Handle the water ref acquisition of the HYPER sequence but do not split (into short/long TE)
 
             meta.set_dim_info(
                 0,
@@ -320,5 +336,49 @@ def _special_case_hyper(data, meta):
     meta_edited.set_dim_info(2, 'DIM_DYN')
     meta_edited.set_standard_def("EditPulse", edit_pulse_val)
 
+    print('  - Short TE Metab Dims: ', data_short_te.shape)
+    print('  - Edited   Metab Dims: ', data_edited.shape)
+
     return [data_short_te, data_edited], \
            [meta_short_te, meta_edited]
+
+
+def _special_case_hyper_ref(data, meta):
+    '''
+    Special case handling for the HYPER/ISTHMUS Water Reference
+    Notes:
+      - (AG 09/2025) Updated to allow ISTHMUS full file separation.
+    '''
+    data_edited = data[:, :, 0::2]
+    data_short_te = data[:, :, 1::2]
+
+    # Add Spatial Dimensions
+    data_edited = data_edited.reshape((1, 1, 1) + data_edited.shape)
+    data_short_te = data_short_te.reshape((1, 1, 1) + data_short_te.shape)
+
+    # Apply conjugate
+    data_edited = data_edited.conj()
+    data_short_te = data_short_te.conj()
+
+    # Meta Data Short TE Water Reference
+    meta_short_te = meta.copy()
+    meta_short_te.set_dim_info(0, 'DIM_COIL')
+    meta_short_te.set_dim_info(1, 'DIM_DYN')
+    meta_short_te.set_dim_info(2, 'DIM_USER_0', info='HYPER Short TE water reference')
+
+    meta_short_te.set_standard_def('WaterSuppressed', False)
+    meta_short_te.set_standard_def('EchoTime', 0.035)
+
+    # Meta Data Long TE Water Reference
+    meta_edited = meta.copy()
+    meta_edited.set_dim_info(0, 'DIM_COIL')
+    meta_edited.set_dim_info(1, 'DIM_DYN')
+    meta_edited.set_dim_info(2, 'DIM_USER_0', info='HYPER Long TE water reference')
+    meta_edited.set_standard_def('WaterSuppressed', False)
+    meta_edited.set_standard_def('EchoTime', 0.08)
+
+    # Display Final Dimensions
+    print('  - Short TE Water Dims: ', data_short_te.shape)
+    print('  - Edited   Water Dims: ', data_edited.shape)
+
+    return [data_short_te, data_edited], [meta_short_te, meta_edited]

@@ -2,8 +2,10 @@
 
 This module contains the main class to be called as a script (through the main function).
 
-Author: William Clarke <william.clarke@ndcn.ox.ac.uk>
-Copyright (C) 2020 University of Oxford
+Author:  William Clarke         <william.clarke@ndcn.ox.ac.uk>
+         Vasilis Karlaftis      <vasilis.karlaftis@ndcn.ox.ac.uk>
+
+Copyright (C) 2026 University of Oxford
 """
 
 import argparse
@@ -11,6 +13,7 @@ import sys
 import os.path as op
 from pathlib import Path
 import json
+import numpy as np
 from nibabel.nifti2 import Nifti2Image
 from spec2nii import __version__ as spec2nii_ver
 from numpy import isclose
@@ -19,6 +22,76 @@ from numpy import isclose
 
 class Spec2niiError(Exception):
     pass
+
+
+def _subset_dim_header_value(value, keep_indices, original_size):
+    """Subset dimension header values that track a pruned higher dimension."""
+    if isinstance(value, dict):
+        return {key: _subset_dim_header_value(val, keep_indices, original_size)
+                for key, val in value.items()}
+
+    if isinstance(value, list) and len(value) == original_size:
+        return [value[idx] for idx in keep_indices]
+
+    if isinstance(value, tuple) and len(value) == original_size:
+        return tuple(value[idx] for idx in keep_indices)
+
+    if isinstance(value, np.ndarray) and value.ndim > 0 and value.shape[0] == original_size:
+        return value[keep_indices].tolist()
+
+    return value
+
+
+def remove_zero_higher_dim_indices(nifti_mrs_img, remove=True):
+    """Identify and optionally remove fully zero indices in dimensions 5+.
+
+    An index in a higher dimension is only removed when every value at that index
+    is zero across the spectral dimension and all remaining higher dimensions.
+
+    :param nifti_mrs_img: Input NIfTI-MRS object.
+    :param remove: If True remove the detected zero indices, otherwise only report them.
+    :return: Tuple of (possibly updated image, zero index map keyed by dimension number).
+    """
+    data = nifti_mrs_img[:]
+
+    if data.ndim <= 4:
+        return nifti_mrs_img, {}
+
+    zero_indices = {}
+    keep_indices = {}
+    original_shape = data.shape
+
+    for axis in range(4, data.ndim):
+        reduce_axes = tuple(idx for idx in range(data.ndim) if idx != axis)
+        axis_zero_mask = np.all(data == 0, axis=reduce_axes)
+        zero_indices[axis + 1] = np.flatnonzero(axis_zero_mask).tolist()
+
+        if remove and np.any(axis_zero_mask) and not np.all(axis_zero_mask):
+            keep_indices[axis] = np.flatnonzero(~axis_zero_mask)
+
+    if not keep_indices:
+        return nifti_mrs_img, zero_indices
+
+    for axis, keep in keep_indices.items():
+        data = np.take(data, keep, axis=axis)
+
+    hdr_ext = nifti_mrs_img.hdr_ext.to_dict()
+    for axis, keep in keep_indices.items():
+        dim_header_key = f'dim_{axis + 1}_header'
+        if dim_header_key in hdr_ext:
+            hdr_ext[dim_header_key] = _subset_dim_header_value(
+                hdr_ext[dim_header_key],
+                keep,
+                original_shape[axis])
+
+    from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
+    from nifti_mrs.hdr_ext import Hdr_Ext
+
+    return gen_nifti_mrs_hdr_ext(
+        data,
+        nifti_mrs_img.dwelltime,
+        Hdr_Ext.from_header_ext(hdr_ext),
+        affine=nifti_mrs_img.getAffine('voxel', 'world')), zero_indices
 
 
 class spec2nii:
@@ -41,6 +114,10 @@ class spec2nii:
             subparser.add_argument("-o", "--outdir", type=Path,
                                    help="Output location (default = .)", default='.')
             subparser.add_argument('--nifti1', action='store_true')
+            subparser.add_argument(
+                '--keep_zero_valued',
+                action='store_true',
+                help=argparse.SUPPRESS)
             subparser.add_argument("--override_nucleus", type=str, nargs='+',
                                    help="Override ResonantNucleus field with input(s). E.g. '2H'.")
             subparser.add_argument("--override_frequency", type=float, nargs='+',
@@ -143,7 +220,7 @@ class spec2nii:
             "--special",
             type=str,
             default=None,
-            help="Identify special case sequence. Options: 'hyper'.")
+            help="Identify special case sequence. Options: 'hyper' or 'hyper-4'.")
         parser_p_dl = add_common_parameters(parser_p_dl)
         parser_p_dl.set_defaults(func=self.philips_dl)
 
@@ -286,6 +363,18 @@ class spec2nii:
                                    verbose=False,
                                    anon=False)
 
+        parser_clean = subparsers.add_parser('clean', help='Update invalid fields in NIfTI-MRS header.')
+        parser_clean.add_argument('file', help='NIfTI-MRS file', type=Path)
+        parser_clean = add_common_parameters(parser_clean)
+        parser_clean.set_defaults(func=self.clean,
+                                  nifti1=False,
+                                  json=False,
+                                  override_nucleus=None,
+                                  override_frequency=None,
+                                  override_dwelltime=None,
+                                  verbose=False,
+                                  anon=False)
+
         if len(sys.argv) == 1:
             parser.print_usage(sys.stderr)
             sys.exit(1)
@@ -307,6 +396,18 @@ class spec2nii:
 
             self.insert_spectralwidth()
 
+            keep_zero_valued = getattr(args, 'keep_zero_valued', False)
+            for idx, (f_out, nifti_mrs_img) in enumerate(zip(self.fileoutNames, self.imageOut)):
+                self.imageOut[idx], removed_indices = remove_zero_higher_dim_indices(
+                    nifti_mrs_img,
+                    remove=not keep_zero_valued)
+                if args.verbose:
+                    removed_str = ', '.join(
+                        f'dim {dim}: {indices}'
+                        for dim, indices in removed_indices.items() if indices)
+                    if removed_str:
+                        print(f'Removed zero-valued higher-dimension indices from {f_out}: {removed_str}')
+
             if args.anon:
                 from spec2nii.anonymise import anon_nifti_mrs
                 for idx, nifti_mrs_img in enumerate(self.imageOut):
@@ -324,22 +425,13 @@ class spec2nii:
         """Implement any command line overrides for essential parameters."""
         for nifti_mrs_img in self.imageOut:
             if args.override_dwelltime:
-                nifti_mrs_img.set_dwell_time(args.override_dwelltime)
+                nifti_mrs_img.dwelltime = args.override_dwelltime
 
-            if args.override_nucleus or args.override_frequency:
-                from nibabel.nifti1 import Nifti1Extension
-                hdr_ext_codes = nifti_mrs_img.header.extensions.get_codes()
-                index = hdr_ext_codes.index(44)
-                original = json.loads(nifti_mrs_img.header.extensions[index].get_content())
+            if args.override_frequency:
+                nifti_mrs_img.hdr_ext.SpectrometerFrequency = args.override_frequency
 
-                if args.override_nucleus:
-                    original['ResonantNucleus'] = args.override_nucleus
-                if args.override_frequency:
-                    original['SpectrometerFrequency'] = args.override_frequency
-                json_s = json.dumps(original)
-                new_ext = Nifti1Extension(44, json_s.encode('UTF-8'))
-                nifti_mrs_img.header.extensions.clear()
-                nifti_mrs_img.header.extensions.append(new_ext)
+            if args.override_nucleus:
+                nifti_mrs_img.hdr_ext.ResonantNucleus = args.override_nucleus
 
     def insert_spectralwidth(self):
         """Ensure that the correct spectral width is inserted into the header extension"""
@@ -760,6 +852,11 @@ class spec2nii:
     def insert(self, args):
         from spec2nii.other import insert_hdr_ext
         self.imageOut, self.fileoutNames = insert_hdr_ext(args)
+
+    # Clean function
+    def clean(self, args):
+        from spec2nii.other import clean_hdr_ext
+        self.imageOut, self.fileoutNames = clean_hdr_ext(args)
 
 
 def main(*args):

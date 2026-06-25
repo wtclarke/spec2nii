@@ -112,7 +112,7 @@ def _process_svs_pfile(pfile):
         data, meta, dwelltime, fname_suffix = _process_oslaser(pfile)
     elif psd == 'oslaser' and numecho > 1:  # MM: If edited data, use _process_gaba
         data, meta, dwelltime, fname_suffix = _process_gaba(pfile)
-    elif psd == 'slaser':
+    elif psd in ('slaser', 'probe-sl'):
         data, meta, dwelltime, fname_suffix = _process_slaser(pfile)
     elif psd in ('hbcd', 'jpress', 'jpress_ac', 'gaba', 'probe-p-mega_rml', 'repress7'):
         data, meta, dwelltime, fname_suffix = _process_gaba(pfile)
@@ -196,7 +196,8 @@ def _process_oslaser(pfile):
 def _process_slaser(pfile):
     """Extract metabolite and reference data from a slaser format pfile
 
-    This seems to be like a standard probe-p. Maybe slaser is the canonical vendor implementation.
+    Handles slaser (Ralph Noeske's WIP slaser) and official
+    (MR30 in research mode and MR30.1 in clinical mode) PROBE-sL sequence
 
     :param Pfile pfile: Pfile object
     :return: List numpy data arrays
@@ -212,9 +213,26 @@ def _process_slaser(pfile):
     dwelltime = 1 / pfile.hdr.rhr_spectral_width
 
     meta = _populate_metadata(pfile, water_suppressed=True, data_dimensions=metab.ndim)
-    meta_ref = _populate_metadata(pfile, water_suppressed=False, data_dimensions=water.ndim)
+    meta.set_standard_def('TxOffset', -2.0)
+    meta_ref_ecc = _populate_metadata(pfile, water_suppressed=False, data_dimensions=water.ndim)
+    meta_ref_ecc.set_standard_def('TxOffset', -2.0)
+    meta_ref_quant = _populate_metadata(pfile, water_suppressed=False, data_dimensions=water.ndim)
+    meta_ref_quant.set_standard_def('TxOffset', 0.0)
 
-    return [metab, water], [meta, meta_ref], dwelltime, ['', '_ref']
+    if not np.isclose(pfile.hdr.rhr_rh_user19, 8.0):
+        return [metab, water], \
+            [meta, meta_ref_ecc], \
+            dwelltime, \
+            ['', '_ref_ecc']
+    else:
+
+        waterecc = water[..., [0, 1, 4, 5]]
+        waterquant = water[..., [2, 3, 6, 7]]
+
+        return [metab, waterecc, waterquant], \
+            [meta, meta_ref_ecc, meta_ref_quant], \
+            dwelltime, \
+            ['', '_ref_ecc', '_ref_no_ovs']
 
 
 def _add_editing_info(pfile, meta, data):
@@ -591,11 +609,7 @@ def _populate_metadata(pfile, water_suppressed=True, data_dimensions=None):
     # 'TxCoil'
     # Not Known
     # 'RxCoil'
-    meta.set_user_def(
-        key="ReceiveCoilName",
-        value=hdr.rhi_cname.decode(pfile.encoding, errors="replace"),
-        doc="Rx coil name.",
-    )
+    meta.set_standard_def('RxCoil', hdr.rhi_cname.decode(pfile.encoding, errors='replace'))
 
     # # 5.3 Sequence information
     # 'SequenceName'

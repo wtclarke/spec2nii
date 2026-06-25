@@ -6,11 +6,13 @@ from datetime import datetime
 from ast import literal_eval
 
 import numpy as np
+
 from nifti_mrs.create_nmrs import gen_nifti_mrs_hdr_ext
 from nifti_mrs.hdr_ext import Hdr_Ext
 
 from spec2nii.nifti_orientation import NIFTIOrient, calc_affine
 from spec2nii import __version__ as spec2nii_ver
+from spec2nii.utils import detect_file_encoding
 
 default_tag_order = ['DIM_DYN', 'DIM_EDIT', 'DIM_USER_0']
 
@@ -109,8 +111,11 @@ def read_spar(filename):
     :rtype: dict
     '''
 
+    # Automatically detect encoding
+    estimated_encoding = detect_file_encoding(filename)
+
     parameter_dict = {}
-    with open(filename, 'r') as f:
+    with open(filename, 'r', encoding=estimated_encoding) as f:
         for line in f:
             # ignore comments (!) and empty lines
             if line == "\n" or line.startswith("!"):

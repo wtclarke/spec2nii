@@ -2321,10 +2321,22 @@ def get_pfile_hdr_fields(version):
         plist.append(('pad_xx',                   ct.c_char * 51))
         plist.append(('rhi_image_uid',            ct.c_char * 32))
 
-    elif version_major in (26, 27, 28, 29, 30):
+    elif version_major in (26, 27, 28, 29, 30, 31):
         plist.append(('rhr_rh_rdbm_rev',           ct.c_float))
         plist.append(('rhr_rdb_hdr_off_data',      ct.c_int))
-        plist.append(('pad_xx',                    ct.c_char * 84))
+        plist.append(('rhr_rdb_hdr_off_per_pass',      ct.c_int))
+        plist.append(('rhr_rdb_hdr_off_unlock_raw',      ct.c_int))
+        plist.append(('rhr_rdb_hdr_off_data_acq_tab',      ct.c_int))
+        plist.append(('rhr_rdb_hdr_off_nex_tab',      ct.c_int))
+        plist.append(('rhr_rdb_hdr_off_nex_abort_tab',      ct.c_int))
+        plist.append(('rhr_rdb_hdr_off_tool',      ct.c_int))
+        plist.append(('rhr_rdb_hdr_off_exam',      ct.c_int))
+        plist.append(('rhr_rdb_hdr_off_series',      ct.c_int))
+        plist.append(('rhr_rdb_hdr_off_image',      ct.c_int))
+        plist.append(('rhr_rdb_hdr_off_ps',      ct.c_int))
+        plist.append(('rhr_rdb_hdr_off_grad_data',      ct.c_int))
+        plist.append(('rhr_rdb_hdr_off_CTT_data',      ct.c_int))
+        plist.append(('pad_xx',                    ct.c_char * 36))
         plist.append(('rhr_rh_scan_date',          ct.c_char * 10))
         plist.append(('rhr_rh_scan_time',          ct.c_char * 8))
         plist.append(('rhr_rh_logo',               ct.c_char * 10))
@@ -2433,6 +2445,9 @@ def get_pfile_hdr_fields(version):
 
         if version > 27.0:  # 27.001+
             plist.append(('pad_xx',                    ct.c_char * 8192))
+        if version >= 31.0:
+            # Compared to MR30(.1) MR31 increased the size of the prescan header by 304 bytes
+            plist.append(('pad_xx',                    ct.c_char * 304))
 
         plist.append(('rhe_magstrength',           ct.c_int))
         plist.append(('pad_xx',                    ct.c_char * 4))
@@ -2559,7 +2574,9 @@ def get_pfile_hdr_fields(version):
         plist.append(('rhi_freq_dir',              ct.c_short))
         plist.append(('pad_xx',                    ct.c_char * 130))
         plist.append(('rhi_psdname',               ct.c_char * 33))
-        plist.append(('pad_xx',                    ct.c_char * 84))
+        plist.append(('rhi_projname',              ct.c_char * 13))
+        plist.append(('rhi_psdiname',              ct.c_char * 13))
+        plist.append(('pad_xx',                    ct.c_char * 58))
         plist.append(('rhi_cname',                 ct.c_char * 17))
         plist.append(('pad_xx',                    ct.c_char * 51))
         plist.append(('rhi_image_uid',             ct.c_char * 32))

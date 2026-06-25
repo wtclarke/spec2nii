@@ -67,6 +67,8 @@ def test_svs(tmp_path):
     assert hdr_ext['SpectrometerFrequency'][0] == 127.76365
     assert hdr_ext['ResonantNucleus'][0] == '1H'
     assert hdr_ext['OriginalFile'][0] == svs_path.name
+    assert isinstance(hdr_ext['RxCoil'], str)
+    assert 'ReceiveCoilName' not in hdr_ext
 
     assert np.isclose(hdr_ext['EchoTime'], 0.27)
     assert np.isclose(hdr_ext['RepetitionTime'], 2.0)
@@ -325,7 +327,7 @@ def test_mm_slaser(tmp_path):
     assert hdr_ext['OriginalFile'][0] == mm_slaser.name
 
     img_ref, hdr_ext_ref = read_nifti_mrs_with_hdr(
-        tmp_path / f'{mm_slaser.stem}_ref.nii.gz')
+        tmp_path / f'{mm_slaser.stem}_ref_ecc.nii.gz')
     assert img_ref.shape[:5] == (1, 1, 1, 4096, 32)
     assert not hdr_ext_ref['WaterSuppressed']
     assert hdr_ext_ref['dim_5'] == 'DIM_COIL'
