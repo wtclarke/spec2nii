@@ -227,7 +227,7 @@ def test_rawdata_pv_360_1_1(tmp_path):
                            str(data_path)])
 
     # Img 7 - svs
-    img = read_nifti_mrs(tmp_path / 'raw_RAWDATA_7.nii.gz')
+    img = read_nifti_mrs(tmp_path / 'raw_Rawdata_7.nii.gz')
 
     assert img.shape == (1, 1, 1, 2048, 4)
     assert np.iscomplexobj(img.dataobj)
@@ -243,7 +243,7 @@ def test_rawdata_pv_360_1_1(tmp_path):
     assert 'acqp' in hdr_ext
 
     # Img 12 - svs
-    img = read_nifti_mrs(tmp_path / 'raw_RAWDATA_12.nii.gz')
+    img = read_nifti_mrs(tmp_path / 'raw_Rawdata_12.nii.gz')
 
     assert img.shape == (1, 1, 1, 2060, 4, 384)
     assert np.iscomplexobj(img.dataobj)
@@ -259,7 +259,7 @@ def test_rawdata_pv_360_1_1(tmp_path):
     assert 'acqp' in hdr_ext
 
     # Img 15 - svs
-    img = read_nifti_mrs(tmp_path / 'raw_RAWDATA_15.nii.gz')
+    img = read_nifti_mrs(tmp_path / 'raw_Rawdata_15.nii.gz')
 
     assert img.shape == (1, 1, 1, 2048, 4)
     assert np.iscomplexobj(img.dataobj)
@@ -333,7 +333,7 @@ def test_rawdata_pv_360_3_5(tmp_path):
                            str(data_path)])
 
     # Img 7 - svs
-    img = read_nifti_mrs(tmp_path / 'raw_RAWDATA_7.nii.gz')
+    img = read_nifti_mrs(tmp_path / 'raw_Rawdata_7.nii.gz')
 
     assert img.shape == (1, 1, 1, 2048, 4)
     assert np.iscomplexobj(img.dataobj)
@@ -349,7 +349,7 @@ def test_rawdata_pv_360_3_5(tmp_path):
     assert 'acqp' in hdr_ext
 
     # Img 19 - svs
-    img = read_nifti_mrs(tmp_path / 'raw_RAWDATA_19.nii.gz')
+    img = read_nifti_mrs(tmp_path / 'raw_Rawdata_19.nii.gz')
 
     assert img.shape == (1, 1, 1, 2048, 4, 32)
     assert np.iscomplexobj(img.dataobj)
