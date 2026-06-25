@@ -1,3 +1,143 @@
 [build-system]
-requires = ["setuptools", "versioneer", "pyyaml"]
+requires = ["setuptools>=77", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "spec2nii"
+description = "Multi-format in vivo MR spectroscopy conversion to NIFTI"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
+authors = [
+  { name = "Will Clarke", email = "william.clarke@ndcn.ox.ac.uk" },
+]
+dynamic = ["version"]
+dependencies = [
+  "numpy>=1.26",
+  "nibabel",
+  "pydicom==3.*",
+  "pyMapVBVD>=0.6.0",
+  "scipy>=1.13",
+  "brukerapi>=0.2.3",
+  "pandas",
+  "nifti-mrs>=1.4.1",
+  "chardet",
+  "textual>=7.4.0,<8"
+]
+
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/wtclarke/spec2nii"
+
+[project.scripts]
+spec2nii = "spec2nii.spec2nii:main"
+
+[project.optional-dependencies]
+dev = [
+  "build",
+  "flake8",
+  "flake8-pyproject",
+  "h5py",
+  "pillow",
+  "pytest",
+  "setuptools-scm>=8",
+]
+
+[tool.setuptools.packages.find]
+exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+spec2nii = ["bruker_properties.json",
+            "bruker_fid_override.json",
+            "bruker_2dseq_override.json",
+            "bruker_rawdata_override.json"]
+"spec2nii.GE" = ["VESPA_LICENSE"]
+
+[tool.setuptools_scm]
+fallback_version = "0+unknown"
+
+[tool.flake8]
+ignore = [
+  "E221",
+  "W503",
+  "W504",
+]
+per-file-ignores = [
+  "__init__.py:F401",
+  "spec2nii/GE/ge_read_pfile.py:W293, W291, E222",
+  "spec2nii/GE/ge_hdr_fields.py:E241",
+]
+exclude = [
+  ".git",
+  "__pycache__",
+  ".vscode",
+  "spec2nii/nifti_mrs/definitions.py",
+]
+max-line-length = 120
+
+[tool.codespell]
+skip = "ge_hdr_fields.py,ge_pfile.py,ge_read_pfile.py,fileiobase.py,varian.py"
+ignore-words-list = "te,varian"
+
+[tool.pytest.ini_options]
+markers = [
+  "orientation: marks tests as orientation tests (deselect with '-m \"not orientation\"')",
+]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-64", "osx-arm64"]
+
+[tool.pixi.dependencies]
+python = ">=3.10,<3.15"
+
+[tool.pixi.feature.py310]
+platforms = ["linux-64"]
+[tool.pixi.feature.py310.dependencies]
+python = "3.10.*"
+
+[tool.pixi.feature.py311]
+platforms = ["linux-64"]
+[tool.pixi.feature.py311.dependencies]
+python = "3.11.*"
+
+[tool.pixi.feature.py312]
+platforms = ["linux-64"]
+[tool.pixi.feature.py312.dependencies]
+python = "3.12.*"
+
+[tool.pixi.feature.py313]
+platforms = ["linux-64"]
+[tool.pixi.feature.py313.dependencies]
+python = "3.13.*"
+
+[tool.pixi.feature.py314]
+platforms = ["linux-64"]
+[tool.pixi.feature.py314.dependencies]
+python = "3.14.*"
+
+[tool.pixi.pypi-dependencies]
+spec2nii = { path = ".", editable = true, extras = ["dev"] }
+
+[tool.pixi.environments]
+default = { features = [], solve-group = "python" }
+py310 = { features = ["py310"], solve-group = "py310" }
+py311 = { features = ["py311"], solve-group = "py311" }
+py312 = { features = ["py312"], solve-group = "py312" }
+py313 = { features = ["py313"], solve-group = "py313" }
+py314 = { features = ["py314"], solve-group = "py314" }
+
+[tool.pixi.tasks]
+lint = "flake8 spec2nii"
+test = "pytest -m 'not orientation' tests"
+build = "python -m build"
