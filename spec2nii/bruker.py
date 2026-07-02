@@ -4,6 +4,7 @@ https://github.com/isi-nmr/brukerapi-python
 
 Author: Tomas Psorn <tomaspsorn@isibrno.cz>
         Will Clarke <william.clarke@ndcn.ox.ac.uk>
+        Vasilis Karlaftis <vasilis.karlaftis@ndcn.ox.ac.uk>
 Copyright (C) 2021 Institute of Scientific Instruments of the CAS, v. v. i.
 """
 import os
@@ -12,6 +13,7 @@ import warnings
 from datetime import datetime
 
 import numpy as np
+from pathlib import Path
 
 from brukerapi.dataset import Dataset
 from brukerapi.folders import Folder
@@ -24,10 +26,128 @@ from nifti_mrs.hdr_ext import Hdr_Ext
 from spec2nii.nifti_orientation import NIFTIOrient
 from spec2nii import __version__ as spec2nii_ver
 
+from textual.app import App, ComposeResult
+from textual.reactive import reactive
+from textual.widgets import Header, Footer, Static, ListView, ListItem
+from textual.containers import Horizontal, VerticalScroll
+from rich.text import Text
+
 # Default dimension assignments.
 fid_dimension_defaults = {
     'repetition': "DIM_DYN",
     'channel': "DIM_COIL"}
+
+
+def inspect_files(path):
+    """Inspect scan folder to provide options for processing.
+    """
+    from brukerapi.exceptions import UnsuportedDatasetType, IncompleteDataset, NotADatasetDir, InvalidDataset
+
+    path = Path(path)
+    # find all valid file formats
+    files = [[f for f in path.rglob('rawdata.job0')],
+             [f for f in path.rglob("fid*") if f.name in {"fid", "fid_proc.64"}],
+             [f for f in path.rglob('2dseq')]]
+    property_files = [importlib_resources.files('spec2nii') / 'bruker_rawdata_override.json',
+                      importlib_resources.files('spec2nii') / 'bruker_fid_override.json',
+                      importlib_resources.files('spec2nii') / 'bruker_2dseq_override.json']
+    colours = ['\033[96m', '\033[92m', '\033[91m', '\033[90m']
+    clr_rst = '\033[0m'
+    # read and print data layout for each format
+    files_list = []
+    num_list = []
+    cnt = 1
+    text_to_print = []
+    for i, (file, prf) in enumerate(zip(files, property_files)):
+        if file == []:
+            continue
+        for f in file:
+            skip_file = False
+            clr = colours[i]
+            try:
+                d = Dataset(f, property_files=[prf])
+            except (UnsuportedDatasetType, IncompleteDataset, NotADatasetDir, InvalidDataset):
+                continue
+            if len(file) == 1:
+                text = f"\n[{cnt}] {f.stem.upper()} data layout"
+            else:
+                text = f"\n[{cnt}] {f.parent.stem + '/' + f.stem.upper()} data layout"
+            # check if 2dseq is of a valid 'VisuCoreFrameType' for conversion
+            if d.type == '2dseq':
+                frame_type = d.parameters['visu_pars'].to_dict()['VisuCoreFrameType']['value']
+                if isinstance(frame_type, str) or 'REAL_IMAGE' not in frame_type or 'IMAGINARY_IMAGE' not in frame_type:
+                    text += " - INVALID FOR MRS NIfTI CONVERSION"
+                    # change colour to grey
+                    clr = colours[-1]
+                    # skip file from files_list
+                    skip_file = True
+                text += f"\n\t{'VisuCoreFrameType':20s}: {frame_type}"
+            # check if fid is of MRSI data and print a warning that it might not be reconstructed
+            elif d.type in ['fid', 'fid_proc', 'rawdata']:
+                if d.scheme_id == 'CSI':
+                    text += f" - WARNING: MRSI {d.type.upper()} data might not be reconstructed. " \
+                            "Use '2dseq' if available."
+                    # change colour to grey
+                    clr = colours[-1]
+            # skip any other formats
+            else:
+                continue
+            # universal printing
+            text_to_print.append(clr + text + clr_rst)
+            for key, val in d._schema.layouts.items():
+                text_to_print.append(f"\t{clr}{key:20s}: {val}{clr_rst}")
+            # append lists and bump counter
+            if not skip_file:
+                files_list.append(f)
+                num_list.append(cnt)
+            cnt += 1
+    return files_list, num_list, text_to_print
+
+
+def inspect_scans(scan_list):
+    """Inspect subject folder to provide scan information.
+    """
+    keys_to_print = {
+        "ACQ_protocol_name": "Protocol Name",
+        "ACQ_scan_name": "Scan Name",
+        "ACQ_dim_desc": "Scan Type",
+    }
+    text_to_print = []
+    to_delete = []
+    updated_scan_list = scan_list.copy()
+    for scan in updated_scan_list:
+        try:
+            with open(scan / "acqp", "r", encoding="utf-8") as f:
+                readlines = list(f)
+        except FileNotFoundError:
+            to_delete.append(updated_scan_list.index(scan))
+            continue
+        scan_text = [f"\n{scan.name}"]
+        for i, line in enumerate(readlines):
+            line = line.strip()
+            if line.startswith("##$"):
+                key = line[3:].split("=")[0]
+                if key in keys_to_print:
+                    # get the value from the next line
+                    value_line = readlines[i + 1].strip()
+                    if value_line.startswith("<") and value_line.endswith(">"):
+                        scan_text.append(f"\t{keys_to_print[key]:20s}: {value_line[1:-1]}")
+                    else:
+                        scan_text.append(f"\t{keys_to_print[key]:20s}: {value_line}")
+
+        # update colour
+        if any("Spectroscopic" in line for line in scan_text):
+            scan_text = [f"\033[96m{line}" for line in scan_text]
+        else:
+            scan_text = [f"\033[0m{line}" for line in scan_text]
+        # add it to main text
+        text_to_print.extend(scan_text)
+
+    # remove scans that could not be read
+    for idx in sorted(to_delete, reverse=True):
+        del updated_scan_list[idx]
+
+    return updated_scan_list, text_to_print
 
 
 def read_bruker(args):
@@ -47,7 +167,7 @@ def read_bruker(args):
                 data,
                 dwelltime,
                 meta,
-                orientation.Q44,
+                orientation.Q44 if orientation else None,
                 no_conj=True)
         )
         fileoutNames.append(name)
@@ -69,17 +189,26 @@ def yield_bruker(args):
 
     # get location of the spec2nii Bruker properties configuration file
     ref1 = importlib_resources.files('spec2nii') / 'bruker_properties.json'
-    ref2 = importlib_resources.files('spec2nii') / 'bruker_fid_override.json'
-
+    ref2 = ref1
+    if args.mode == 'FID':
+        ref2 = importlib_resources.files('spec2nii') / 'bruker_fid_override.json'
+        parameter_files = []
+    elif args.mode == '2DSEQ':
+        ref2 = importlib_resources.files('spec2nii') / 'bruker_2dseq_override.json'
+        # add the method and reco files in addition to defaults as needed in subsequent properties
+        parameter_files = ['method']
+    elif args.mode == 'RAWDATA':
+        ref2 = importlib_resources.files('spec2nii') / 'bruker_rawdata_override.json'
+        parameter_files = []
     with importlib_resources.as_file(ref1) as bruker_properties_path:
-        with importlib_resources.as_file(ref2) as bruker_fid_override_path:
+        with importlib_resources.as_file(ref2) as bruker_override_path:
 
             # case of Bruker dataset
             if os.path.isfile(args.file):
                 d = Dataset(
                     args.file,
-                    property_files=[bruker_fid_override_path, bruker_properties_path],
-                    parameter_files=['method'])
+                    parameter_files=parameter_files,
+                    property_files=[bruker_override_path, bruker_properties_path])
                 try:
                     d.query(queries)
                 except FilterEvalFalse:
@@ -88,12 +217,18 @@ def yield_bruker(args):
 
             # case of folder containing Bruker datasets
             elif os.path.isdir(args.file):
-
+                dataset_index = [args.mode.lower()]
+                if args.mode == 'FID':
+                    dataset_index.append('fid_proc.64')
+                # Code excludes any rawdata.navigator files, explicitly selecting rawdata.job0 files
+                if args.mode == 'RAWDATA':
+                    dataset_index = ['rawdata.job0']
                 # process individual datasets
-                for dataset in Folder(args.file, dataset_state={
-                    "parameter_files": ['method'],
-                    "property_files": [bruker_properties_path]
-                }).get_dataset_list_rec():
+                folder_list = Folder(args.file, dataset_state={
+                                     "parameter_files": parameter_files,
+                                     "property_files": [bruker_override_path, bruker_properties_path]},
+                                     dataset_index=dataset_index)
+                for dataset in folder_list.get_dataset_list_rec():
                     with dataset as d:
                         try:
                             d.query(queries)
@@ -110,7 +245,10 @@ def _get_queries(args):
     if args.mode == '2DSEQ':
         queries = ["@type=='2dseq'", "@is_spectroscopy==True", "@is_complex==True"]
     elif args.mode == 'FID':
-        queries = ["@type=='fid'", "@is_spectroscopy==True"]
+        queries = ["@type in ['fid', 'fid_proc']", "@is_spectroscopy==True"]
+    # TODO review and update RAWDATA handling
+    elif args.mode == 'RAWDATA':
+        queries = ["@type=='rawdata'", "@is_spectroscopy==True"]
     return queries + args.query
 
 
@@ -122,35 +260,51 @@ def _proc_dataset(d, args):
     # merge 2dseq complex frame group if present
     if d.is_complex and d.type == '2dseq':
         d = FrameGroupMerger().merge(d, 'FG_COMPLEX')
-
+    # raise warning for FID MRSI data
+    if d.type in ['fid', 'fid_proc', 'rawdata'] and d.scheme_id == 'CSI':
+        warnings.warn(f"MRSI {d.type.upper()} data might not be reconstructed. "
+                      "Interpret the results with caution! (use '2dseq' if available)")
     # prepare the data array
     if d.is_svs:
-        data = _prep_data_svs(d)
+        data = _prep_data_svs(d, args.zeropad)
     elif d.is_mrsi:
-        data = _prep_data_mrsi(d)
+        data = _prep_data_mrsi(d, args.zeropad, args.nospectrum)
     else:
         data = d.data
-
+    d.data = data
     # get properties
     properties = d.to_dict()
 
     # Orientation information
-    if d.type == 'fid':
+    if d.type in ['fid', 'fid_proc', 'rawdata']:
         orientation = NIFTIOrient(_fid_affine_from_params(d))
-    else:
+    elif d.type == '2dseq':
         orientation = NIFTIOrient(np.reshape(np.array(properties['affine']), (4, 4)))
+    else:
+        orientation = None
 
     # Meta data
-    if d.type == 'fid':
+    if d.type in ['fid', 'fid_proc']:
         meta = _fid_meta(d, dump=args.dump_headers)
-    else:
+    elif d.type == 'rawdata':
+        meta = _rawdata_meta(d, dump=args.dump_headers)
+    elif d.type == '2dseq':
         meta = _2dseq_meta(d, dump=args.dump_headers)
-
-    # Dwelltime - to do resolve this factor of 2 issue
-    if d.type == 'fid':
-        dwelltime = d.dwell_s * 2
     else:
-        dwelltime = d.dwell_s * 2
+        meta = None
+
+    # Dwelltime
+    if abs(d.dwell_s - d.dwell_time) >= 1:
+        # user select which of the two to use as dwelltime
+        print("Warning: dwell time in acqp file 'SW_h' and method file 'PVM_SpecSWH' differ significantly (>=1Hz).")
+        print("Please select which one to use as dwell time:")
+        print(f"1: 'SW_h'={d.dwell_s}")
+        print(f"2: 'PVM_SpecSWH'={d.dwell_time}")
+
+        dwelltime = input()
+        dwelltime = d.dwell_s if dwelltime == '1' else d.dwell_time
+    else:
+        dwelltime = d.dwell_s
 
     if args.fileout:
         name = args.fileout + '_' + d.id.rstrip('_')
@@ -160,7 +314,7 @@ def _proc_dataset(d, args):
     yield data, orientation, dwelltime, meta, name
 
 
-def _prep_data_svs(d):
+def _prep_data_svs(d, zeropad=False):
     """
     Push the spectral dimension of the data array to the 3rd position for SVS data
 
@@ -169,10 +323,18 @@ def _prep_data_svs(d):
 
     """
     data = d.data
-    if d.type == 'fid':
+    if d.type in ['fid', 'fid_proc', 'rawdata']:
         # Remove points acquired before echo
-        data = data[d.points_prior_to_echo:, ...]
+        if zeropad and d.points_prior_to_echo > 0:
+            padded_data = np.zeros_like(data)
+            padded_data[:-d.points_prior_to_echo] = data[d.points_prior_to_echo:]
+            data = padded_data
+        else:
+            data = data[d.points_prior_to_echo:, ...]
 
+        # Correct data by the working_offset
+        if d.working_offset[0] != 0:
+            data = _correct_offset(data, d.dwell_time, d.working_offset[0] * d.freq_ref[0])
         # fid data appears to need to be conjugated for NIFTI-MRS convention
         data = data.conj()
 
@@ -182,21 +344,36 @@ def _prep_data_svs(d):
     return data
 
 
-def _prep_data_mrsi(d):
+def _prep_data_mrsi(d, zeropad=False, nospectrum=False):
     """
     Push the spectral dimension of the data array to the 3rd position for CSI data
 
     """
     data = d.data
-    if d.type == 'fid':
+    if d.type in ['fid', 'fid_proc', 'rawdata']:
         # Remove points acquired before echo
-        data = data[d.points_prior_to_echo:, ...]
+        if zeropad and d.points_prior_to_echo > 0:
+            padded_data = np.zeros_like(data)
+            padded_data[:-d.points_prior_to_echo] = data[d.points_prior_to_echo:]
+            data = padded_data
+        else:
+            data = data[d.points_prior_to_echo:, ...]
+
+        # TODO what should we do with working_offset here?
 
         # fid data appears to need to be conjugated for NIFTI-MRS convention
         data = data.conj()
-
-    # push the spectral dimension to position 2
-    data = np.moveaxis(data, 0, 2)
+    elif d.type == '2dseq' and not nospectrum:
+        warnings.warn(f"MRSI {d.type} data are assumed to be stored in frequency space.\n"
+                      f"If this is not true, please use the '--nospectrum' flag.")
+        # invert frequency shift
+        data = np.fft.ifftshift(data, axes=0)
+        # invert frequency order
+        data = np.flip(data, axis=0)
+        # invert FFT
+        data = np.fft.ifft(data, axis=0)
+    # push the spectral dimension to last position
+    data = np.moveaxis(data, 0, -1)
     # add empty dimensions to push the spectral dimension to the 3rd index
     data = np.expand_dims(data, axis=2)
     return data
@@ -204,7 +381,7 @@ def _prep_data_mrsi(d):
 
 def _fid_affine_from_params(d):
     """ First attempt to create 4x4 affine from fid headers"""
-    warnings.warn('The orientation of bruker fid data is mostly untested.')
+    warnings.warn(f"The orientation of bruker {d.type} data is mostly untested.")
 
     orientation = np.squeeze(d.parameters['method']['PVM_VoxArrGradOrient'].value)
     shift = np.squeeze(d.parameters['method']['PVM_VoxArrPosition'].value)
@@ -299,12 +476,16 @@ def _2dseq_meta(d, dump=False):
 
     # Tags
     unknown_count = 0
-    for ddx, dim in enumerate(d.dim_type[1:]):
-        if dim in fid_dimension_defaults:
-            obj.set_dim_info(ddx, fid_dimension_defaults[dim])
-        else:
-            obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
-            unknown_count += 1
+    for ddx, dim in enumerate(d.dim_type):
+        # have an early exit if you exhausted the data dimensions
+        if ddx >= d.dim - 4:
+            break
+        if d.data.shape[ddx + 4] > 1:
+            if dim in fid_dimension_defaults:
+                obj.set_dim_info(ddx, fid_dimension_defaults[dim])
+            else:
+                obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
+                unknown_count += 1
 
     return obj
 
@@ -382,11 +563,297 @@ def _fid_meta(d, dump=False):
 
     # Tags
     unknown_count = 0
+    # skip first dim_type as it is defined to be: k_space_encode_step_0
     for ddx, dim in enumerate(d.dim_type[1:]):
-        if dim in fid_dimension_defaults:
-            obj.set_dim_info(ddx, fid_dimension_defaults[dim])
-        else:
-            obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
-            unknown_count += 1
+        # have an early exit if you exhausted the data dimensions
+        if ddx >= d.dim - 4:
+            break
+        if d.data.shape[ddx + 4] > 1:
+            if dim in fid_dimension_defaults:
+                obj.set_dim_info(ddx, fid_dimension_defaults[dim])
+            else:
+                obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
+                unknown_count += 1
 
     return obj
+
+
+def _rawdata_meta(d, dump=False):
+    """ Extract information from method and acqp file into hdr_ext.
+
+    :param d: Dataset
+    :return: NIfTI MRS hdr ext object.
+    """
+
+    # Extract required metadata and create hdr_ext object
+    cf = d.SpectrometerFrequency
+    obj = Hdr_Ext(
+        cf,
+        d.ResonantNucleus)
+
+    # # 5.1 MRS specific Tags
+    # 'EchoTime'
+    obj.set_standard_def('EchoTime', float(d.TE * 1E-3))
+    # 'RepetitionTime'
+    obj.set_standard_def('RepetitionTime', float(d.TR / 1E3))
+    # 'InversionTime'
+    # 'MixingTime'
+    # 'ExcitationFlipAngle'
+    # 'TxOffset'
+    # Bit of a guess, not sure of units.
+    obj.set_standard_def('TxOffset', float(d.working_offset[0]))
+    # 'VOI'
+    # 'WaterSuppressed'
+    # No apparent parameter stored in the SPAR info.
+    # 'WaterSuppressionType'
+    # 'SequenceTriggered'
+    # # 5.2 Scanner information
+    # 'Manufacturer'
+    obj.set_standard_def('Manufacturer', 'Bruker')
+    # 'ManufacturersModelName'
+    # 'DeviceSerialNumber'
+    # 'SoftwareVersions'
+    obj.set_standard_def('SoftwareVersions', d.PV_version)
+    # 'InstitutionName'
+    # 'InstitutionAddress'
+    # 'TxCoil'
+    # 'RxCoil'
+    # # 5.3 Sequence information
+    # 'SequenceName'
+    obj.set_standard_def('SequenceName', d.method_desc)
+    # 'ProtocolName'
+    # # 5.4 Sequence information
+    # 'PatientPosition'
+    # 'PatientName'
+    obj.set_standard_def('PatientName', d.subj_id)
+    # 'PatientID'
+    # 'PatientWeight'
+    # 'PatientDoB'
+    # 'PatientSex'
+    # # 5.5 Provenance and conversion metadata
+    # 'ConversionMethod'
+    obj.set_standard_def('ConversionMethod', f'spec2nii v{spec2nii_ver}')
+    # 'ConversionTime'
+    conversion_time = datetime.now().isoformat(sep='T', timespec='milliseconds')
+    obj.set_standard_def('ConversionTime', conversion_time)
+    # 'OriginalFile'
+    obj.set_standard_def('OriginalFile', [str(d.path), ])
+    # # 5.6 Spatial information
+    # 'kSpace'
+    obj.set_standard_def('kSpace', [False, False, False])
+
+    # Stuff full headers into user fields
+    if dump:
+        for hdr_file in d.parameters:
+            obj.set_user_def(key=hdr_file,
+                             doc=f'Bruker {hdr_file} file.',
+                             value=d.parameters[hdr_file].to_dict())
+
+    # Tags
+    unknown_count = 0
+    for ddx, dim in enumerate(d.dim_type):
+        # have an early exit if you exhausted the data dimensions
+        if ddx >= d.dim - 4:
+            break
+        if d.data.shape[ddx + 4] > 1:
+            if dim in fid_dimension_defaults:
+                if dim == 'channel' and d.data.shape[ddx + 4] == d.channels:
+                    obj.set_dim_info(ddx, fid_dimension_defaults[dim])
+                elif dim == 'repetition' and d.data.shape[ddx + 4] == d.nreps:
+                    obj.set_dim_info(ddx, fid_dimension_defaults[dim])
+                else:
+                    obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
+                    unknown_count += 1
+            else:
+                obj.set_dim_info(ddx, f'DIM_USER_{unknown_count}')
+                unknown_count += 1
+
+    return obj
+
+
+def _correct_offset(data, dwell, offset_hz):
+    """Apply linear phase to correct a frequency offset
+
+    :param data: data (nfids * npoints)
+    :type data: np.ndarray
+    :param dwell: dwell time in seconds
+    :type dwell: float
+    :param offset_hz: Frequency offset to correct, in hertz
+    :type offset_hz: float
+    :return: shifted data
+    :rtype: np.ndarray
+    """
+    time_axis = np.arange(data.shape[0]) * dwell
+    lin_phase = np.exp(1j * time_axis * offset_hz * 2 * np.pi)
+    # reshape to match data dimensions
+    lin_phase = lin_phase.reshape((-1,) + (1,) * (data.ndim - 1))
+    return data * lin_phase
+
+
+class DataFolderBrowser(App):
+    """
+    Single-panel dynamic UI:
+      - browse mode: show scan folders
+      - inspect mode: show inspect text header + clickable file list
+    Behaviour:
+      - start_folder: Path or None
+      - if start_folder is provided -> start in inspect mode with no back allowed
+      - otherwise -> start in browse mode (list immediate child dirs)
+      - when user selects a file, self.selected = (str(path), mode) and app exits
+    """
+
+    # Only include back binding when we allow it at runtime
+    BINDINGS = [("b", "back", "Back"), ("q", "quit", "Quit")]
+    current_mode = reactive("browse")  # "browse" or "inspect"
+
+    def __init__(self, root_path: Path, start_folder: Path | None = None, **kwargs):
+        super().__init__(**kwargs)
+        self.root_path = Path(root_path).resolve()
+        self.start_folder = Path(start_folder).resolve() if start_folder else None
+        self.selected = None
+        self.allow_back = False  # toggled when entering inspect in subject mode
+
+    def compose(self) -> ComposeResult:
+        yield Header()
+        # single horizontal column: scrollable header (Static inside VerticalScroll) + a ListView
+        with Horizontal():
+            with VerticalScroll(id="main_scroll"):
+                self.header_static = Static("", id="header")
+                yield self.header_static
+            self.main_list = ListView(id="main_list")
+            yield self.main_list
+        yield Footer()
+
+    async def on_mount(self):
+        # Decide starting mode
+        if self.start_folder:
+            # start in inspect mode for the scan, no back allowed
+            self.allow_back = False
+            await self.enter_inspect(self.start_folder)
+        else:
+            # subject mode: populate scan list
+            self.current_mode = "browse"
+            self.allow_back = False
+            self.show_browse()
+        # focus the list
+        self.main_list.focus()
+
+    # ---------- browse helpers ----------
+    def _list_subject_folders(self) -> list[Path]:
+        # immediate subfolders only (assume subject layout: each child is a scan)
+        base = self.root_path
+        try:
+            folders = sorted((p for p in base.iterdir() if p.is_dir()),
+                             key=lambda p: (p.name.isdigit(), int(p.name) if p.name.isdigit() else p.name))
+            return folders
+        except Exception:
+            return []
+
+    def show_browse(self):
+        """Populate the main_list with scan folders (browse mode)."""
+        self.current_mode = "browse"
+        scan_list = self._list_subject_folders()
+
+        scan_list, text_to_print = inspect_scans(scan_list)
+
+        # render header text
+        text_block = f"Subject: {self.root_path}\n\n"
+        text_block += "Select a scan folder.\n\n"
+        text_block += "\n".join(text_to_print)
+        self.header_static.update(Text.from_ansi(text_block))
+
+        # populate list synchronously
+        self.main_list.clear()
+        for p in scan_list:
+            item = ListItem(Static(str(p.name)))
+            item.data = p
+            self.main_list.append(item)
+        # remove the 'back' binding if present
+        try:
+            self.unbind("b")
+        except Exception:
+            pass
+        self.main_list.focus()
+
+    # ---------- inspect helpers ----------
+    async def enter_inspect(self, folder_path: Path, allow_back: bool = False):
+        """
+        Switch to inspect mode for folder_path.
+        If allow_back True, we add a 'b' binding to go back to browse.
+        """
+        self.current_mode = "inspect"
+        self.allow_back = bool(allow_back)
+        # toggle binding for back
+        if allow_back:
+            # add 'back' binding
+            try:
+                self.bind("b", "back", "Back")
+            except Exception:
+                pass
+        else:
+            # remove the 'back' binding if present
+            try:
+                self.unbind("b")
+            except Exception:
+                pass
+
+        files_list, num_list, text_to_print = inspect_files(folder_path)
+
+        # render header text
+        text_block = f"Scan: {folder_path}\n\n"
+        text_block += "Select a file to process it.\n\n"
+        text_block += "\n".join(text_to_print)
+        self.header_static.update(Text.from_ansi(text_block))
+
+        # populate main_list with selectable files (1..N)
+        self.main_list.clear()
+        for i, p in zip(num_list, files_list):
+            item = ListItem(Static(f"[{i}] {os.path.relpath(p, folder_path)}"))
+            item.data = p
+            self.main_list.append(item)
+
+        # focus the list
+        self.main_list.focus()
+
+    async def action_back(self):
+        """Back action when in inspect mode with allow_back=True."""
+        if self.current_mode == "inspect" and self.allow_back:
+            self.show_browse()
+
+    # ---------- selection handler ----------
+    async def on_list_view_selected(self, event) -> None:
+        """
+        Single handler:
+         - in browse mode: node.data is a Path scan -> enter_inspect(scan, allow_back=True)
+         - in inspect mode: node.data is a Path file -> finalise selection and exit
+        """
+        # robust event parsing (similar pattern as before)
+        sender = getattr(event, "sender", None) or getattr(event, "control", None) or getattr(event, "list_view", None)
+        node = getattr(event, "item", None) or getattr(event, "node", None) or getattr(event, "entry", None)
+
+        if sender is None or node is None:
+            # last resort: pick focused item
+            try:
+                node = self.main_list.get_child_at_index(self.main_list.index or 0)
+            except Exception:
+                return
+
+        if self.current_mode == "browse":
+            # user clicked a subject -> enter inspect for that folder with back allowed
+            folder_path = node.data
+            if folder_path is not None:
+                await self.enter_inspect(folder_path, allow_back=True)
+            return
+
+        # inspect mode -> finalise file selection
+        if self.current_mode == "inspect":
+            filename = node.data
+            if filename is None:
+                return
+            mode = filename.stem.upper()
+            if mode == "FID_PROC":
+                mode = "FID"
+            # store string path for CLI boundary
+            self.selected = (str(filename), mode)
+            self.exit()
+            return

@@ -1,0 +1,350 @@
+{
+  "subj_id": [
+  {
+    "cmd": "#SUBJECT_id[1:-1]",
+    "conditions": [
+
+    ]
+  },
+  {
+    "cmd": "''",
+    "conditions": [
+
+    ]
+  }
+],
+"study_id": [
+  {
+    "cmd": "str(#SUBJECT_study_nr)",
+    "conditions": [
+
+    ]
+  },
+  {
+    "cmd": "''",
+    "conditions": [
+
+    ]
+  }
+],
+"exp_id": [
+  {
+    "cmd": "@path.parent.name",
+    "conditions": [
+
+    ]
+  },
+  {
+    "cmd": "''",
+    "conditions": [
+
+    ]
+  }
+],
+"id": [
+  {
+    "cmd": "f'Rawdata_{@exp_id}_{@subj_id}_{@study_id}'",
+    "conditions": [
+      "@subtype=='job0'"
+    ]
+  },
+  {
+    "cmd": "f'Rawdata_{@subtype}_{@exp_id}_{@subj_id}_{@study_id}'",
+    "conditions": [
+      "@subtype!='job0'"
+    ]
+  }
+],
+  "scheme_id": [
+    {
+      "cmd": "'CART_2D'" ,
+      "conditions": [
+        ["#PULPROG",
+          [
+            "<FLASH.ppg>",
+            "<FLASHAngio.ppg>",
+            "<RAREVTR.ppg>",
+            "<MGE.ppg>",
+            "<RARE.ppg>",
+            "<FcFLASH.ppg>",
+            "<DtiStandard.ppg>",
+            "<FISP.ppg>",
+            "<MSME.ppg>",
+            "<FAIR_RARE.ppg>",
+            "<RAREst.ppg>",
+            "<FLOWMAP.ppg>",
+            "<MDEFT.ppg>",
+            "<igFLASH.ppg>",
+            "<B1Map.ppg>",
+            "<DESS.ppg>"
+          ]
+        ],
+        "#ACQ_dim==2",
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>', '<PV-360.1.1>']"
+      ]
+    },
+    {
+      "cmd": "'CART_3D'" ,
+      "conditions": [
+        ["#PULPROG[1:-1]",
+          [
+            "FLASH.ppg",
+            "FLASHAngio.ppg",
+            "RAREVTR.ppg",
+            "MGE.ppg",
+            "RARE.ppg",
+            "FISP.ppg",
+            "MDEFT.ppg"
+          ]
+        ],
+        "#ACQ_dim==3",
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>', '<PV-360.1.1>']"
+      ]
+    },
+    {
+      "cmd": "'FIELD_MAP'" ,
+      "conditions": [
+        ["#PULPROG[1:-1]",
+          [
+            "FieldMap.ppg"
+          ]
+        ],
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>', '<PV-360.1.1>']"
+      ]
+    },
+    {
+      "cmd": "'RADIAL'" ,
+      "conditions": [
+        ["#PULPROG[1:-1]",
+          [
+            "UTE.ppg",
+            "UTE3D.ppg",
+            "ZTE.ppg"
+          ]
+        ],
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>', '<PV-360.1.1>']"
+      ]
+    },
+    {
+      "cmd": "'EPI'" ,
+      "conditions": [
+        ["#PULPROG[1:-1]",
+          [
+            "EPI.ppg",
+            "DtiEpi.ppg",
+            "navigatorEPI_OM.ppg",
+            "EPSI.ppg",
+            "FAIR_EPI.ppg",
+            "CASL_EPI.ppg",
+            "T1_EPI.ppg",
+            "T2_EPI.ppg",
+            "T2S_EPI.ppg"
+          ]
+        ],
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>', '<PV-360.1.1>']"
+      ]
+    },
+    {
+      "cmd": "'SPECTROSCOPY'" ,
+      "conditions": [
+        ["#PULPROG[1:-1]",
+          [
+            "PRESS.ppg",
+            "STEAM.ppg",
+            "SINGLEPULSE.ppg",
+            "NSPECT.ppg",
+            "ISIS.ppg",
+            "CPMG.ppg",
+            "RfProfile.ppg",
+            "fmap_fq.ppg",
+            "ste_laser_dIR_WSTM.ppg",
+            "mt_sLASER.ppg",
+            "mt_MEGA_sLASER_V35.ppg",
+            "cl_STELASER_PA360_b.ppg",
+            "cl_STELASER_PA_35.ppg"
+          ]
+        ],
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+      ]
+    },
+    {
+      "cmd": "'SPECTROSCOPY'" ,
+      "conditions": [
+        ["#PULPROG[1:-1]",
+          [
+            "PRESS.ppg",
+            "STEAM.ppg",
+            "SINGLEPULSE.ppg",
+            "NSPECT.ppg",
+            "ISIS.ppg",
+            "CPMG.ppg",
+            "RfProfile.ppg",
+            "fmap_fq.ppg",
+            "ste_laser_dIR_WSTM.ppg",
+            "mt_sLASER.ppg",
+            "mt_MEGA_sLASER_V35.ppg",
+            "cl_STELASER_PA360_b.ppg",
+            "cl_STELASER_PA_35.ppg"
+          ]
+        ],
+        "#ACQ_sw_version[0:8]=='<PV-360.'"
+      ]
+    },
+    {
+      "cmd": "'CSI'" ,
+      "conditions": [
+        ["#PULPROG[1:-1]",
+          [
+            "CSI.ppg"
+          ]
+        ],
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']"
+      ]
+    },
+        {
+      "cmd": "'CSI'" ,
+      "conditions": [
+        ["#PULPROG[1:-1]",
+          [
+            "CSI.ppg"
+          ]
+        ],
+        "#ACQ_sw_version[0:8]=='<PV-360.'"
+      ]
+    },
+    {
+      "cmd": "'SPIRAL'" ,
+      "conditions": [
+        ["#PULPROG[1:-1]",
+          [
+            "SPIRAL.ppg",
+            "DtiSpiral.ppg"
+          ]
+        ],
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>', '<PV-360.1.1>']"
+      ]
+    },
+    {
+      "cmd": "'ZTE'" ,
+      "conditions": [
+        ["#PULPROG[1:-1]",
+          [
+            "ZTE.ppg"
+          ]
+        ],
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>', '<PV-360.1.1>']"
+      ]
+    },
+    {
+      "cmd": "'SPECTROSCOPY'",
+      "conditions": []
+    }
+  ],
+  "job_desc": [
+    {
+      "cmd": "#ACQ_jobs.primed_dict(7)['<{}>'.format(@subtype)]",
+      "conditions": [
+        "#ACQ_sw_version[0:8]=='<PV-360.'"
+      ]
+    },
+    {
+      "cmd": "#ACQ_jobs.nested[0][:-1]",
+      "conditions": [
+        "#ACQ_sw_version[0:8]=='<PV-360.'"
+      ]
+    },
+    {
+      "cmd": "#ACQ_jobs.nested[0]",
+      "conditions": [
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']",
+        "@subtype == 'job0'"
+      ]
+    },
+    {
+      "cmd": "#ACQ_jobs.nested[1]",
+      "conditions": [
+        "#ACQ_sw_version in ['<PV 5.1>', '<PV 6.0>', '<PV 6.0.1>', '<PV-7.0.0>']",
+        "@subtype == 'job1'"
+      ]
+    }
+  ],
+  "shape_storage": [
+    {
+      "cmd": "(@job_desc[0],) + (#PVM_EncNReceivers,) + (@job_desc[3],)",
+      "conditions": ["@scheme_id=='CSI'"]
+    },
+    {
+      "cmd": "(@job_desc[0],) + (#PVM_EncNReceivers,) + (@job_desc[3],)",
+      "conditions": ["#PVM_EncNReceivers>1"]
+    },
+    {
+      "cmd": "(@job_desc[0],) + (@job_desc[3],)",
+      "conditions": ["#PVM_EncNReceivers==1"]
+    }
+  ],
+  "dwell_s": [
+    {
+      "cmd": "1./#SW_h",
+      "conditions": [
+        "#SW_h!=0"
+      ]
+    },
+    {
+      "cmd": "1./@job_desc[5]",
+      "conditions": [
+        "#SW_h==0"
+      ]
+    }
+  ],
+  "dim_type": [
+    {
+      "cmd": [
+        "'channel'",
+        "'repetition'",
+        "'k_space_encode_step_0'"
+      ],
+      "conditions": [
+        "@scheme_id=='SPECTROSCOPY'",
+        "#PVM_EncNReceivers>1"
+      ]
+    },
+    {
+      "cmd": [
+        "'repetition'",
+        "'k_space_encode_step_0'"
+      ],
+      "conditions": [
+        "@scheme_id=='SPECTROSCOPY'",
+        "#PVM_EncNReceivers==1"
+      ]
+    },
+    {
+      "cmd": [
+        "'channel'",
+        "'repetition'",
+        "'k_space_encode_step_0'"
+      ],
+      "conditions": [
+        "@scheme_id=='CSI'"
+      ]
+    }
+  ],
+  "npoints": [
+    {
+      "cmd": "#PVM_SpecMatrix.tuple[0]",
+      "conditions": []
+    }
+  ],
+  "naverages": [
+    {
+      "cmd": "#PVM_NAverages",
+      "conditions": []
+    }
+  ],
+  "nreps": [
+    {
+      "cmd": "#PVM_NRepetitions",
+      "conditions": []
+    }
+  ]
+}

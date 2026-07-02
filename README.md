@@ -143,6 +143,8 @@ Both classic and enhanced DICOM is handled. Well tested on the vendors' own PRES
 `spec2nii bruker -m 2DSEQ 2DSEQ_FILE_or_DIR`
 `spec2nii bruker -m FID FID_FILE_or_DIR`
 
+Use the `--inspect FOLDER` option to run a textual App and navigate through a folder's scans and available data formats.
+
 Use the `-d` option to dump the header files (method and acqp for fid, visu_pars for 2dseq) into the header extension.
 
 Additional filters can be added by defining additional queries using the `-q` flag.

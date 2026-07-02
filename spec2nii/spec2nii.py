@@ -285,17 +285,23 @@ class spec2nii:
 
         # Bruker format
         parser_bruker = subparsers.add_parser('bruker', help='Convert from Bruker data format.')
-        parser_bruker.add_argument('file', help='2dseq file to convert', type=str)
+        parser_bruker.add_argument('file', help="fid, 2dseq or rawdata file to convert. "
+                                   "If using '--inspect', specify a directory.", type=str)
         parser_bruker.add_argument('-q', '--query', action='append', default=[])
-        parser_bruker.add_argument('-m', '--mode', type=str, default='2DSEQ', choices=['2DSEQ', 'FID'])
+        parser_bruker.add_argument('-m', '--mode', type=str, default='2DSEQ', choices=['2DSEQ', 'FID', 'RAWDATA'],)
         parser_bruker.add_argument('-d', '--dump_headers',
                                    help='Dump bruker header files into json header extension',
                                    action='store_true')
+        parser_bruker.add_argument('-zp', '--zeropad', action='store_true',
+                                   help='Zero pad the output data after removing points prior to echo')
+        parser_bruker.add_argument('--nospectrum', action='store_true',
+                                   help='2dseq data in time domain (default is frequency domain for MRSI)')
+        parser_bruker.add_argument('--inspect', action='store_true',
+                                   help='Inspect input directory for available file formats to convert.')
         parser_bruker = add_common_parameters(parser_bruker)
         parser_bruker.set_defaults(func=self.bruker)
 
         # Varian format
-
         parser_varian = subparsers.add_parser('varian', help='Convert from the Varian/OpenVnmrJ data format')
         parser_varian.add_argument(
             'file', help='Path to the varian .fid directory, containing procpar and fid files', type=str)
@@ -755,11 +761,70 @@ class spec2nii:
         from spec2nii.other_formats import lcm_raw
         self.imageOut, self.fileoutNames = lcm_raw(args)
 
-    # Bruker 2dseq files with FG_COMPLEX
+    # Bruker parser
     def bruker(self, args):
         from spec2nii.bruker import read_bruker
-
+        if args.inspect:
+            args = self.bruker_inspect(args)
         self.imageOut, self.fileoutNames = read_bruker(args)
+
+    # Helper function for Bruker inspect mode
+    def bruker_inspect(self, args):
+        folder = Path(args.file)
+        if op.isdir(folder):
+            # if folder is not a subject or a scan folder, raise an error
+            if (folder / 'method').exists():
+                start_folder = folder
+            elif (folder / 'subject').exists():
+                start_folder = None
+            else:
+                indent = " " * len("ValueError: ")
+                raise ValueError("Selected directory is invalid - no 'subject' or 'method' files found.\n"
+                                 f"{indent}Please select a 'subject' folder if you want to inspect all scans.\n"
+                                 f"{indent}Please select a 'scan' folder if you want to inspect its files.")
+            from spec2nii.bruker import DataFolderBrowser
+            root_path = folder
+            # run the textual app once with the one-call configuration
+            app = DataFolderBrowser(root_path=root_path, start_folder=start_folder)
+            app.run()
+            # after exit, app.selected should be set by DataFolderBrowser when the user chose a file
+            if not getattr(app, "selected", None):
+                raise SystemExit("No file selected in inspection UI; aborting.")
+            args.file, args.mode = app.selected
+            # print(f"✓ Selected: {op.relpath(args.file, folder)}")
+            if args.fileout is None:
+                args.fileout = args.mode.lower()
+            # create command for printing
+            cmd = self._bruker_cmd_builder(args, folder)
+            print(f"Command:\n {cmd}\n")
+        else:
+            raise ValueError('Bruker inspect option requires a directory path instead of file as input.')
+        return args
+
+    def _bruker_cmd_builder(self, args, orig_file):
+        # start by adding the 'inspect' modified arguments
+        cmd = ['spec2nii',
+               'bruker',
+               args.file,
+               '-m', args.mode,
+               '-f', args.fileout]
+        # then add the arguments from sys.argv
+        flag = 0  # flag that indicates the previous argument was a '-' or '--' flag
+        for i in sys.argv:
+            # skip 'inspect' flag, previous folder input, 'mode' and 'fileout' arguments
+            if i in ['--inspect', str(orig_file), '-m', '--mode', '-f', '--fileout']:
+                flag = 0
+                continue
+            # otherwise, store the argument in the command
+            if i.startswith('-'):
+                cmd.append(i)
+                flag = 1
+            # also store the value following an argument if flag == 1
+            elif flag == 1:
+                cmd.append(i)
+                flag = 0
+
+        return " ".join(cmd)
 
     # Varian parser
     def varian(self, args):

@@ -6,17 +6,17 @@
       },
       {
         "cmd": "[#BF1,]",
-        "conditions": ["@type=='fid'"]
+        "conditions": ["@type in ['fid', 'fid_proc', 'rawdata']"]
       }
     ],
     "ResonantNucleus": [
       {
-        "cmd": "[#NUCLEUS[1:-1]]",
-        "conditions": ["@type=='fid'"]
-      },
-      {
         "cmd": "[#VisuAcqImagedNucleus[1:-1]]",
         "conditions": ["@type=='2dseq'"]
+      },
+      {
+        "cmd": "[#NUCLEUS[1:-1]]",
+        "conditions": ["@type in ['fid', 'fid_proc', 'rawdata']"]
       }
     ],
     "is_spectroscopy": [
@@ -26,21 +26,20 @@
       },
       {
         "cmd": "'Spectroscopic' in #ACQ_dim_desc.list",
-        "conditions": ["@type=='fid'"]
+        "conditions": ["@type in ['fid', 'fid_proc', 'rawdata']"]
       }
     ],
     "is_complex": [
       {
         "cmd": "True",
         "conditions": [
-          "#VisuCoreFrameType.list[0]=='REAL_IMAGE'"
+          "'REAL_IMAGE' in #VisuCoreFrameType.list",
+          "'IMAGINARY_IMAGE' in #VisuCoreFrameType.list"
         ]
       },
       {
         "cmd": "True",
-        "conditions": [
-          "@type=='fid'"
-        ]
+        "conditions": ["@type in ['fid', 'fid_proc', 'rawdata']"]
       },
       {
         "cmd": "False",
@@ -59,7 +58,7 @@
       {
         "cmd": "True",
         "conditions": [
-          "@type=='fid'",
+          "@type in ['fid', 'fid_proc', 'rawdata']",
           "#ACQ_dim_desc.list==['Spectroscopic', 'Spatial', 'Spatial']"
         ]
       },
@@ -79,7 +78,7 @@
       {
         "cmd": "True",
         "conditions": [
-          "@type=='fid'",
+          "@type in ['fid', 'fid_proc', 'rawdata']",
           "#ACQ_dim_desc.list==['Spectroscopic',]"
         ]
       },
@@ -91,12 +90,14 @@
     "points_prior_to_echo": [
       {
         "cmd": "#PVM_DigShift",
-        "conditions": ["@type=='fid'"]
+        "conditions": ["@type in ['fid', 'fid_proc', 'rawdata']"]
       },
       {
         "cmd": "int(np.round(#ACQ_RxFilterInfo[0][0]))",
-        "conditions": ["@type=='fid'",
-                      ["#ACQ_sw_version",["<PV-360.1.1>"]]]
+        "conditions": ["@type in ['fid', 'fid_proc', 'rawdata']",
+                      "#ACQ_sw_version[0:8]=='<PV-360.'",
+                      "@is_spectroscopy"
+        ]
       },
       {
         "cmd": "0",
@@ -106,7 +107,7 @@
     "method_desc": [
       {
         "cmd": "#Method",
-        "conditions": ["@type=='fid'"]
+        "conditions": ["@type in ['fid', 'fid_proc', 'rawdata']"]
       },
       {
         "cmd": "#VisuAcquisitionProtocol",
@@ -116,7 +117,7 @@
     "PV_version": [
       {
         "cmd": "#ACQ_sw_version",
-        "conditions": ["@type=='fid'"]
+        "conditions": ["@type in ['fid', 'fid_proc', 'rawdata']"]
       },
       {
         "cmd": "#VisuAcqSoftwareVersion",
@@ -126,6 +127,18 @@
     "working_offset": [
       {
         "cmd": "#PVM_FrqWorkOffsetPpm",
+        "conditions": []
+      }
+    ],
+    "freq_ref": [
+      {
+        "cmd": "#PVM_FrqRef",
+        "conditions": []
+      }
+    ],
+    "dwell_time": [
+      {
+        "cmd": "1./ #PVM_SpecSWH",
         "conditions": []
       }
     ],

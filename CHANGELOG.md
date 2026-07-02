@@ -1,21 +1,31 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.8.13 (Thursday 25th June 2026)
+--------------------------------
+- Added ability to 'inspect' Bruker data folders, printing some useful information about available data formats.
+- Added support on Bruker fid_proc.64 files.
+- Added support on Bruker rawdata files.
+- Apply ppm offset correction on FID and rawdata.
+- Added zero padding option for FID and rawdata.
+- Bug fix on MRSI 2dseq being in frequency domain.
+- Bumped dependency to Brukerapi 0.2.3.
+
 0.8.12 (Wednesday 20th May 2026)
-------------
+--------------------------------
 - Handle DICOMs missing series and instance numbers (generated through Siemens retrorecon).
 - Special case handling of ViennaCrt sequence for VE DICOM.
 - Bumped dependency to nifti-mrs 1.4.1
 
 0.8.11 (Monday 20th April 2026)
-----------------------------------
+-------------------------------
 - Fix issues arising in coil names and 31P Siemens CSI with missing DICOM VOI fields.
 
 0.8.10 (Monday 20th April 2026)
-----------------------------------
+-------------------------------
 - Backend only: moved from `versioneer` to `setuptools_scm`
 
 0.8.9 (Monday 20th April 2026)
-----------------------------------
+------------------------------
 - Automatically remove zero-valued elements from the 5th and higher dimensions when those indices are entirely empty across the spectral and remaining higher dimensions.
 - Added a hidden `--keep_zero_valued` option to preserve zero-valued higher-dimension elements when needed.
 - Added handling for GE `PROBE-sL` sequence. This sequence and the prior `slaser` WIP will generate separated (ecc vs quantification) water references.
@@ -25,7 +35,7 @@ This document contains the Spec2nii release history in reverse chronological ord
 - UIH svs with wref in DICOM tag `'0065', 'ff07'` will generate a water reference.
 
 0.8.8 (Tuesday 14th April 2026)
-----------------------------------
+-------------------------------
 - Added 'clean' subcommand for updating invalid header extensions 
 - Special case handling of DICOM files for dkd_svs_slaser_moconav - awaiting test data.
 - Remove Python 3.9 (eol) from supported versions, add 3.14.
@@ -46,7 +56,7 @@ This document contains the Spec2nii release history in reverse chronological ord
 - Python 3.13 compatibility and testing, scipy dependency now >=1.13
 
 0.8.4 (Monday 23rd September 2024)
--------------------------------
+----------------------------------
 - GE HBCD sequence adjustments.
 
 0.8.3 (Tuesday 9th August 2024)
@@ -54,7 +64,7 @@ This document contains the Spec2nii release history in reverse chronological ord
 - Fix for multiple GE HBCD sequence names (again).
 
 0.8.2 (Tuesday 9th July 2024)
--------------------------------
+-----------------------------
 - Fix for multiple GE HBCD sequence names.
 
 0.8.1 (Wednesday 3rd July 2024)
@@ -146,7 +156,7 @@ This document contains the Spec2nii release history in reverse chronological ord
 - Added handling for GE presscsi and probe-s sequences.
 
 0.6.2 (Sunday 5th February 2023)
-----------------------------------
+--------------------------------
 - Handle HYPER references in SPAR/SDAT pipeline
 - Handle HURCULES/HERMES (smm_svs_herc) sequence in XA twix format.
 - Changed behaviour of Siemens DICOM `spec2nii dicom` to recursively glob directory argument.

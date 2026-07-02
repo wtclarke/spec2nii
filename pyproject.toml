@@ -19,10 +19,11 @@ dependencies = [
   "pydicom==3.*",
   "pyMapVBVD>=0.6.0",
   "scipy>=1.13",
-  "brukerapi>=0.1.8,<0.1.9",
+  "brukerapi>=0.2.5",
   "pandas",
   "nifti-mrs>=1.4.1",
-  "chardet"
+  "chardet",
+  "textual>=7.4.0,<8"
 ]
 
 classifiers = [
@@ -56,7 +57,10 @@ dev = [
 exclude = ["tests*"]
 
 [tool.setuptools.package-data]
-spec2nii = ["bruker_properties.json", "bruker_fid_override.json"]
+spec2nii = ["bruker_properties.json",
+            "bruker_fid_override.json",
+            "bruker_2dseq_override.json",
+            "bruker_rawdata_override.json"]
 "spec2nii.GE" = ["VESPA_LICENSE"]
 
 [tool.setuptools_scm]
@@ -97,28 +101,18 @@ platforms = ["linux-64", "osx-64", "osx-arm64"]
 [tool.pixi.dependencies]
 python = ">=3.10,<3.15"
 
-[tool.pixi.feature.py310]
-platforms = ["linux-64"]
 [tool.pixi.feature.py310.dependencies]
 python = "3.10.*"
 
-[tool.pixi.feature.py311]
-platforms = ["linux-64"]
 [tool.pixi.feature.py311.dependencies]
 python = "3.11.*"
 
-[tool.pixi.feature.py312]
-platforms = ["linux-64"]
 [tool.pixi.feature.py312.dependencies]
 python = "3.12.*"
 
-[tool.pixi.feature.py313]
-platforms = ["linux-64"]
 [tool.pixi.feature.py313.dependencies]
 python = "3.13.*"
 
-[tool.pixi.feature.py314]
-platforms = ["linux-64"]
 [tool.pixi.feature.py314.dependencies]
 python = "3.14.*"
 
