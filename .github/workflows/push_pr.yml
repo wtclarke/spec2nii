@@ -19,7 +19,7 @@ jobs:
         with:
           manifest-path: pyproject.toml
           environments: py312
-          cache: true
+          cache: false
           activate-environment: false
       - name: Lint
         run: |
@@ -46,7 +46,7 @@ jobs:
         with:
           manifest-path: pyproject.toml
           environments: ${{ matrix.environment }}
-          cache: true
+          cache: false
           activate-environment: false
       - name: Run pytest
         run: |
