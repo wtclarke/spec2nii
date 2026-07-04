@@ -1,9 +1,8 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
-0.8.14 (Saturday 4th July 2026)
---------------------------------
+0.8.14 (Monday 6th July 2026)
+-----------------------------
 - Expanded dependency to textual version 8.
-- Updated CI to run the checkout once for PR-tests.
 
 0.8.13 (Thursday 25th June 2026)
 --------------------------------
