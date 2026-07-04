@@ -23,7 +23,7 @@ dependencies = [
   "pandas",
   "nifti-mrs>=1.4.1",
   "chardet",
-  "textual>=7.4.0,<8"
+  "textual>=7.4.0,<9"
 ]
 
 classifiers = [
