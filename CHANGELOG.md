@@ -1,5 +1,9 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.8.14 (Saturday 4th July 2026)
+--------------------------------
+- Expanded dependency to textual version 8.
+
 0.8.13 (Thursday 25th June 2026)
 --------------------------------
 - Added ability to 'inspect' Bruker data folders, printing some useful information about available data formats.
@@ -8,7 +12,7 @@ This document contains the Spec2nii release history in reverse chronological ord
 - Apply ppm offset correction on FID and rawdata.
 - Added zero padding option for FID and rawdata.
 - Bug fix on MRSI 2dseq being in frequency domain.
-- Bumped dependency to Brukerapi 0.2.3.
+- Bumped dependency to Brukerapi 0.2.5.
 
 0.8.12 (Wednesday 20th May 2026)
 --------------------------------
