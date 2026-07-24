@@ -215,7 +215,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
         base_name_out: Core string of output file.
         name_in: name of input file.
         dataKey: eval info flag name,
-        remove_os: Remove time-doain overrides
+        remove_os: Remove time-domain overrides
         quiet: True to suppress text output.
     """
 
@@ -233,12 +233,11 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
     #     Only for XA50/60 and the svs_se_isthmus_gls sequence (svs_se_isthmus_gls2 is the corrected sequence)
     #     Data can continue through standard processing after fix
     #     contact agudmun2 [at] jhmi [dot] edu for questions.
-    if ((('XA50' in twixObj['hdr']['Dicom']['SoftwareVersions'])  or
-         ('XA60' in twixObj['hdr']['Dicom']['SoftwareVersions'])) and
-        (twixObj['hdr']['Meas'][('tSequenceFileName')].split('\\')[-1] == 'smm_svs_isthmus_gls')):
-    
+    if (any(v in twixObj['hdr']['Dicom']['SoftwareVersions'] for v in ('XA50', 'XA60')) and
+       (re.split(r'[\\/]', twixObj['hdr']['Meas']['tSequenceFileName'])[-1] == 'smm_svs_isthmus_gls')):
         # Note Update to User
-        print('    XA50/60 Receiver Phase Correction Starting  ***')
+        if not quiet:
+            print('\tXA50/60 Receiver Phase Correction Starting ***')
 
         # Correct Receiver Phase in Degrees
         update_rcv_list  = [0, 0, 0, 0, 180, 180, 180, 180, 0, 0, 0, 0, 180, 180, 180, 180,
@@ -257,7 +256,8 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
 
         # Update Phase
         squeezedData[:,:,hercules_idx] *= np.exp(-1j * update_rcv_array)[None,None,:]
-        print('    XA50/60 Receiver Phase Correction Completed ***')
+        if not quiet:
+            print('\tXA50/60 Receiver Phase Correction Completed ***')
 
     # Conjugate the data from the twix file to match the phase conventions of the format
     squeezedData = squeezedData.conj()
