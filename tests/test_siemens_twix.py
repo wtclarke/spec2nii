@@ -256,6 +256,37 @@ def test_hyper_isthmus_special_case(tmp_path):
             assert hdr_ext['dim_7'] == 'DIM_DYN'
 
 
+def test_hyper_isthmus_special_case_phase_correction(tmp_path):
+    from mapvbvd import mapVBVD
+    # Read raw twix file.
+    twixObj = mapVBVD(isthmus_update, quiet=False)[1]
+    dataKey = 'image'
+    twixObj[dataKey].flagRemoveOS = False
+    twixObj[dataKey].squeeze = True
+    raw_fid = twixObj[dataKey]['']
+
+    # Apply phase correction
+    update_rcv_list  = [0, 0, 0, 0, 180, 180, 180, 180, 0, 0, 0, 0, 180, 180, 180, 180,
+                            180, 180, 180, 180, 0, 0, 0, 0, 180, 180, 180, 180, 0, 0, 0, 0]
+    update_rcv_array = np.tile(update_rcv_list, 224 // len(update_rcv_list)).astype(float)
+    update_rcv_array *= (np.pi / 180)
+    hercules_idx = np.arange(34, 264)
+    hercules_idx = hercules_idx[hercules_idx % 33 != 0]
+    updated_fid = raw_fid.copy()
+    updated_fid[:, :, hercules_idx] *= np.exp(-1j * update_rcv_array)[None, None, :]
+
+    # find the angular difference in degrees
+    phase_diff = np.degrees(np.angle(updated_fid[0]) - (np.angle(raw_fid[0])))
+    # round the degrees and map -180 to +180 degrees
+    phase_diff = np.round(phase_diff).astype(int)
+    phase_diff = 180 - ((180 - phase_diff) % 360)
+
+    nominal_phase_diff = np.zeros(phase_diff.shape[1], dtype=int)
+    nominal_phase_diff[hercules_idx] = np.tile(update_rcv_list, 224 // len(update_rcv_list))
+    for coil in range(phase_diff.shape[0]):
+        assert np.allclose(nominal_phase_diff, phase_diff[coil])
+
+
 def test_twix_mrsi_orientation(tmp_path):
     '''Test that the (empty) mrsi has information matching the twix equivalent.'''
 

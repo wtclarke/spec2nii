@@ -227,7 +227,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
     if not quiet:
         print(f'Found data of size {squeezedData.shape}.')
 
-    # Fixing XA50/60 Receiver Phase Issue for ISTHMUS  (ATG 06/22/2026)
+    # Fixing XA50/60 Receiver Phase Issue for ISTHMUS (ATG 06/22/2026)
     #     Identified Incorrect Receiver Phase at Acquisition of New XA60 ISTHMUS' HERCULES
     #     This will ensure the correct Receiver Phase
     #     Only for XA50/60 and the svs_se_isthmus_gls sequence (svs_se_isthmus_gls2 is the corrected sequence)
@@ -242,12 +242,12 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
         # Correct Receiver Phase in Degrees
         update_rcv_list  = [0, 0, 0, 0, 180, 180, 180, 180, 0, 0, 0, 0, 180, 180, 180, 180,
                             180, 180, 180, 180, 0, 0, 0, 0, 180, 180, 180, 180, 0, 0, 0, 0]
- 
+
         # Instantiate Array with Receiver Phase List Repeated 224 times (4 Edits x 56 Transients Each)
         update_rcv_array = np.tile(update_rcv_list, 224 // len(update_rcv_list)).astype(float)
 
         # Convert to Receiver Array from Degrees to Radians
-        update_rcv_array *= (np.pi/180)
+        update_rcv_array *= (np.pi / 180)
 
         # Get HERCULES Indices
         #     This will Skip PRESS (1:33) and Water References (0:256:33)
@@ -255,7 +255,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
         hercules_idx = hercules_idx[hercules_idx % 33 != 0]
 
         # Update Phase
-        squeezedData[:,:,hercules_idx] *= np.exp(-1j * update_rcv_array)[None,None,:]
+        squeezedData[:, :, hercules_idx] *= np.exp(-1j * update_rcv_array)[None, None, :]
         if not quiet:
             print('\tXA50/60 Receiver Phase Correction Completed ***')
 

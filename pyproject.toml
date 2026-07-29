@@ -19,7 +19,7 @@ dependencies = [
   "pydicom==3.*",
   "pyMapVBVD>=0.6.0",
   "scipy>=1.13",
-  "brukerapi>=0.2.5",
+  "brukerapi>=0.2.5,<0.2.6",
   "pandas",
   "nifti-mrs>=1.4.1",
   "chardet",
