@@ -215,7 +215,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
         base_name_out: Core string of output file.
         name_in: name of input file.
         dataKey: eval info flag name,
-        remove_os: Remove time-doain overrides
+        remove_os: Remove time-domain overrides
         quiet: True to suppress text output.
     """
 
@@ -226,6 +226,38 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
 
     if not quiet:
         print(f'Found data of size {squeezedData.shape}.')
+
+    # Fixing XA50/60 Receiver Phase Issue for ISTHMUS (ATG 06/22/2026)
+    #     Identified Incorrect Receiver Phase at Acquisition of New XA60 ISTHMUS' HERCULES
+    #     This will ensure the correct Receiver Phase
+    #     Only for XA50/60 and the svs_se_isthmus_gls sequence (svs_se_isthmus_gls2 is the corrected sequence)
+    #     Data can continue through standard processing after fix
+    #     contact agudmun2 [at] jhmi [dot] edu for questions.
+    if (any(v in twixObj['hdr']['Dicom']['SoftwareVersions'] for v in ('XA50', 'XA60')) and
+       (re.split(r'[\\/]', twixObj['hdr']['Meas']['tSequenceFileName'])[-1] == 'smm_svs_isthmus_gls')):
+        # Note Update to User
+        if not quiet:
+            print('\tXA50/60 Receiver Phase Correction Starting ***')
+
+        # Correct Receiver Phase in Degrees
+        update_rcv_list  = [0, 0, 0, 0, 180, 180, 180, 180, 0, 0, 0, 0, 180, 180, 180, 180,
+                            180, 180, 180, 180, 0, 0, 0, 0, 180, 180, 180, 180, 0, 0, 0, 0]
+
+        # Instantiate Array with Receiver Phase List Repeated 224 times (4 Edits x 56 Transients Each)
+        update_rcv_array = np.tile(update_rcv_list, 224 // len(update_rcv_list)).astype(float)
+
+        # Convert to Receiver Array from Degrees to Radians
+        update_rcv_array *= (np.pi / 180)
+
+        # Get HERCULES Indices
+        #     This will Skip PRESS (1:33) and Water References (0:256:33)
+        hercules_idx = np.arange(34, 264)
+        hercules_idx = hercules_idx[hercules_idx % 33 != 0]
+
+        # Update Phase
+        squeezedData[:, :, hercules_idx] *= np.exp(-1j * update_rcv_array)[None, None, :]
+        if not quiet:
+            print('\tXA50/60 Receiver Phase Correction Completed ***')
 
     # Conjugate the data from the twix file to match the phase conventions of the format
     squeezedData = squeezedData.conj()
