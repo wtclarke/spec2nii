@@ -206,7 +206,7 @@ def test_enhanced_csi(tmp_path):
         # Skip keys with known differences.
         if key in ('RxCoil', 'SequenceName', 'PatientID', 'ConversionTime', 'OriginalFile'):
             continue
-        if isinstance(hdr_ext[key], (float, complex)):
+        if isinstance(hdr_ext[key], (float, complex, np.ndarray)):
             assert np.isclose(hdr_ext[key], hdr_ext_comp[key])
         else:
             assert hdr_ext[key] == hdr_ext_comp[key]
