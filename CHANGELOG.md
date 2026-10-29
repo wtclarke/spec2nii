@@ -3,6 +3,7 @@ This document contains the Spec2nii release history in reverse chronological ord
 0.8.16 (WIP)
 ---------------------------------
 - Added DICOM conversion of Siemens XB data.
+- Added TWIX conversion of Siemens XB data.
 
 0.8.15 (Wednesday 29th July 2026)
 ---------------------------------

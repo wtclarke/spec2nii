@@ -18,6 +18,7 @@ vb_path = siemens_path / 'VBData' / 'Twix/meas_MID151_svs_se_C_T15_S10_10_FID108
 ve_path = siemens_path / 'VEData' / 'Twix/meas_MID00240_FID62745_svs_se_c_t15_s10_R10.dat'
 xa20_path = siemens_path / 'XAData' / 'XA20/twix/meas_MID00027_FID07653_svs_se_30_WS_on.dat'
 xa30_path = siemens_path / 'XAData' / 'XA30/meas_MID00479_FID106847_svs_se_135sws.dat'
+xb10_path = siemens_path / 'XBData' / 'XB10/TWIX/meas_MID00136_FID10276_sLASER_WS128.dat'
 ve_fid = siemens_path / 'fid' / 'meas_MID00070_FID27084_fid_13C_360dyn_hyper_TR1000.dat'
 
 # Special cased data
@@ -119,6 +120,26 @@ def test_XA30(tmp_path):
     assert img_ref.shape == (1, 1, 1, 4096, 44)
     assert np.iscomplexobj(img_ref.dataobj)
     assert hdr_ext['dim_5'] == 'DIM_COIL'
+
+
+def test_XB10(tmp_path):
+
+    subprocess.check_call(['spec2nii', 'twix',
+                           '-e', 'image',
+                           '-f', 'xb10',
+                           '-o', tmp_path,
+                           '-j', str(xb10_path)])
+
+    img_t = read_nifti_mrs(tmp_path / 'xb10.nii.gz')
+
+    hdr_ext_codes = img_t.header.extensions.get_codes()
+    hdr_ext = json.loads(img_t.header.extensions[hdr_ext_codes.index(44)].get_content())
+
+    assert img_t.shape == (1, 1, 1, 4096, 16, 136)
+    assert np.iscomplexobj(img_t.dataobj)
+    assert hdr_ext['dim_5'] == 'DIM_COIL'
+    assert hdr_ext['dim_6'] == 'DIM_DYN'
+
 
 
 def test_os_remove(tmp_path):
