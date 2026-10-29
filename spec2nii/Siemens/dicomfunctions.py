@@ -31,19 +31,27 @@ class IncompatibleSOPClassUID(Exception):
     pass
 
 
-def xa_or_vx(img):
+class CSINotHandledError(Exception):
+    pass
+
+
+def get_dicom_type(img):
     """Determine siemens DICOM type
 
     :param img: DICOM image object
     :type img: nibabel.nicom.dicomwrappers.SiemensWrapper
     :raises IncompatibleSOPClassUID: Raised if not a Siemens Syngo Non Image Storage or MRSpectroscopyStorage dicom file
-    :return: String either 'xa' or 'vx'
+    :return: String 'xa', 'vx' or 'xb'
     :rtype: str
     """
     if img.dcm_data.SOPClassUID == '1.3.12.2.1107.5.9.1':
         return 'vx'
     elif img.dcm_data.SOPClassUID == '1.2.840.10008.5.1.4.1.1.4.2':
-        return 'xa'
+        # Current only 'Syngo MR XB10' is supported for XB as no other sequences are tested
+        if img.dcm_data.SoftwareVersions == 'Syngo MR XB10':
+            return 'xb'
+        else:
+            return 'xa'
     else:
         if img.dcm_data.SOPClassUID == '1.2.840.10008.5.1.4.1.1.4':
             raise IncompatibleSOPClassUID(
@@ -51,22 +59,22 @@ def xa_or_vx(img):
                 ' This normally contains MR imaging (not spectroscopy) data.'
                 ' This data was collected on a'
                 f' {img.dcm_data.SoftwareVersions} baseline scanner.'
-                ' spec2nii is tested on VA-VE, XA20, and XA30 DICOM files.')
+                ' spec2nii is tested on VA-VE, XA20, XA30, and XB10 DICOM files.')
         else:
             raise IncompatibleSOPClassUID(
                 'spec2nii does not recognise this SOPClassUID '
                 f'{img.dcm_data.SOPClassUID} as MRS data. This data was collected on a'
                 f' {img.dcm_data.SoftwareVersions} baseline scanner.'
-                ' spec2nii is tested on VA-VE, XA20, and XA30 DICOM files.')
+                ' spec2nii is tested on VA-VE, XA20, XA30, and XB10 DICOM files.')
 
 
 def svs_or_CSI(img):
     """Identify from the csa headers whether data is CSI or SVS."""
-    if xa_or_vx(img) == 'vx':
+    if get_dicom_type(img) == 'vx':
         rows = img.csa_header['tags']['Rows']['items'][0]
         cols = img.csa_header['tags']['Columns']['items'][0]
         slices = img.csa_header['tags']['NumberOfFrames']['items'][0]
-    elif xa_or_vx(img) == 'xa':
+    elif get_dicom_type(img) in ('xa', 'xb'):
         spec_fov_geom = img.dcm_data.SharedFunctionalGroupsSequence[0].MRSpectroscopyFOVGeometrySequence[0]
         rows = spec_fov_geom.SpectroscopyAcquisitionPhaseRows
         cols = spec_fov_geom.SpectroscopyAcquisitionPhaseColumns
@@ -90,6 +98,7 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
 
     # Convert each file (combine after)
     data_list = []
+    has_transients = False
     orientation_list = []
     dwelltime_list = []
     meta_list = []
@@ -126,6 +135,7 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
             specDataCmplx, orientation, dwelltime, meta_obj = process_siemens_csi(img, verbose=verbose)
 
         data_list.append(specDataCmplx)
+        has_transients = has_transients or int(getattr(img.dcm_data, 'NumberOfFrames', 1)) > 1
         orientation_list.append(orientation)
         dwelltime_list.append(dwelltime)
         meta_list.append(meta_obj)
@@ -159,11 +169,18 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
             elif 'SeriesInstanceUID' in img.dcm_data:
                 mainStr = img.dcm_data.SeriesInstanceUID
             else:
-                raise missingTagError("Neither SeriesDescription or SeriesInstanceUID tags defined."
+                raise missingTagError("Neither 'SeriesDescription' or 'SeriesInstanceUID' tags defined."
                                       " Please specify an output filename using '-f'")
 
-    # Sort by series and instance number
-    data_list = np.asarray(data_list)
+    # If last dimension corresponds to transients but is singleton then remove
+    if len(files_in) == 1 and get_dicom_type(img) == 'xb' and not has_transients:
+        data_list[0] = data_list[0][..., 0]
+
+    # Keep arrays with different numbers of transients as individual objects.
+    # Initialise and then fill it out with the complex arrays.
+    data_array = np.empty(len(data_list), dtype=object)
+    data_array[:] = data_list
+    data_list = data_array
     orientation_list = np.asarray(orientation_list)
     dwelltime_list = np.asarray(dwelltime_list)
     meta_list = np.asarray(meta_list)
@@ -173,9 +190,10 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
     str_suffix = np.asarray(str_suffix)
     files_in = np.asarray(files_in)
 
+    # Sort by series and instance number
     sort_index = np.lexsort((inst_num, series_num))  # Sort by series then inst
 
-    data_list = data_list[sort_index, :]
+    data_list = data_list[sort_index]
     orientation_list = orientation_list[sort_index]
     dwelltime_list = dwelltime_list[sort_index]
     meta_list = meta_list[sort_index]
@@ -220,7 +238,11 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
         # Combine data into 5th dimension if needed
         data_in_gr = data_list[gr]
         if len(data_in_gr) > 1:
-            combined_data = np.stack(data_in_gr, axis=-1)
+            if has_transients:
+                # This assumes transients are always the last dimension
+                combined_data = np.concatenate(data_in_gr, axis=-1)
+            else:
+                combined_data = np.stack(data_in_gr, axis=-1)
 
             if _is_vienna_crt(img):
                 print('Vienna CRT')
@@ -262,10 +284,12 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
 
 def process_siemens_svs(img, verbose):
     """Pass to appropriate function for software version."""
-    if xa_or_vx(img) == 'vx':
+    if get_dicom_type(img) == 'vx':
         return process_siemens_svs_vx(img, verbose)
-    elif xa_or_vx(img) == 'xa':
+    elif get_dicom_type(img) == 'xa':
         return process_siemens_svs_xa(img, verbose)
+    elif get_dicom_type(img) == 'xb':
+        return process_siemens_svs_xb(img, verbose)
 
 
 def _get_enhanced_dcm_img_orientation_pat(img):
@@ -285,6 +309,50 @@ def _get_enhanced_dcm_img_orientation_pat(img):
         # For VB19 data formatted as MRSpectroscopyStorage this seems to be different to
         # the XA data I've seen. But this could also be a sequence specific thing!
         return np.array(dcm_hdrs1.PlaneOrientationSequence[0].ImageOrientationPatient).reshape(2, 3)
+
+
+def process_siemens_svs_xb(img, verbose):
+    """Process Siemens DICOM SVS data acquired on a NumarisX system."""
+    specData = np.frombuffer(img.dcm_data[('5600', '0020')].value, dtype=np.single)
+    # It appears the phase convention is reversed in the NumarisX systems.
+    specDataCmplx = specData[0::2] - 1j * specData[1::2]
+    # Reshape the complex data to FID x transients
+    # TODO change this to default to 1 transient and everything as num_points with a warning
+    # also consider printing what was detected as these vars
+    num_points = getattr(img.dcm_data, "DataPointColumns", None)
+    num_transients = getattr(img.dcm_data, "NumberOfFrames", None)
+    if num_points is None:
+        spec_fov_geom = img.dcm_data.SharedFunctionalGroupsSequence[0].MRSpectroscopyFOVGeometrySequence[0]
+        num_points = getattr(spec_fov_geom, "SpectroscopyAcquisitionDataColumns", None)
+    if num_points is None or num_transients is None:
+        raise missingTagError("'DataPointColumns' or 'NumberOfFrames' tags not defined."
+                              " Please check the DICOM file.")
+
+    num_points = int(num_points)
+    num_transients = int(num_transients)
+    specDataCmplx = specDataCmplx.reshape(num_transients, num_points).T
+
+    dcm_hdrs = img.dcm_data.PerFrameFunctionalGroupsSequence[0]
+    dcm_hdrs1 = img.dcm_data.SharedFunctionalGroupsSequence[0]
+    # 1) Extract dicom parameters
+    imageOrientationPatient = _get_enhanced_dcm_img_orientation_pat(img)
+    imagePositionPatient = dcm_hdrs.PlanePositionSequence[0].ImagePositionPatient
+
+    # The first two elements could easily be the reverse of this.
+    xyzMM = np.array([float(dcm_hdrs1.PixelMeasuresSequence[0].PixelSpacing[0]),
+                      float(dcm_hdrs1.PixelMeasuresSequence[0].PixelSpacing[1]),
+                      float(dcm_hdrs1.PixelMeasuresSequence[0].SliceThickness)])
+
+    currNiftiOrientation = dcm_to_nifti_orientation(imageOrientationPatient,
+                                                    imagePositionPatient,
+                                                    xyzMM,
+                                                    (1, 1, 1),
+                                                    verbose=verbose)
+    dwelltime = 1 / img.dcm_data.SpectralWidth
+    # Use the same method to extract the metadata as for XA
+    meta = extractDicomMetadata_xa(img)
+
+    return specDataCmplx, currNiftiOrientation, dwelltime, meta
 
 
 def process_siemens_svs_xa(img, verbose):
@@ -342,10 +410,13 @@ def process_siemens_svs_vx(img, verbose):
 
 def process_siemens_csi(img, verbose):
     """Pass to appropriate CSI function for software version."""
-    if xa_or_vx(img) == 'vx':
+    if get_dicom_type(img) == 'vx':
         return process_siemens_csi_vx(img, verbose)
-    elif xa_or_vx(img) == 'xa':
+    elif get_dicom_type(img) == 'xa':
         return process_siemens_csi_xa(img, verbose)
+    elif get_dicom_type(img) == 'xb':
+        raise CSINotHandledError('XB CSI data is currently not handled for the Siemens DICOM format.'
+                                 'Please contact the developers if you have examples of this type of data.')
 
 
 def process_siemens_csi_xa(img, verbose):
@@ -746,7 +817,7 @@ def identify_integrated_references(img, inst_num):
     :return: name suffix
     '''
 
-    if xa_or_vx(img) == 'xa':
+    if get_dicom_type(img) in ('xa', 'xb'):
         return 0, ''
 
     fullcsa = csar.get_csa_header(img.dcm_data, csa_type='series')

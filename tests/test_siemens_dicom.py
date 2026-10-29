@@ -23,6 +23,8 @@ ve_mrsi_path = siemens_path / 'VEData' / 'DICOM/csi_se_3D_t>c23.5>s20.3_R10_7_1/
 xa20_svs_path = siemens_path / 'XAData' / 'XA20/DICOM/26516628.dcm'
 xa30_svs_path = siemens_path / 'XAData' / 'XA30/meas_MID00479_FID106847_svs_se_135sws.dcm'
 
+xb10_svs_path = siemens_path / 'XBData' / 'XB10/DICOM/'
+
 tim_trio_non_image = siemens_path / 'VBData' / 'tim_trio_sop_class_uid' / 'timtrio_mr_vb19a.dcm'
 tim_trio_mrspecstorage = siemens_path / 'VBData' / 'tim_trio_sop_class_uid' / 'timtrio_mrdcm_vb13a_2_0.dcm'
 
@@ -88,6 +90,19 @@ def test_XA30_svs(tmp_path):
     img_t = read_nifti_mrs(tmp_path / 'xa30_svs.nii.gz')
 
     assert img_t.shape == (1, 1, 1, 2048)
+    assert np.iscomplexobj(img_t.dataobj)
+
+
+def test_XB10_svs(tmp_path):
+
+    subprocess.check_call(['spec2nii', 'dicom',
+                           '-f', 'xb10_svs',
+                           '-o', tmp_path,
+                           '-j', str(xb10_svs_path)])
+
+    img_t = read_nifti_mrs(tmp_path / 'xb10_svs.nii.gz')
+
+    assert img_t.shape == (1, 1, 1, 2048, 136)
     assert np.iscomplexobj(img_t.dataobj)
 
 
