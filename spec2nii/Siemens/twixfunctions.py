@@ -37,7 +37,6 @@ defaults = {'vb': {'Col': 'time',
                    'Eco': 'DIM_EDIT'}}
 
 xa_product_seq = ['svs_se', 'svs_st', 'svs_slaser']
-# xb_product_seq = ['sead']
 
 
 class IncompatibleSoftwareVersion(Exception):
@@ -82,10 +81,8 @@ def is_xa_product(hdr):
     """If the baseline is xa and the sequence is a svs product sequence return True."""
     def is_product():
         return seq_name(hdr) in xa_product_seq
-        # return seq_name(hdr) in (xa_product_seq + xb_product_seq)
 
-    return get_twix_type(hdr) == 'xa' and is_product()
-    # return get_twix_type(hdr) in ('xa', 'xb') and is_product()
+    return get_twix_type(hdr) in ('xa', 'xb') and is_product()
 
 
 def id_sequence_type(twixhdr):
@@ -334,7 +331,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
 
         # To do, handle any other dimensions properly
         xa_ref_scans = xa_ref_scans.squeeze()
-        xa_zero_index = xa_ref_scans[0, :, :] == 0.0
+        xa_zero_index = xa_ref_scans[0, ...] == 0.0
         xa_ref_scans = xa_ref_scans[:, ~xa_zero_index]\
             .reshape(xa_ref_scans.shape[0], xa_ref_scans.shape[1], -1)
     else:
@@ -412,7 +409,8 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
 
     # AG 03/22/2023 - New Hyper Function
     # AG 03/25/2025 - Support for Siemens Update to 'smm_svs_isthmus_gls'
-    elif any(x in twixObj['hdr']['Meas'][('tSequenceFileName')] for x in ('smm_svs_herc_hyper', 'svs_isthmus')):
+    elif any(x in twixObj['hdr']['Meas'][('tSequenceFileName')].lower()
+             for x in ('smm_svs_herc_hyper', 'svs_isthmus')):
         from spec2nii.Siemens.twix_special_case import smm_svs_herc_hyper                   # Hyper Data
 
         hyp_names  = ['35ms Water Reference',
@@ -442,13 +440,14 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
         return nifti_mrs_out, filename_out
 
     # HERCULES Data
-    elif (get_twix_type(twixObj['hdr']) == 'xa' and 'smm_svs_herc' in twixObj['hdr']['Meas'][('tSequenceFileName')]):
+    elif (get_twix_type(twixObj['hdr']) == 'xa' and
+          'smm_svs_herc' in twixObj['hdr']['Meas'][('tSequenceFileName')].lower()):
         from spec2nii.Siemens.twix_special_case import mgs_svs_ed_twix
         reord_data, meta_obj, dim_tags = mgs_svs_ed_twix(twixObj, reord_data, meta_obj, dim_tags)
 
     elif re.search(
-            r'svs_slaser(voi)?_dkd',
-            twixObj['hdr']['Meas'][('tSequenceFileName')],
+            r'(svs_slaser(voi)?_dkd|dkd_svs_slaser)',
+            twixObj['hdr']['Meas'][('tSequenceFileName')].lower(),
             re.IGNORECASE):
         from spec2nii.Siemens.twix_special_case import slaser_dkd
         for data, meta, name in slaser_dkd(twixObj, reord_data, meta_obj, dim_tags):

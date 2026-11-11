@@ -236,16 +236,9 @@ def slaser_dkd(twixObj, reord_data, meta_obj, dim_tags):
 
     group_out = []
 
-    if scan_mode == 1.0:
-        for idx, dt in enumerate(dim_tags):
-            meta_obj.set_dim_info(idx, dt)
-        group_out.append(
-            (reord_data.reshape((1, 1, 1) + reord_data.shape),
-             meta_obj,
-             ''))
-
-    elif (re.search(r'svs_slaser(voi)?_dkd2$', seq_file_name) and scan_mode == 8.0)\
-            or (re.search(r'svs_slaser(voi)?_dkd$', seq_file_name) and scan_mode == 8.0):
+    # For Dinesh Deelchand's slaser sequence, scanmode=8 (wref1+3) acquires
+    # sSpecPara.lAutoRefScanNo*2 water reference scans at start and same at end.
+    if (re.search(r'(svs_slaser(voi)?_dkd2?$|dkd_svs_slaser)', seq_file_name) and scan_mode == 8.0):
         num_ref = int(twixObj.hdr['MeasYaps'][('sSpecPara', 'lAutoRefScanNo')])
         num_dyn = int(twixObj.hdr['MeasYaps'][('lAverages',)])
 
@@ -302,6 +295,19 @@ def slaser_dkd(twixObj, reord_data, meta_obj, dim_tags):
             (reord_data[..., indices].reshape(base_shape),
              meta_obj.copy(),
              '_vapor_ovs_rfoff'))
+
+    elif (re.search(r'dkd_svs_slaser', seq_file_name) and scan_mode == 1.0):
+        import warnings
+        warnings.warn(f"Conversion of '{seq_file_name}' with scan_mode={scan_mode} is not yet implemented."
+                      " Please get in contact with test data to implement it.'")
+
+    elif scan_mode == 1.0:
+        for idx, dt in enumerate(dim_tags):
+            meta_obj.set_dim_info(idx, dt)
+        group_out.append(
+            (reord_data.reshape((1, 1, 1) + reord_data.shape),
+             meta_obj,
+             ''))
 
     else:
         print(f'slaser_dkd special case processing: unrecognised case for {seq_file_name} with scan mode {scan_mode}.')

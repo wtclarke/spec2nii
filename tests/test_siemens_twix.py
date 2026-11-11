@@ -135,11 +135,28 @@ def test_XB10(tmp_path):
     hdr_ext_codes = img_t.header.extensions.get_codes()
     hdr_ext = json.loads(img_t.header.extensions[hdr_ext_codes.index(44)].get_content())
 
-    assert img_t.shape == (1, 1, 1, 4096, 16, 136)
+    assert img_t.shape == (1, 1, 1, 4096, 16, 128)
     assert np.iscomplexobj(img_t.dataobj)
     assert hdr_ext['dim_5'] == 'DIM_COIL'
     assert hdr_ext['dim_6'] == 'DIM_DYN'
 
+    img_t = read_nifti_mrs(tmp_path / 'xb10_rf_off.nii.gz')
+    hdr_ext_codes = img_t.header.extensions.get_codes()
+    hdr_ext = json.loads(img_t.header.extensions[hdr_ext_codes.index(44)].get_content())
+
+    assert img_t.shape == (1, 1, 1, 4096, 16, 4)
+    assert np.iscomplexobj(img_t.dataobj)
+    assert hdr_ext['dim_5'] == 'DIM_COIL'
+    assert hdr_ext['dim_6'] == 'DIM_DYN'
+
+    img_t = read_nifti_mrs(tmp_path / 'xb10_rf_grads_ovs_off.nii.gz')
+    hdr_ext_codes = img_t.header.extensions.get_codes()
+    hdr_ext = json.loads(img_t.header.extensions[hdr_ext_codes.index(44)].get_content())
+
+    assert img_t.shape == (1, 1, 1, 4096, 16, 4)
+    assert np.iscomplexobj(img_t.dataobj)
+    assert hdr_ext['dim_5'] == 'DIM_COIL'
+    assert hdr_ext['dim_6'] == 'DIM_DYN'
 
 
 def test_os_remove(tmp_path):
