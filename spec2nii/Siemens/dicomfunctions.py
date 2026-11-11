@@ -49,7 +49,11 @@ def get_dicom_type(img):
     elif img.dcm_data.SOPClassUID == '1.2.840.10008.5.1.4.1.1.4.2':
         # Current only 'Syngo MR XB10' is supported for XB as no other sequences are tested
         if img.dcm_data.SoftwareVersions == 'Syngo MR XB10':
-            return 'xb'
+            raise IncompatibleSOPClassUID(
+                'spec2nii is currently being tested on XB10 DICOM files.'
+                f' This data was collected on a {img.dcm_data.SoftwareVersions} baseline scanner.'
+                ' Please contact the developers if you have examples of this type of data.')
+            # return 'xb'
         else:
             return 'xa'
     else:
@@ -59,13 +63,13 @@ def get_dicom_type(img):
                 ' This normally contains MR imaging (not spectroscopy) data.'
                 ' This data was collected on a'
                 f' {img.dcm_data.SoftwareVersions} baseline scanner.'
-                ' spec2nii is tested on VA-VE, XA20, XA30, and XB10 DICOM files.')
+                ' spec2nii is tested on VA-VE, XA20, and XA30 DICOM files.')
         else:
             raise IncompatibleSOPClassUID(
                 'spec2nii does not recognise this SOPClassUID '
                 f'{img.dcm_data.SOPClassUID} as MRS data. This data was collected on a'
                 f' {img.dcm_data.SoftwareVersions} baseline scanner.'
-                ' spec2nii is tested on VA-VE, XA20, XA30, and XB10 DICOM files.')
+                ' spec2nii is tested on VA-VE, XA20, and XA30 DICOM files.')
 
 
 def svs_or_CSI(img):

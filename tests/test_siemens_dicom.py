@@ -93,17 +93,17 @@ def test_XA30_svs(tmp_path):
     assert np.iscomplexobj(img_t.dataobj)
 
 
-def test_XB10_svs(tmp_path):
+# def test_XB10_svs(tmp_path):
 
-    subprocess.check_call(['spec2nii', 'dicom',
-                           '-f', 'xb10_svs',
-                           '-o', tmp_path,
-                           '-j', str(xb10_svs_path)])
+#     subprocess.check_call(['spec2nii', 'dicom',
+#                            '-f', 'xb10_svs',
+#                            '-o', tmp_path,
+#                            '-j', str(xb10_svs_path)])
 
-    img_t = read_nifti_mrs(tmp_path / 'xb10_svs.nii.gz')
+#     img_t = read_nifti_mrs(tmp_path / 'xb10_svs.nii.gz')
 
-    assert img_t.shape == (1, 1, 1, 2048, 136)
-    assert np.iscomplexobj(img_t.dataobj)
+#     assert img_t.shape == (1, 1, 1, 2048, 136)
+#     assert np.iscomplexobj(img_t.dataobj)
 
 
 def test_VB_mrsi(tmp_path):
