@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "spec2nii"
 description = "Multi-format in vivo MR spectroscopy conversion to NIFTI"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "BSD-3-Clause"
 license-files = ["LICENSE"]
 authors = [
@@ -16,7 +16,7 @@ dynamic = ["version"]
 dependencies = [
   "numpy>=1.26",
   "nibabel",
-  "pydicom==3.*",
+  "pydicom>=3,<4",
   "pyMapVBVD>=0.6.0",
   "scipy>=1.13",
   "brukerapi>=0.2.5,<0.2.6",
@@ -28,11 +28,11 @@ dependencies = [
 
 classifiers = [
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
   "Operating System :: OS Independent",
 ]
 
@@ -99,10 +99,7 @@ channels = ["conda-forge"]
 platforms = ["linux-64", "osx-64", "osx-arm64"]
 
 [tool.pixi.dependencies]
-python = ">=3.10,<3.15"
-
-[tool.pixi.feature.py310.dependencies]
-python = "3.10.*"
+python = ">=3.11,<3.16"
 
 [tool.pixi.feature.py311.dependencies]
 python = "3.11.*"
@@ -116,16 +113,21 @@ python = "3.13.*"
 [tool.pixi.feature.py314.dependencies]
 python = "3.14.*"
 
+[tool.pixi.feature.py315.dependencies]
+python = "3.15.*"
+pkg-config = "*"
+hdf5 = "*"
+
 [tool.pixi.pypi-dependencies]
 spec2nii = { path = ".", editable = true, extras = ["dev"] }
 
 [tool.pixi.environments]
 default = { features = [], solve-group = "python" }
-py310 = { features = ["py310"], solve-group = "py310" }
 py311 = { features = ["py311"], solve-group = "py311" }
 py312 = { features = ["py312"], solve-group = "py312" }
 py313 = { features = ["py313"], solve-group = "py313" }
 py314 = { features = ["py314"], solve-group = "py314" }
+py315 = { features = ["py315"], solve-group = "py315" }
 
 [tool.pixi.tasks]
 lint = "flake8 spec2nii"
