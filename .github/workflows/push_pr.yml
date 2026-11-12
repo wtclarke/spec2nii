@@ -18,7 +18,9 @@ jobs:
       - uses: actions/checkout@v6
       - uses: prefix-dev/setup-pixi@v0.9.4
         with:
+          pixi-version: v0.84.2
           manifest-path: pyproject.toml
+          run-install: false
           cache: false
           activate-environment: false
       - name: Check pixi.lock
@@ -39,16 +41,17 @@ jobs:
           lfs: true
       - uses: prefix-dev/setup-pixi@v0.9.4
         with:
+          pixi-version: v0.84.2
           manifest-path: pyproject.toml
           cache: false
           activate-environment: false
       - name: Install dependencies
-        run: pixi install -e py314 --frozen
+        run: pixi install --frozen -e py314
       - name: Lint
         continue-on-error: true
-        run: pixi run -e py314 lint --frozen
+        run: pixi run --frozen -e py314 lint
       - name: Run pytest
-        run: pixi run -e py314 test --frozen
+        run: pixi run --frozen -e py314 test
 
   # ###########
   # 3. PR tests
@@ -70,10 +73,11 @@ jobs:
           lfs: true
       - uses: prefix-dev/setup-pixi@v0.9.4
         with:
+          pixi-version: v0.84.2
           manifest-path: pyproject.toml
           cache: false
           activate-environment: false
       - name: Install dependencies
-        run: pixi install -e ${{ matrix.environment }} --frozen
+        run: pixi install --frozen -e ${{ matrix.environment }}
       - name: Run pytest
-        run: pixi run -e ${{ matrix.environment }} test --frozen
+        run: pixi run --frozen -e ${{ matrix.environment }} test
