@@ -23,7 +23,7 @@ jobs:
           activate-environment: false
       - name: Lint
         run: |
-          pixi run lint
+          pixi run -e py314 lint
       - name: Run pytest
         run: |
           pixi run -e py314 test
