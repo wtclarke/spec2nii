@@ -1,4 +1,6 @@
+
 name: Run code tests on push and pull requests
+
 on:
   push:
   pull_request:
@@ -6,7 +8,27 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ###########
+  # 1. Lockfile
+  # ###########
+  lockfile:
+    name: Validate pixi.lock
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: prefix-dev/setup-pixi@v0.9.4
+        with:
+          manifest-path: pyproject.toml
+          cache: false
+          activate-environment: false
+      - name: Check pixi.lock
+        run: pixi lock --check
+
+  # #############
+  # 2. Push tests
+  # #############
   push-tests:
+    needs: lockfile
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     name: Pixi (py314, ubuntu-latest)
     runs-on: ubuntu-latest
@@ -18,17 +40,21 @@ jobs:
       - uses: prefix-dev/setup-pixi@v0.9.4
         with:
           manifest-path: pyproject.toml
-          environments: py314
           cache: false
           activate-environment: false
+      - name: Install dependencies
+        run: pixi install -e py314 --frozen
       - name: Lint
-        run: |
-          pixi run -e py314 lint
+        continue-on-error: true
+        run: pixi run -e py314 lint --frozen
       - name: Run pytest
-        run: |
-          pixi run -e py314 test
+        run: pixi run -e py314 test --frozen
 
+  # ###########
+  # 3. PR tests
+  # ###########
   pr-tests:
+    needs: lockfile
     if: github.event_name == 'pull_request'
     name: Pixi (${{ matrix.environment }}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -45,9 +71,9 @@ jobs:
       - uses: prefix-dev/setup-pixi@v0.9.4
         with:
           manifest-path: pyproject.toml
-          environments: ${{ matrix.environment }}
           cache: false
           activate-environment: false
+      - name: Install dependencies
+        run: pixi install -e ${{ matrix.environment }} --frozen
       - name: Run pytest
-        run: |
-          pixi run -e ${{ matrix.environment }} test
+        run: pixi run -e ${{ matrix.environment }} test --frozen
