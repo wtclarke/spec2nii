@@ -1,7 +1,8 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
-0.8.17 (WIP)
--------------------------------------
+0.8.17 (Monday 16th November 2026)
+----------------------------------
+- Added special case handling of VOI position for Siemens DICOM VE12 SVS data.
 - Added Python 3.15 support
 - Dropped Python 3.10 support
 

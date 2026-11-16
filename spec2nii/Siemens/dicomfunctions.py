@@ -411,8 +411,8 @@ def process_siemens_svs_vx(img, verbose):
     # VoiPosition - this does not have the FOV shift that imagePositionPatient has
     imagePositionPatient = img.csa_header['tags']['VoiPosition']['items']
     # only for 'syngo MR E12' software version, extract the VoiPosition from the ASCCONV block
-    if _get_software_version(img.dcm_data) == 'syngo MR E12':
-        imagePositionPatient = (_voi_position_from_ascconv(img.dcm_data) or imagePositionPatient)
+    if _get_software_version(img.dcm_data).lower() == 'syngo mr e12':
+        imagePositionPatient = (_voi_position_from_ascconv(img.dcm_data, verbose) or imagePositionPatient)
     xyzMM = np.array([img.csa_header['tags']['VoiPhaseFoV']['items'][0],
                       img.csa_header['tags']['VoiReadoutFoV']['items'][0],
                       img.csa_header['tags']['VoiThickness']['items'][0]])
@@ -541,7 +541,9 @@ def process_siemens_csi_vx(img, verbose):
     return specDataCmplx, currNiftiOrientation, dwelltime, meta
 
 
-def _voi_position_from_ascconv(dcm_data):
+def _voi_position_from_ascconv(dcm_data, verbose):
+    if verbose:
+        print('Reading VOI position from ASCCONV block.')
     for tag in [(0x0029, 0x1020), (0x0029, 0x1120)]:
         if tag in dcm_data:
             raw = dcm_data[tag].value
@@ -574,8 +576,10 @@ def _detect_and_fill_voi(img, meta):
     # VoiPosition - this does not have the FOV shift that imagePositionPatient has
     imagePositionPatient = img.csa_header['tags']['VoiPosition']['items']
     # only for 'syngo MR E12' software version, extract the VoiPosition from the ASCCONV block
-    if _get_software_version(img.dcm_data) == 'syngo MR E12':
-        imagePositionPatient = (_voi_position_from_ascconv(img.dcm_data) or imagePositionPatient)
+    if _get_software_version(img.dcm_data).lower() == 'syngo mr e12':
+        print("Software version 'Syngo MR E12' detected: CSI VOI position read from CSA header."
+              " If it should be read from the ASCCONV block instead, please contact the developers.")
+        # imagePositionPatient = (_voi_position_from_ascconv(img.dcm_data) or imagePositionPatient)
     xyzMM = np.array([img.csa_header['tags']['VoiPhaseFoV']['items'][0],
                       img.csa_header['tags']['VoiReadoutFoV']['items'][0],
                       img.csa_header['tags']['VoiThickness']['items'][0]])

@@ -92,6 +92,9 @@ where `m_dVoI_Position_{Sag/Cor/Tra}` is read from `MEAS.sSpecPara.sVoI.sPositio
 
 At some subsequent point the first two elements in the imagePositionPatient vector is updated to include a half FOV shift.
 
+_VE12_
+For SVS data, it seems that the imagePositionPatient vector extracted from the CSA header has twice as large values than the true VOI. In this case, the VOI position is extracted from the ASCCONV block instead. CSI data are currently untested.
+
 ### Summary
 A one half voxel shift appears to be added in the sequence code. But a similar shift is not apparent in the reconstruction code. The value of the first two elements imagePositionPatient is exactly one half a FOV from the centre of the UI element. I.e. this takes you to a voxel edge (as displayed on the scanner) not a voxel centre (as required by DICOM and NIfTI).
 
