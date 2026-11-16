@@ -1,5 +1,14 @@
 This document contains the Spec2nii release history in reverse chronological order.
 
+0.8.17 (WIP)
+-------------------------------------
+- Added Python 3.15 support
+- Dropped Python 3.10 support
+
+0.8.16 (Wednesday 11th November 2026)
+-------------------------------------
+- Added TWIX conversion of Siemens XB data.
+
 0.8.15 (Wednesday 29th July 2026)
 ---------------------------------
 - Added receiver phase correction for ISTHMUS XA50/60 data.

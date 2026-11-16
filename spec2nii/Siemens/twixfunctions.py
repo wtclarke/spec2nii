@@ -43,7 +43,7 @@ class IncompatibleSoftwareVersion(Exception):
     pass
 
 
-def xa_or_vx(hdr):
+def get_twix_type(hdr):
     """Determine siemens software type
 
     :param hdr: mapVBVDHdr object
@@ -52,15 +52,18 @@ def xa_or_vx(hdr):
     :return: String either 'xa' or 'vx'
     :rtype: str
     """
+    # TODO make these case insensitive
     if re.search(r'syngo MR XA\d{2}', hdr['Dicom']['SoftwareVersions']):
         return 'xa'
+    elif re.search(r'Syngo MR XB\d{2}', hdr['Dicom']['SoftwareVersions']):
+        return 'xb'
     elif re.search(r'syngo MR [A-Z]\d{2}', hdr['Dicom']['SoftwareVersions']):
         return 'vx'
     else:
         raise IncompatibleSoftwareVersion(
             'spec2nii does not recognise this Siemens software version'
             f' ({hdr["Dicom"]["SoftwareVersions"]}).'
-            ' spec2nii is tested on VA-VE, and XA20 and XA30 DICOM files.')
+            ' spec2nii is tested on VA-VE, and XA20, XA30, and XB10 TWIX files.')
 
 
 def seq_name(hdr):
@@ -77,10 +80,9 @@ def seq_name(hdr):
 def is_xa_product(hdr):
     """If the baseline is xa and the sequence is a svs product sequence return True."""
     def is_product():
-        if any(seq_name(hdr) == seq for seq in xa_product_seq):
-            return True
+        return seq_name(hdr) in xa_product_seq
 
-    return xa_or_vx(hdr) == 'xa' and is_product()
+    return get_twix_type(hdr) in ('xa', 'xb') and is_product()
 
 
 def id_sequence_type(twixhdr):
@@ -329,7 +331,7 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
 
         # To do, handle any other dimensions properly
         xa_ref_scans = xa_ref_scans.squeeze()
-        xa_zero_index = xa_ref_scans[0, :, :] == 0.0
+        xa_zero_index = xa_ref_scans[0, ...] == 0.0
         xa_ref_scans = xa_ref_scans[:, ~xa_zero_index]\
             .reshape(xa_ref_scans.shape[0], xa_ref_scans.shape[1], -1)
     else:
@@ -407,7 +409,8 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
 
     # AG 03/22/2023 - New Hyper Function
     # AG 03/25/2025 - Support for Siemens Update to 'smm_svs_isthmus_gls'
-    elif any(x in twixObj['hdr']['Meas'][('tSequenceFileName')] for x in ('smm_svs_herc_hyper', 'svs_isthmus')):
+    elif any(x in twixObj['hdr']['Meas'][('tSequenceFileName')].lower()
+             for x in ('smm_svs_herc_hyper', 'svs_isthmus')):
         from spec2nii.Siemens.twix_special_case import smm_svs_herc_hyper                   # Hyper Data
 
         hyp_names  = ['35ms Water Reference',
@@ -437,13 +440,14 @@ def process_svs(twixObj, base_name_out, name_in, dataKey, dim_overrides, remove_
         return nifti_mrs_out, filename_out
 
     # HERCULES Data
-    elif (xa_or_vx(twixObj['hdr']) == 'xa' and 'smm_svs_herc' in twixObj['hdr']['Meas'][('tSequenceFileName')]):
+    elif (get_twix_type(twixObj['hdr']) == 'xa' and
+          'smm_svs_herc' in twixObj['hdr']['Meas'][('tSequenceFileName')].lower()):
         from spec2nii.Siemens.twix_special_case import mgs_svs_ed_twix
         reord_data, meta_obj, dim_tags = mgs_svs_ed_twix(twixObj, reord_data, meta_obj, dim_tags)
 
     elif re.search(
-            r'svs_slaser(voi)?_dkd',
-            twixObj['hdr']['Meas'][('tSequenceFileName')],
+            r'(svs_slaser(voi)?_dkd|dkd_svs_slaser)',
+            twixObj['hdr']['Meas'][('tSequenceFileName')].lower(),
             re.IGNORECASE):
         from spec2nii.Siemens.twix_special_case import slaser_dkd
         for data, meta, name in slaser_dkd(twixObj, reord_data, meta_obj, dim_tags):
@@ -930,7 +934,7 @@ def examineTwix(twixObj, fileName, mraid):
 
 def extractTwixMetadata(mapVBVDHdr, original_file):
     """Pass to appropriate extractTwixMetadata function for software version."""
-    if xa_or_vx(mapVBVDHdr) == 'vx':
+    if get_twix_type(mapVBVDHdr) == 'vx':
         try:
             return extractTwixMetadata_vx(mapVBVDHdr, original_file)
         except KeyError as original_err:
@@ -942,7 +946,7 @@ def extractTwixMetadata(mapVBVDHdr, original_file):
                 print(f'XA interpreter failed with reason {backup_err}. Raising original error.')
                 raise original_err
 
-    elif xa_or_vx(mapVBVDHdr) == 'xa':
+    elif get_twix_type(mapVBVDHdr) in ('xa', 'xb'):
         return extractTwixMetadata_xa(mapVBVDHdr, original_file)
 
 
