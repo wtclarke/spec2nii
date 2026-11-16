@@ -65,10 +65,11 @@ def get_dicom_type(img):
                 f' {img.dcm_data.SoftwareVersions} baseline scanner.'
                 ' spec2nii is tested on VA-VE, XA20, and XA30 DICOM files.')
         else:
+            soft_ver = _get_software_version(img.dcm_data)
             raise IncompatibleSOPClassUID(
-                'spec2nii does not recognise this SOPClassUID '
-                f'{img.dcm_data.SOPClassUID} as MRS data. This data was collected on a'
-                f' {img.dcm_data.SoftwareVersions} baseline scanner.'
+                'spec2nii does not recognise this SOPClassUID'
+                f' {img.dcm_data.SOPClassUID} as MRS data. This data was collected on a'
+                f' {soft_ver} baseline scanner.'
                 ' spec2nii is tested on VA-VE, XA20, and XA30 DICOM files.')
 
 
@@ -88,6 +89,14 @@ def svs_or_CSI(img):
         return 'CSI'
     else:
         return 'SVS'
+
+
+def _get_software_version(dcm_data):
+    if hasattr(dcm_data, 'SoftwareVersions'):
+        soft_ver = dcm_data.SoftwareVersions
+    else:
+        soft_ver = 'Unknown'
+    return soft_ver
 
 
 def _is_vienna_crt(img):
@@ -175,6 +184,10 @@ def multi_file_dicom(files_in, fname_out, tag, verbose):
             else:
                 raise missingTagError("Neither 'SeriesDescription' or 'SeriesInstanceUID' tags defined."
                                       " Please specify an output filename using '-f'")
+
+    if len(data_list) == 0:
+        print("No valid MRS DICOM files found. Exiting conversion...")
+        return [], []
 
     # If last dimension corresponds to transients but is singleton then remove
     if len(files_in) == 1 and get_dicom_type(img) == 'xb' and not has_transients:
@@ -397,6 +410,9 @@ def process_siemens_svs_vx(img, verbose):
     imageOrientationPatient = np.array(img.csa_header['tags']['ImageOrientationPatient']['items']).reshape(2, 3)
     # VoiPosition - this does not have the FOV shift that imagePositionPatient has
     imagePositionPatient = img.csa_header['tags']['VoiPosition']['items']
+    # only for 'syngo MR E12' software version, extract the VoiPosition from the ASCCONV block
+    if _get_software_version(img.dcm_data).lower() == 'syngo mr e12':
+        imagePositionPatient = (_voi_position_from_ascconv(img.dcm_data, verbose) or imagePositionPatient)
     xyzMM = np.array([img.csa_header['tags']['VoiPhaseFoV']['items'][0],
                       img.csa_header['tags']['VoiReadoutFoV']['items'][0],
                       img.csa_header['tags']['VoiThickness']['items'][0]])
@@ -525,6 +541,27 @@ def process_siemens_csi_vx(img, verbose):
     return specDataCmplx, currNiftiOrientation, dwelltime, meta
 
 
+def _voi_position_from_ascconv(dcm_data, verbose):
+    if verbose:
+        print('Reading VOI position from ASCCONV block.')
+    for tag in [(0x0029, 0x1020), (0x0029, 0x1120)]:
+        if tag in dcm_data:
+            raw = dcm_data[tag].value
+            text = raw.decode('latin-1', errors='replace') if isinstance(raw, bytes) else str(raw)
+            keys = ('sSpecPara.sVoI.sPosition.dSag',
+                    'sSpecPara.sVoI.sPosition.dCor',
+                    'sSpecPara.sVoI.sPosition.dTra')
+            vals = []
+            for key in keys:
+                m = re.search(rf'{re.escape(key)}\s*=\s*(\S+)', text)
+                if m is None:
+                    break
+                vals.append(float(m.group(1)))
+            if len(vals) == 3:
+                return vals
+    return None
+
+
 def _detect_and_fill_voi(img, meta):
     """Look for a VOI volume in the headers of a CSI scan. If present populate the VOI header field.
 
@@ -538,6 +575,11 @@ def _detect_and_fill_voi(img, meta):
     imageOrientationPatient = np.array(img.csa_header['tags']['ImageOrientationPatient']['items']).reshape(2, 3)
     # VoiPosition - this does not have the FOV shift that imagePositionPatient has
     imagePositionPatient = img.csa_header['tags']['VoiPosition']['items']
+    # only for 'syngo MR E12' software version, extract the VoiPosition from the ASCCONV block
+    if _get_software_version(img.dcm_data).lower() == 'syngo mr e12':
+        print("Software version 'Syngo MR E12' detected: CSI VOI position read from CSA header."
+              " If it should be read from the ASCCONV block instead, please contact the developers.")
+        # imagePositionPatient = (_voi_position_from_ascconv(img.dcm_data) or imagePositionPatient)
     xyzMM = np.array([img.csa_header['tags']['VoiPhaseFoV']['items'][0],
                       img.csa_header['tags']['VoiReadoutFoV']['items'][0],
                       img.csa_header['tags']['VoiThickness']['items'][0]])
