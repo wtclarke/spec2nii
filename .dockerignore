@@ -1,0 +1,18 @@
+# Keep .git: setuptools-scm reads it to derive the package version.
+.github
+.vscode
+.idea
+.pixi
+.venv
+venv
+build
+dist
+*.egg-info
+**/__pycache__
+**/*.pyc
+tests
+docs
+.pytest_cache
+.flake8
+Dockerfile
+.dockerignore
